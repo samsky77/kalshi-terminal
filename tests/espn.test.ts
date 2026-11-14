@@ -12,7 +12,23 @@ const ev = {
   }],
 };
 
+const soccer = {
+  id: '1', date: '2026-11-21T15:00Z', status: { type: { state: 'pre' } },
+  competitions: [{
+    competitors: [{ homeAway: 'home', team: { displayName: 'Manchester City' } }, { homeAway: 'away', team: { displayName: 'Fulham' } }],
+    odds: [{ moneyline: { home: { close: { odds: '-235' } }, away: { close: { odds: '+600' } }, draw: { close: { odds: '+400' } } } }],
+  }],
+};
+
 describe('espn odds mapping', () => {
+  it('maps soccer to a 3-way h2h with a Draw outcome', () => {
+    const o = eventFromEspn(soccer, 'soccer_epl', 'x')!;
+    expect(o.bookmakers[0].markets[0].outcomes.map((x) => x.name)).toEqual(['Fulham', 'Manchester City', 'Draw']);
+  });
+  it('drops soccer h2h without a draw price', () => {
+    const e = { ...soccer, competitions: [{ ...soccer.competitions[0], odds: [{ moneyline: { home: { close: { odds: '-235' } }, away: { close: { odds: '+600' } } } }] }] };
+    expect(eventFromEspn(e, 'soccer_epl', 'x')).toBeNull();
+  });
   it('converts american odds', () => {
     expect(americanStrToDecimal('+120')).toBeCloseTo(2.2);
     expect(americanStrToDecimal('-142')).toBeCloseTo(1.704, 3);

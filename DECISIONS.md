@@ -39,13 +39,15 @@ Open choices made during the build, each with a one-line reason. **★ = review 
 27. The Kalshi series catalogue is cached 6 h, not 30 s. It is 6.8 MB and changes rarely; every other Kalshi response is cached 30 s.
 28. The Kalshi throttle is 5 requests/s per server instance. On Vercel each instance has its own throttle and cache (no shared store on the free tier).
 29. Simulation runs in a **Web Worker on the phone**, not on the server. That keeps Vercel free-tier function time small, and it works offline. Sims are cached by game + consensus, so Kalshi price updates only re-price.
-30. Kalshi prices reload every 90 s while the app is open and visible, and only for sports that have odds. Odds never refresh automatically.
+30. Kalshi prices reload every 90 s while the app is open and visible. **Odds now refresh automatically at most once per sport per ~10 h**, only for sports with games starting within 24 h, and still behind the 30-credit reserve. The refresh runs when the app is opened (or open at the next poll), so the phone must be opened at least once a day; there is no server cron or shared store on the free tier.
 31. The on-device dataset gets one record per odds refresh, plus Kalshi-price snapshots at most every 15 min per sport. That keeps IndexedDB small while giving a price history.
 32. The service worker is hand-written (no next-pwa). It's small and compatible with Next 15; Lighthouse 11 reports the app installable.
 33. Lighthouse **11.7.1** was used for the PWA audit. Lighthouse 12 removed the PWA category.
 34. The fixture odds are **real recorded responses** (2026-11-14 ~03:08Z), not synthetic. The matcher and calibration tests then exercise real naming and real line shapes.
 35. Demo mode replays the fixtures with "now" set to the recording time, so the Value tab can be checked without spending credits.
 36. Node.js 24 LTS was installed with winget (user scope); the machine had no Node.
+
+38. **Free odds source: ESPN's public scoreboard** (no key, no credits) for NBA, NFL, NHL, CFB and CBB. One book (DraftKings), pregame lines only, mapped into the Odds API shape. Soccer, tennis, FCS and any ESPN failure still use The Odds API, so credits are spent only there. The sim then anchors to one book instead of a multi-book median, and ESPN's endpoint is unofficial and can change without notice.
 
 ## Things I could not verify
 

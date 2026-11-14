@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   try {
     const plan = await planRefresh(sport, typeof body.horizonHours === 'number' ? body.horizonHours : undefined);
     if (!plan.keys.length) return json({ error: 'No open Kalshi events map to an odds key for this sport; nothing to fetch.', plan }, 409);
-    const r = await refreshOdds(sport, plan.keys);
+    const r = await refreshOdds(sport, plan.keys, plan.counts);
     return json({ ...r, unmapped: plan.unmapped });
   } catch (e) {
     if (e instanceof ReserveError) return json({ error: e.message, remaining: e.remaining, cost: e.cost }, 409);

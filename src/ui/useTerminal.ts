@@ -21,6 +21,7 @@ type PerSport<T> = Partial<Record<Sport, T>>;
 
 const KALSHI_POLL_MS = 90_000;
 const AUTO_HORIZON_H = 24; // auto refresh covers games starting within this window
+const AUTO_RETRY_MS = 3600_000; // after any automatic attempt, wait an hour before trying that sport again
 const AUTO_MIN_GAP_MS = 10 * 3600_000; // at most about one paid refresh per sport per day
 
 async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -194,6 +195,12 @@ export function useTerminal() {
         if (!soon) continue;
         const last = m.lastOddsRefresh?.[s];
         if (last && Date.now() - Date.parse(last) < AUTO_MIN_GAP_MS) continue;
+        // Failed attempts must not retry on every 90 s poll (that would burn credits): wait an hour after any attempt.
+        const attemptKey = `kt-auto-attempt-${s}`;
+        let attempt = 0;
+        try { attempt = Number(localStorage.getItem(attemptKey)) || 0; } catch { /* private mode */ }
+        if (Date.now() - attempt < AUTO_RETRY_MS) continue;
+        try { localStorage.setItem(attemptKey, String(Date.now())); } catch { /* private mode */ }
         await refreshOdds(s, true);
         m.lastOddsRefresh = { ...m.lastOddsRefresh, [s]: new Date().toISOString() };
       }

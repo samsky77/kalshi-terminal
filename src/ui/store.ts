@@ -67,6 +67,7 @@ export interface Meta {
   credits?: { remaining: number | null; used: number | null; checkedAt: string };
   lastOddsRefresh?: Partial<Record<Sport, string>>;
   lastDatasetSave?: Partial<Record<Sport, string>>;
+  settled?: Record<string, 'yes' | 'no'>; // Kalshi settlements for backtest picks (ticker -> result)
 }
 export const loadMeta = async () => (await idbGet<Meta>('meta', 'meta')) ?? {};
 export const saveMeta = (m: Meta) => idbPut('meta', 'meta', m);

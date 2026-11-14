@@ -105,6 +105,7 @@ Odds are cached on the server for hours and on the phone indefinitely. They're m
 
 - **Value**: ranked +EV contracts, filtered by sport, market type, tier (A/B on by default, C off) and minimum edge. Each row shows sim %, ask, fee, edge (¢ per contract) and size at the ask. Tap a row for the game detail.
 - **Games**: every Kalshi game per sport, with the moneyline, spread ladder and total ladder (sim %, Yes and No ask, edge per side; • marks a value flag). Games with no sportsbook match are listed as **UNPRICED** and never flagged. Started games are never flagged.
+- **Track**: automatic backtest. Value picks (≥2¢ edge, last snapshot before the game started) are logged from the on-device dataset, graded against Kalshi settlements via `/api/settle` once the game should be over, 1 contract each at ask plus fee. Shows hit rate, average sim probability, P&L and ROI by sport, market and tier. It only logs while the app is open.
 - **Data**: credits left, last Kalshi and odds refresh per sport, the odds keys and cost per refresh, Refresh buttons, unmatched events (Kalshi and odds, with reasons), Live/Demo switch, and export or clear of the on-device backtest dataset.
 - **Game detail**: consensus inputs, the sim's fit to them, margin and total distributions (dashed line = consensus line), model parameters, books used, and odds timestamps.
 
@@ -129,4 +130,4 @@ Odds are cached on the server for hours and on the phone indefinitely. They're m
 
 ## Out of scope for v1 (designed for, not built)
 
-Candle charts and orderbook depth (the unauthenticated orderbook endpoint works, see KALSHI.md), historical backtesting (the dataset is already being collected on-device), pick tracking and P&L, push alerts, independent ratings models, accounts and subscriptions.
+Candle charts and orderbook depth (the unauthenticated orderbook endpoint works, see KALSHI.md), historical backtesting beyond what the phone has logged, push alerts, independent ratings models, accounts and subscriptions.

@@ -47,6 +47,8 @@ Open choices made during the build, each with a one-line reason. **★ = review 
 35. Demo mode replays the fixtures with "now" set to the recording time, so the Value tab can be checked without spending credits.
 36. Node.js 24 LTS was installed with winget (user scope); the machine had no Node.
 
+38. **Free odds source: ESPN's public scoreboard** (no key, no credits) for NBA, NFL, NHL, CFB and CBB. One book (DraftKings), pregame lines only, mapped into the Odds API shape. Soccer, tennis, FCS and any ESPN failure still use The Odds API, so credits are spent only there. The sim then anchors to one book instead of a multi-book median, and ESPN's endpoint is unofficial and can change without notice.
+
 ## Things I could not verify
 
 37. ★ **Kalshi's fee schedule PDF** was behind a bot checkpoint. The fee test table was computed from the published formula; spot-check a few rows against the PDF.

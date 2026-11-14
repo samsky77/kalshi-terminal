@@ -6,6 +6,7 @@ import { normalizeName } from '@/core/matcher';
 import type { OddsBatch } from '@/core/pipeline';
 import { LEAGUE_SEEDS, ODDS_CREDITS_PER_KEY, ODDS_RESERVE } from '@/core/sports';
 import type { KalshiGame, OddsEvent, Sport } from '@/core/types';
+import { espnBatch, espnCovers } from './espn';
 import { getJson, Throttle } from './http';
 import { fixturesDir } from './root';
 
@@ -100,20 +101,39 @@ export interface RefreshResult {
   errors: string[];
 }
 
-/** Manual refresh for one sport. Never called automatically. Enforces the credit reserve first. */
+/**
+ * Refresh one sport. Keys ESPN covers (NBA, NFL, NHL, CFB, CBB) come from the free ESPN feed and cost no credits;
+ * everything else (soccer, tennis, FCS) and any ESPN failure goes to The Odds API, behind the credit reserve.
+ */
 export async function refreshOdds(sport: Sport, keys: string[]): Promise<RefreshResult> {
   const key = oddsKey();
-  if (!key) {
-    const batches = fixtureBatches(sport).filter((b) => !keys.length || keys.includes(b.sportKey));
-    return { mode: 'fixture', sport, keys, cost: 0, creditsBefore: null, credits: lastCredits, batches, errors: [] };
-  }
-  const cost = keys.length * ODDS_CREDITS_PER_KEY;
-  const { credits } = await oddsStatus(true);
-  const before = credits.remaining;
-  if (before !== null && before - cost < ODDS_RESERVE) throw new ReserveError(before, cost);
   const batches: OddsBatch[] = [];
   const errors: string[] = [];
+  const paid: string[] = [];
   for (const k of keys) {
+    if (!espnCovers(k)) { paid.push(k); continue; }
+    try {
+      const b = await espnBatch(k);
+      batchCache.set(k, b);
+      batches.push(b);
+    } catch (e) {
+      errors.push(`${(e as Error).message} (free feed)`);
+      paid.push(k);
+    }
+  }
+  if (!key) {
+    const fx = fixtureBatches(sport).filter((b) => paid.includes(b.sportKey));
+    return { mode: batches.length ? 'live' : 'fixture', sport, keys, cost: 0, creditsBefore: null, credits: lastCredits, batches: [...batches, ...fx], errors };
+  }
+  if (!paid.length) return { mode: 'live', sport, keys, cost: 0, creditsBefore: lastCredits.remaining, credits: lastCredits, batches, errors };
+  const cost = paid.length * ODDS_CREDITS_PER_KEY;
+  const { credits } = await oddsStatus(true);
+  const before = credits.remaining;
+  if (before !== null && before - cost < ODDS_RESERVE) {
+    if (batches.length) return { mode: 'live', sport, keys, cost: 0, creditsBefore: before, credits, batches, errors: [...errors, new ReserveError(before, cost).message] };
+    throw new ReserveError(before, cost);
+  }
+  for (const k of paid) {
     const q = new URLSearchParams({ apiKey: key, regions: 'us', markets: 'h2h,spreads,totals', oddsFormat: 'decimal', dateFormat: 'iso' });
     const r = await getJson<OddsEvent[]>(`${ODDS_BASE}/sports/${k}/odds?${q}`, { throttle, retries: 2 });
     if (r.status === 200 && Array.isArray(r.body)) {

@@ -20,7 +20,7 @@ export interface Plan { keys: string[]; unmapped: string[]; cost: number }
 type PerSport<T> = Partial<Record<Sport, T>>;
 
 const KALSHI_POLL_MS = 90_000;
-const AUTO_HORIZON_H = 36; // auto refresh covers games starting within this window
+const AUTO_HORIZON_H = 24; // auto refresh covers games starting within this window
 const AUTO_MIN_GAP_MS = 10 * 3600_000; // at most about one paid refresh per sport per day
 
 async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -146,7 +146,7 @@ export function useTerminal() {
     } catch { /* offline */ }
   }, []);
 
-  /** Credit-spending refresh. Manual from Data, or automatic once a day (auto = only games starting within 36 h). */
+  /** Credit-spending refresh. Manual from Data, or automatic once a day (auto = only games starting within 24 h). */
   const refreshOdds = useCallback(
     async (sport: Sport, auto = false) => {
       setBusyFor(sport, 'odds');

@@ -20,6 +20,8 @@ export interface Plan { keys: string[]; unmapped: string[]; cost: number }
 type PerSport<T> = Partial<Record<Sport, T>>;
 
 const KALSHI_POLL_MS = 90_000;
+const AUTO_HORIZON_H = 36; // auto refresh covers games starting within this window
+const AUTO_MIN_GAP_MS = 10 * 3600_000; // at most about one paid refresh per sport per day
 
 async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, init);
@@ -144,14 +146,14 @@ export function useTerminal() {
     } catch { /* offline */ }
   }, []);
 
-  /** Manual, credit-spending refresh. */
+  /** Credit-spending refresh. Manual from Data, or automatic once a day (auto = only games starting within 36 h). */
   const refreshOdds = useCallback(
-    async (sport: Sport) => {
+    async (sport: Sport, auto = false) => {
       setBusyFor(sport, 'odds');
       setNotice(null);
       try {
         const r = await getJson<{ mode: string; batches: OddsBatch[]; credits: Status['credits']; cost: number; creditsBefore: number | null; errors: string[] }>(
-          '/api/odds/refresh', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sport }) });
+          '/api/odds/refresh', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(auto ? { sport, horizonHours: AUTO_HORIZON_H } : { sport }) });
         for (const b of r.batches) await store.saveOddsBatch(b);
         const keys = new Set(r.batches.map((b) => b.sportKey));
         oddsRef.current = [...oddsRef.current.filter((b) => !keys.has(b.sportKey)), ...r.batches];
@@ -175,6 +177,30 @@ export function useTerminal() {
     },
     [loadKalshi, recompute],
   );
+
+  /** Once a day per sport: pull odds for games starting soon, so today's slate is always priced. */
+  const autoRefreshing = useRef(false);
+  const autoRefresh = useCallback(async () => {
+    if (autoRefreshing.current || modeRef.current !== 'live') return;
+    autoRefreshing.current = true;
+    try {
+      const m = await store.loadMeta();
+      for (const s of SPORTS) {
+        const games = snapsRef.current[s]?.games ?? [];
+        const soon = games.some((g) => {
+          const t = Date.parse(g.startTime);
+          return t > Date.now() - 3 * 3600e3 && t < Date.now() + AUTO_HORIZON_H * 3600e3;
+        });
+        if (!soon) continue;
+        const last = m.lastOddsRefresh?.[s];
+        if (last && Date.now() - Date.parse(last) < AUTO_MIN_GAP_MS) continue;
+        await refreshOdds(s, true);
+        m.lastOddsRefresh = { ...m.lastOddsRefresh, [s]: new Date().toISOString() };
+      }
+    } finally {
+      autoRefreshing.current = false;
+    }
+  }, [refreshOdds]);
 
   const loadAll = useCallback(async () => {
     for (const s of SPORTS) await loadKalshi(s);
@@ -237,13 +263,14 @@ export function useTerminal() {
       if (saved === 'demo') await setMode('demo');
       else {
         await hydrate();
-        if (navigator.onLine) await loadAll();
+        if (navigator.onLine) { await loadAll(); await autoRefresh(); }
       }
     })();
     const t = setInterval(() => {
       if (!navigator.onLine || document.hidden || modeRef.current !== 'live') return;
-      // Kalshi prices only (free). Odds are never refreshed automatically.
+      // Kalshi prices every poll (free); odds at most once per sport per day (see autoRefresh).
       for (const s of SPORTS) if (oddsRef.current.length && snapsRef.current[s]) loadKalshi(s);
+      autoRefresh();
     }, KALSHI_POLL_MS);
     return () => { clearInterval(t); window.removeEventListener('online', on); window.removeEventListener('offline', off); };
     // eslint-disable-next-line react-hooks/exhaustive-deps

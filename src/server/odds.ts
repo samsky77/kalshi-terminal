@@ -67,12 +67,13 @@ export function tennisKeyFor(competition: string, league: string, sports: OddsSp
 }
 
 /** Odds keys that have at least one matching open Kalshi game for this sport. */
-export function keysForGames(sport: Sport, games: KalshiGame[], sports: OddsSportInfo[]): { keys: string[]; unmapped: string[] } {
+export function keysForGames(sport: Sport, games: KalshiGame[], sports: OddsSportInfo[], horizonHours?: number): { keys: string[]; unmapped: string[] } {
   const keys = new Set<string>();
   const unmapped = new Set<string>();
   const active = new Set(sports.map((s) => s.key));
   for (const g of games) {
     if (Date.parse(g.startTime) < Date.now() - 6 * 3600e3) continue;
+    if (horizonHours !== undefined && Date.parse(g.startTime) > Date.now() + horizonHours * 3600e3) continue;
     const seed = LEAGUE_SEEDS.find((s) => s.prefix === g.league);
     if (!seed || seed.sport !== sport) continue;
     const k = seed.sport === 'tennis' ? tennisKeyFor(g.competition, g.league, sports) : seed.oddsKey ?? undefined;

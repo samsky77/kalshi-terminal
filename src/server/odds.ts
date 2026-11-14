@@ -6,7 +6,7 @@ import { normalizeName } from '@/core/matcher';
 import type { OddsBatch } from '@/core/pipeline';
 import { LEAGUE_SEEDS, ODDS_CREDITS_PER_KEY, ODDS_RESERVE } from '@/core/sports';
 import type { KalshiGame, OddsEvent, Sport } from '@/core/types';
-import { espnBatch, espnCovers } from './espn';
+import { espnBatch, espnCovers, isTennisKey } from './espn';
 import { getJson, Throttle } from './http';
 import { fixturesDir } from './root';
 
@@ -114,6 +114,7 @@ export async function refreshOdds(sport: Sport, keys: string[]): Promise<Refresh
     if (!espnCovers(k)) { paid.push(k); continue; }
     try {
       const b = await espnBatch(k);
+      if (isTennisKey(k) && !b.events.length) { paid.push(k); continue; } // ESPN lists tennis lines only for some matches
       batchCache.set(k, b);
       batches.push(b);
     } catch (e) {

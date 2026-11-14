@@ -9,6 +9,6 @@ import { keysForGames, oddsMode, oddsStatus } from './odds';
 export async function planRefresh(sport: Sport, horizonHours?: number) {
   const { sports, credits } = await oddsStatus();
   const snap = oddsMode() === 'live' ? await loadSport(sport) : kalshiFixtureSnapshot(sport);
-  const { keys, unmapped } = keysForGames(sport, snap?.games ?? [], sports, horizonHours);
-  return { sport, keys, unmapped, cost: oddsMode() === 'live' ? keys.filter((k) => !espnCovers(k)).length * ODDS_CREDITS_PER_KEY : 0, credits };
+  const { keys, unmapped, counts } = keysForGames(sport, snap?.games ?? [], sports, horizonHours);
+  return { sport, keys, unmapped, counts, cost: oddsMode() === 'live' ? keys.filter((k) => !espnCovers(k)).length * ODDS_CREDITS_PER_KEY : 0, credits };
 }

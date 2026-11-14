@@ -68,8 +68,9 @@ export function tennisKeyFor(competition: string, league: string, sports: OddsSp
 }
 
 /** Odds keys that have at least one matching open Kalshi game for this sport. */
-export function keysForGames(sport: Sport, games: KalshiGame[], sports: OddsSportInfo[], horizonHours?: number): { keys: string[]; unmapped: string[] } {
+export function keysForGames(sport: Sport, games: KalshiGame[], sports: OddsSportInfo[], horizonHours?: number): { keys: string[]; unmapped: string[]; counts: Record<string, number> } {
   const keys = new Set<string>();
+  const counts: Record<string, number> = {};
   const unmapped = new Set<string>();
   const active = new Set(sports.map((s) => s.key));
   for (const g of games) {
@@ -78,10 +79,10 @@ export function keysForGames(sport: Sport, games: KalshiGame[], sports: OddsSpor
     const seed = LEAGUE_SEEDS.find((s) => s.prefix === g.league);
     if (!seed || seed.sport !== sport) continue;
     const k = seed.sport === 'tennis' ? tennisKeyFor(g.competition, g.league, sports) : seed.oddsKey ?? undefined;
-    if (k && (active.has(k) || !sports.length)) keys.add(k);
+    if (k && (active.has(k) || !sports.length)) { keys.add(k); if (Date.parse(g.startTime) < Date.now() + 36 * 3600e3) counts[k] = (counts[k] ?? 0) + 1; } // counts = games ESPN's 2-day window should cover
     else unmapped.add(`${g.league} ${g.competition}`);
   }
-  return { keys: [...keys].sort(), unmapped: [...unmapped].sort() };
+  return { keys: [...keys].sort(), unmapped: [...unmapped].sort(), counts };
 }
 
 export class ReserveError extends Error {
@@ -105,7 +106,7 @@ export interface RefreshResult {
  * Refresh one sport. Keys ESPN covers (NBA, NFL, NHL, CFB, CBB) come from the free ESPN feed and cost no credits;
  * everything else (soccer, tennis, FCS) and any ESPN failure goes to The Odds API, behind the credit reserve.
  */
-export async function refreshOdds(sport: Sport, keys: string[]): Promise<RefreshResult> {
+export async function refreshOdds(sport: Sport, keys: string[], expected: Record<string, number> = {}): Promise<RefreshResult> {
   const key = oddsKey();
   const batches: OddsBatch[] = [];
   const errors: string[] = [];
@@ -114,7 +115,9 @@ export async function refreshOdds(sport: Sport, keys: string[]): Promise<Refresh
     if (!espnCovers(k)) { paid.push(k); continue; }
     try {
       const b = await espnBatch(k);
-      if (isTennisKey(k) && !b.events.length) { paid.push(k); continue; } // ESPN lists tennis lines only for some matches
+      // ESPN posts lines late and only for some games (tennis especially): if it covers under 60% of the open Kalshi games, use the paid feed.
+      const want = expected[k] ?? (isTennisKey(k) ? 1 : 0);
+      if (b.events.length < Math.ceil(want * 0.6)) { errors.push(`${k}: ESPN had lines for ${b.events.length} of ${want} games, using Odds API`); paid.push(k); continue; }
       batchCache.set(k, b);
       batches.push(b);
     } catch (e) {

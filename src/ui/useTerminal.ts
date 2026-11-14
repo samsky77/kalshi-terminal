@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { OddsBatch, PipelineOutput } from '@/core/pipeline';
 import { SPORTS, type Sport } from '@/core/types';
 import type { SportSnapshot } from '@/server/kalshi';
+import { buildPicks, summarize, unsettledTickers, type BacktestSummary } from '@/core/backtest';
 import * as store from './store';
 
 export type Mode = 'live' | 'demo';
@@ -41,6 +42,7 @@ export function useTerminal() {
   const [meta, setMeta] = useState<store.Meta>({});
   const [plans, setPlans] = useState<PerSport<Plan>>({});
   const [datasetCount, setDatasetCount] = useState(0);
+  const [backtest, setBacktest] = useState<BacktestSummary | null>(null);
   const [online, setOnline] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -258,6 +260,30 @@ export function useTerminal() {
     } catch { /* IndexedDB unavailable */ }
   }, []);
 
+  /** Automatic backtest: rebuild picks from the saved snapshots, fetch settlements for finished games, grade. At most every 20 min. */
+  const lastBacktest = useRef(0);
+  const runBacktest = useCallback(async (force = false) => {
+    if (!force && Date.now() - lastBacktest.current < 20 * 60_000) return;
+    lastBacktest.current = Date.now();
+    try {
+      const picks = buildPicks(await store.allRecords());
+      const m = await store.loadMeta();
+      const settled = { ...(m.settled ?? {}) };
+      if (navigator.onLine) {
+        const todo = unsettledTickers(picks, settled).slice(0, 120);
+        for (let i = 0; i < todo.length; i += 40) {
+          const r = await fetch(`/api/settle?tickers=${encodeURIComponent(todo.slice(i, i + 40).join(','))}`).then((x) => x.json()).catch(() => null);
+          if (r?.settled) Object.assign(settled, r.settled);
+        }
+        if (Object.keys(settled).length !== Object.keys(m.settled ?? {}).length) {
+          const m2 = await store.loadMeta();
+          await store.saveMeta({ ...m2, settled });
+        }
+      }
+      setBacktest(summarize(picks, settled));
+    } catch { /* IndexedDB unavailable */ }
+  }, []);
+
   useEffect(() => {
     let saved: Mode = 'live';
     try { saved = (localStorage.getItem('kt-mode') as Mode) || 'live'; } catch { /* ignore */ }
@@ -272,12 +298,14 @@ export function useTerminal() {
         await hydrate();
         if (navigator.onLine) { await loadAll(); await autoRefresh(); }
       }
+      runBacktest(true);
     })();
     const t = setInterval(() => {
       if (!navigator.onLine || document.hidden || modeRef.current !== 'live') return;
       // Kalshi prices every poll (free); odds at most once per sport per day (see autoRefresh).
       for (const s of SPORTS) if (oddsRef.current.length && snapsRef.current[s]) loadKalshi(s);
       autoRefresh();
+      runBacktest();
     }, KALSHI_POLL_MS);
     return () => { clearInterval(t); window.removeEventListener('online', on); window.removeEventListener('offline', off); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -299,7 +327,7 @@ export function useTerminal() {
   }, []);
 
   return {
-    mode, setMode, snaps, results, busy, errors, status, meta, plans, datasetCount, online, notice,
+    mode, setMode, snaps, results, busy, errors, status, meta, plans, datasetCount, backtest, runBacktest, online, notice,
     setNotice, loadKalshi, loadAll, refreshOdds, loadPlan, loadStatus, exportDataset, clearDataset,
   };
 }

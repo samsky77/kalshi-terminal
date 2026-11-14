@@ -4,9 +4,10 @@ import { valueRows, type ValueRow } from '@/core/pipeline';
 import { SPORT_LABEL, STALE_HOURS } from '@/core/sports';
 import { SPORTS, type MarketKind, type PricedContract, type PricedGame, type Sport, type Tier } from '@/core/types';
 import { ago, cents, edgeC, pct, signClass, size, when } from './format';
+import type { BacktestSummary } from '@/core/backtest';
 import { useTerminal, type Terminal } from './useTerminal';
 
-type Tab = 'value' | 'games' | 'data';
+type Tab = 'value' | 'games' | 'track' | 'data';
 const KIND_LABEL: Record<MarketKind, string> = { winner: 'ML', tie: 'TIE', spread: 'SPR', total: 'TOT' };
 
 export default function App() {
@@ -37,15 +38,16 @@ export default function App() {
       <main className="content">
         {tab === 'value' && <ValueTab t={t} onOpen={setDetail} />}
         {tab === 'games' && <GamesTab t={t} onOpen={setDetail} />}
+        {tab === 'track' && <TrackTab t={t} />}
         {tab === 'data' && <DataTab t={t} />}
       </main>
 
       {detailGame && <GameDetail g={detailGame} onClose={() => setDetail(null)} />}
 
       <nav className="tabs">
-        {(['value', 'games', 'data'] as Tab[]).map((x) => (
+        {(['value', 'games', 'track', 'data'] as Tab[]).map((x) => (
           <button key={x} className={tab === x ? 'on' : ''} onClick={() => setTab(x)}>
-            {x === 'value' ? 'Value' : x === 'games' ? 'Games' : 'Data'}
+            {x === 'value' ? 'Value' : x === 'games' ? 'Games' : x === 'track' ? 'Track' : 'Data'}
           </button>
         ))}
       </nav>
@@ -279,6 +281,53 @@ function Hist({ title, data, marker }: { title: string; data: [number, number][]
         <text x={W} y={H + 11} textAnchor="end" className="axis">{x1}</text>
       </svg>
     </figure>
+  );
+}
+
+// ---------------------------------------------------------------- Track tab (automatic backtest)
+function TrackTab({ t }: { t: Terminal }) {
+  useEffect(() => { t.runBacktest(true); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  const b = t.backtest;
+  const row = (label: string, x: BacktestSummary['total']) => (
+    <tr key={label}>
+      <td>{label}</td><td className="mono">{x.n}</td>
+      <td className="mono">{pct(x.n ? x.wins / x.n : null, 0)}</td>
+      <td className="mono">{pct(x.avgProb, 0)}</td>
+      <td className={`mono ${(x.pnl >= 0 ? 'pos' : 'neg')}`}>{x.pnl >= 0 ? '+' : ''}{x.pnl.toFixed(2)}</td>
+      <td className={`mono ${(x.pnl >= 0 ? 'pos' : 'neg')}`}>{pct(x.staked ? x.pnl / x.staked : null, 0)}%</td>
+    </tr>
+  );
+  const group = (title: string, g: Record<string, BacktestSummary['total']>) => (
+    <div className="panel">
+      <div className="small dim">{title}</div>
+      <table className="kv mono"><thead><tr><th></th><th>N</th><th>HIT</th><th>SIM</th><th>P&amp;L $</th><th>ROI</th></tr></thead>
+        <tbody>{Object.entries(g).map(([k, v]) => row(SPORT_LABEL[k as Sport] ?? k, v))}</tbody></table>
+    </div>
+  );
+  return (
+    <section>
+      <div className="panel">
+        <p className="small dim">Automatic backtest: every contract the Value list showed at ≥2¢ edge before the game started is logged and graded when Kalshi settles it, 1 contract each at the ask plus fee. It only logs while the app is open, so it fills in over days.</p>
+        {!b || (!b.total.n && !b.pending) ? <p>No picks logged yet. Keep the app open on game days.</p> : (
+          <table className="kv mono"><thead><tr><th></th><th>N</th><th>HIT</th><th>SIM</th><th>P&amp;L $</th><th>ROI</th></tr></thead><tbody>{row('All graded', b.total)}</tbody></table>
+        )}
+        {b && <div className="small dim">{b.pending} picks waiting for results</div>}
+      </div>
+      {b && b.total.n > 0 && group('By sport', b.bySport)}
+      {b && b.total.n > 0 && group('By market', b.byKind)}
+      {b && b.total.n > 0 && group('By tier', b.byTier)}
+      {b && b.recent.length > 0 && (
+        <div className="panel">
+          <div className="small dim">Latest graded</div>
+          {b.recent.map((r) => (
+            <div className="kvline small" key={r.pick.key}>
+              <span>{r.pick.title} · {r.pick.side.toUpperCase()} {r.pick.ticker.split('-').slice(-1)[0]}</span>
+              <b className={`mono ${r.won ? 'pos' : 'neg'}`}>{r.pnl >= 0 ? '+' : ''}{r.pnl.toFixed(2)}</b>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

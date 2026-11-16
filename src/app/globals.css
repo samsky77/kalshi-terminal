@@ -101,3 +101,9 @@ h4 { margin: 12px 0 4px; font-size: 11px; color: var(--accent); text-transform: 
 @keyframes s { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } }
+
+/* QA wave 2 polish */
+.chips .chip { flex: 0 0 auto; }
+button.lrow { min-height: 44px; }
+.link.inline { padding: 10px 2px; margin: -10px 0; }
+.lad-legend { margin: 2px 0 4px; }

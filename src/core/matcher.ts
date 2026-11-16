@@ -41,8 +41,9 @@ const DIFFERENTIATORS = new Set(['st', 'state', 'tech', 'a', 'm', 'and', 'southe
  * "Texas" must not pair with "Texas A&M", "Michigan" with "Michigan State", "Arsenal" with "Arsenal Women",
  * "Real Madrid" with "Real Madrid Castilla". (Not "united"/"city": Kalshi often drops those.)
  */
-const ODDS_ONLY_REJECT = new Set(['state', 'tech', 'a', 'm', 'ii', 'b', 'women', 'w', 'u19', 'u21', 'u23', 'castilla', 'reserves',
-  'christian', 'cc', 'commerce', 'southern', 'northern', 'eastern', 'western', 'central', 'valley', 'atlantic']);
+const ODDS_ONLY_REJECT = new Set(['ii', 'b', 'women', 'w', 'u19', 'u21', 'u23', 'castilla', 'reserves']);
+/** College-only: school names differ by these words; clubs and pro teams ("Sporting Kansas City", "Rosario Central") do not. */
+const ODDS_ONLY_REJECT_COLLEGE = new Set(['state', 'tech', 'a', 'm', 'christian', 'cc', 'commerce', 'southern', 'northern', 'eastern', 'western', 'central', 'valley', 'atlantic']);
 
 /**
  * Similarity of a Kalshi display name to an Odds API name, 0 (no match) up to 2 (exact / alias).
@@ -80,13 +81,17 @@ export function nameScore(kalshiName: string, oddsName: string, sport?: Sport): 
     if (Math.min(t.length, O.req[hit].length) >= 4 && !DIFFERENTIATORS.has(t)) strong = true;
   }
   // Symmetric guard: a differentiator left over on the sportsbook side means a different team.
-  if (matched > 0 && O.req.some((o, j) => !used[j] && ODDS_ONLY_REJECT.has(o))) return 0;
+  const college = sport === 'ncaaf' || sport === 'ncaab' || sport === undefined;
+  if (sport !== 'tennis' && matched > 0 && O.req.some((o, j) => !used[j] && (ODDS_ONLY_REJECT.has(o) || (college && ODDS_ONLY_REJECT_COLLEGE.has(o))))) return 0;
   // Both names carry a qualifier, e.g. (MD) vs (CA), and they share nothing: different schools.
   if (K.opt.length && O.opt.length && !K.opt.some((t) => O.opt.includes(t))) return 0;
   // Tennis: the surname must agree; a shared first name is not a match.
   if (sport === 'tennis' && matched > 0 && matched < Math.max(K.req.length, O.req.length)) {
     const lk = K.req[K.req.length - 1], lo = O.req[O.req.length - 1];
-    if (lk !== lo) return 0;
+    // One source may add or drop a name part ("Felix Auger Aliassime" / "Felix Auger-Aliassime Jr"): fine when
+    // every part of the shorter name is found in the longer one and the first names agree.
+    const subset = matched === Math.min(K.req.length, O.req.length) && matched >= 2 && prefixEq(K.req[0], O.req[0]);
+    if (lk !== lo && !subset) return 0;
     // Same surname, both first names given and different ("Alexander Zverev" vs "Mischa Zverev").
     if (K.req.length > 1 && O.req.length > 1 && !prefixEq(K.req[0], O.req[0])) return 0;
   }

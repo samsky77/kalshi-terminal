@@ -2,7 +2,7 @@ import { markSuspectQuotes, priceContract, type Side } from './edge';
 import { matchGames, type MatchReport } from './matcher';
 import { buildConsensus } from './odds';
 import { simulateGame, type SimOutput } from './sim';
-import { LEAGUE_SEEDS, SIM_RUNS, STALE_HOURS } from './sports';
+import { LEAGUE_SEEDS, NORMAL_CONSTANTS, SIM_RUNS, STALE_HOURS } from './sports';
 import type { Consensus, KalshiGame, MarketKind, OddsEvent, PricedContract, PricedGame, SimSummary, Sport } from './types';
 
 export interface OddsBatch {
@@ -38,6 +38,8 @@ export function batchesForLeague(league: string, odds: OddsBatch[]): OddsBatch[]
     const tour = league === 'KXWTA' ? 'tennis_wta' : 'tennis_atp';
     return odds.filter((b) => b.sportKey.startsWith(tour));
   }
+  // Kalshi lists FCS games under the FBS series too, so college football matches against both feeds.
+  if (seed.sport === 'ncaaf') return odds.filter((b) => b.sportKey.startsWith('americanfootball_ncaaf'));
   return odds.filter((b) => b.sportKey === seed.oddsKey);
 }
 
@@ -90,9 +92,9 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
         out.push({ game: g, status: 'unpriced', unpricedReason: `starts more than ${days} days from now; priced closer to game time`, oddsEventId: m.event.id, homeCode: m.homeCode, awayCode: m.awayCode, homeName: m.event.home_team, awayName: m.event.away_team, stale: false, contracts: [] });
         continue;
       }
-      const cons = buildConsensus(m.event, input.sport === 'soccer');
+      const cons = buildConsensus(m.event, input.sport === 'soccer', (NORMAL_CONSTANTS as Record<string, { sigmaFallback: number }>)[input.sport]?.sigmaFallback);
       if (!cons) {
-        out.push({ game: g, status: 'unpriced', unpricedReason: 'sportsbooks list no usable moneyline', oddsEventId: m.event.id, stale: false, contracts: [] });
+        out.push({ game: g, status: 'unpriced', unpricedReason: 'sportsbooks list no moneyline or spread for this game yet', oddsEventId: m.event.id, stale: false, contracts: [] });
         continue;
       }
       const fAt = fetchedAt.get(m.event.id) ?? cons.lastUpdate;
@@ -149,8 +151,8 @@ export function plainSide(pc: PricedContract, side: 'yes' | 'no'): string {
   if (c.kind === 'total') return c.strikeType === 'greater' ? `${side === 'yes' ? 'Over' : 'Under'} ${k}` : side === 'yes' ? pc.description : `Not ${pc.description}`;
   if (c.kind === 'tie') return side === 'yes' ? 'Tie / draw' : 'No tie / draw';
   const d = pc.description;
-  if (c.kind === 'winner') return side === 'yes' ? d.replace(/ win$/, ' to win') : `Not: ${d}`;
-  return side === 'yes' ? d.replace(' by >', ' by more than ') : `Not: ${d.replace(' by >', ' by more than ')}`;
+  if (c.kind === 'winner') return d.replace(/ win$/, side === 'yes' ? ' to win' : ' not to win');
+  return d.replace(' by >', side === 'yes' ? ' to win by more than ' : ' not to win by more than ');
 }
 
 export interface ValueRow {

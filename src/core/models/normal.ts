@@ -120,6 +120,9 @@ export function calibrateNormal(sport: NormalSport, t: Targets, d: NormalDraws):
   const hasSpread = t.spreadLine !== undefined && t.pHomeCover !== undefined;
   const hasTotal = t.totalLine !== undefined && t.pOver !== undefined;
 
+  // The moneyline-vs-spread solve is noisy (a 1% book disagreement moves sigma by points), so the solved
+  // sigma may only move 25% either side of the documented constant.
+  const band: [number, number] = [Math.max(k.sigmaRange[0], k.sigmaFallback * 0.75), Math.min(k.sigmaRange[1], k.sigmaFallback * 1.25)];
   // Continuous-normal initial guesses.
   const tau0 = hasTotal ? t.totalLine! + k.totalSd * normInv(clampP(t.pOver!)) : DEFAULT_TOTAL[sport];
   let sigma0 = k.sigmaFallback;
@@ -127,7 +130,7 @@ export function calibrateNormal(sport: NormalSport, t: Targets, d: NormalDraws):
     const zc = normInv(clampP(t.pHomeCover!));
     const L = t.spreadLine!;
     const s = -L / (zw - zc);
-    if (Number.isFinite(s) && s > k.sigmaRange[0] && s < k.sigmaRange[1] && Math.abs(L) >= 1) sigma0 = s;
+    if (Number.isFinite(s) && s > 0 && Math.abs(L) >= 1) sigma0 = Math.min(Math.max(s, band[0]), band[1]);
   }
   const p: NormalParams = { mu: sigma0 * zw, sigma: sigma0, tau: tau0, sigmaT: k.totalSd, rho: k.rho };
 
@@ -160,11 +163,11 @@ export function calibrateNormal(sport: NormalSport, t: Targets, d: NormalDraws):
         const zc = normInv(clampP(t.pHomeCover!));
         const muRef = p.mu, sigRef = p.sigma;
         const muCenter = (sig: number) => (st.muHalf > 2 ? -t.spreadLine! + sig * zc : muRef + (sig - sigRef) * zc);
-        const lo = Math.max(k.sigmaRange[0], p.sigma * st.sigLo), hi = Math.min(k.sigmaRange[1], p.sigma * st.sigHi);
+        const lo = Math.max(band[0], p.sigma * st.sigLo), hi = Math.min(band[1], Math.max(p.sigma * st.sigHi, band[0] * 1.001));
         const sig = bisect((sg) => { p.mu = muFor(sg, muCenter(sg)); return pWin2(sim(), n); }, t.pHome, lo, hi, st.iters);
         p.mu = muFor(sig, muCenter(sig));
         p.sigma = sig;
-        const atBound = sig <= k.sigmaRange[0] * 1.005 || sig >= k.sigmaRange[1] * 0.995;
+        const atBound = sig <= band[0] * 1.005 || sig >= band[1] * 0.995;
         if (atBound) { fixedSigma = true; pass--; continue; }
       }
       if (hasTotal) {

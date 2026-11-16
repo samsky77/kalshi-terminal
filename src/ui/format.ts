@@ -9,13 +9,13 @@ export const cents1 = (x: number | null | undefined) => (x === null || x === und
  */
 export function edgeC(e: number | null | undefined): string {
   if (e === null || e === undefined || !Number.isFinite(e)) return '—';
-  const t = Math.trunc(Math.round(e * 100000) / 100) / 10; // 0.01996 -> 1.9
+  const t = Math.trunc(e * 1000 + Math.sign(e) * 1e-6) / 10; // 0.01996 -> 1.9, 0.0199999999 -> 2.0
   if (t === 0) return '0.0';
   return `${t > 0 ? '+' : ''}${t.toFixed(1)}`;
 }
 
 export const size = (n: number | null | undefined) =>
-  n === null || n === undefined || !Number.isFinite(n) ? '—' : n >= 10000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${Math.floor(n)}`;
+  n === null || n === undefined || !Number.isFinite(n) ? '—' : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 10000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${Math.floor(n)}`;
 
 /** "Sun Nov 15 1:00pm": weekday, date and time, so games a week apart never look alike. */
 export function when(iso: string): string {

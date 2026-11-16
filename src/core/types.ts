@@ -93,6 +93,7 @@ export interface Consensus {
   pOver?: number;
   books: string[];
   booksMl: number;
+  mlDerived?: boolean; // no book lists a moneyline: win probability derived from the main spread
   booksSpread: number;
   booksTotal: number;
   lastUpdate: string; // newest bookmaker last_update

@@ -156,3 +156,25 @@ describe('soccer spread labels (wave 2)', () => {
     expect(desc(mk('D'), t).description).toBe('Rosario by >2.5');
   });
 });
+
+describe('one-shot fixes (wave 3)', () => {
+  it('derives a win probability from the spread when no book lists a moneyline', async () => {
+    const { buildConsensus } = await import('../src/core/odds');
+    const ev: any = { id: 'x', home_team: 'H', away_team: 'A', bookmakers: [1, 2].map((i) => ({ key: `b${i}`, last_update: '2026-11-14T00:00:00Z', markets: [{ key: 'spreads', outcomes: [{ name: 'H', price: 1.91, point: -6.5 }, { name: 'A', price: 1.91, point: 6.5 }] }] })) };
+    expect(buildConsensus(ev, false)).toBeNull();
+    const c = buildConsensus(ev, false, 11)!;
+    expect(c.mlDerived).toBe(true);
+    expect(c.pHome).toBeGreaterThan(0.68);
+    expect(c.pHome).toBeLessThan(0.76);
+  });
+  it('edge and size formatting', () => {
+    expect(edgeC(0.0199999999)).toBe('+2.0');
+    expect(edgeC(0.01996)).toBe('+1.9');
+    expect(edgeC(-0.01996)).toBe('-1.9');
+  });
+  it('same tennis player with an extra name part still matches; different first names do not', () => {
+    expect(nameScore('Felix Auger Aliassime', 'Felix Auger Aliassime Jr', 'tennis')).toBeGreaterThan(0);
+    expect(nameScore('Alexander Zverev', 'Mischa Zverev', 'tennis')).toBe(0);
+    expect(nameScore('Michigan', 'Michigan State Spartans', 'ncaaf')).toBe(0);
+  });
+});

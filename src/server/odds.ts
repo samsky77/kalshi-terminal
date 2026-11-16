@@ -82,6 +82,9 @@ export function keysForGames(sport: Sport, games: KalshiGame[], sports: OddsSpor
     if (k && (active.has(k) || !sports.length)) { keys.add(k); if (Date.parse(g.startTime) < Date.now() + 36 * 3600e3) counts[k] = (counts[k] ?? 0) + 1; } // counts = games ESPN's 2-day window should cover
     else unmapped.add(`${g.league} ${g.competition}`);
   }
+  // Kalshi lists FCS games under the FBS series, so fetch the FCS feed whenever college football is planned.
+  const FCS = 'americanfootball_ncaaf_fcs';
+  if (sport === 'ncaaf' && keys.size && active.has(FCS)) keys.add(FCS);
   return { keys: [...keys].sort(), unmapped: [...unmapped].sort(), counts };
 }
 

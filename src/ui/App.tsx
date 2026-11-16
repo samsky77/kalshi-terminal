@@ -259,6 +259,9 @@ function ValueLine({ r, onOpen }: { r: ValueRow; onOpen: (d: Detail) => void }) 
 }
 
 // ---------------------------------------------------------------- Games tab
+/** Games list order: priced games first, then games in progress, then games with no price (each group stays in time order). */
+const rank = (g: PricedGame) => (g.status === 'priced' ? 0 : g.status === 'started' ? 1 : 2);
+
 function GamesTab({ t, sport: picked, setSport, onOpen }: { t: Terminal; sport: Sport | null; setSport: (s: Sport) => void; onOpen: (d: Detail) => void }) {
   // Until the user picks a sport, show the first one that has priced games (then any games).
   const auto = SPORTS.find((s) => t.results[s]?.games.some((g) => g.status === 'priced')) ?? SPORTS.find((s) => t.results[s]?.games.length) ?? 'nfl';
@@ -278,7 +281,7 @@ function GamesTab({ t, sport: picked, setSport, onOpen }: { t: Terminal; sport: 
       <Errors t={t} sports={[sport]} />
       {!res && <div className="empty" role="status">{t.busy[sport] ? 'Loading Kalshi markets…' : t.errors[sport] ? 'No data loaded yet.' : 'Waiting to load…'}</div>}
       {res && res.games.length === 0 && <div className="empty">Kalshi has no open {SPORT_NAME[sport]} game markets right now.</div>}
-      {res?.games.map((g) => <GameCard key={g.game.id} g={g} onOpen={onOpen} />)}
+      {res && [...res.games].sort((x, y) => rank(x) - rank(y)).map((g) => <GameCard key={g.game.id} g={g} onOpen={onOpen} />)}
     </section>
   );
 }
@@ -345,12 +348,13 @@ function Ladder({ title, rows, started, onPick }: { title: string; rows: PricedC
   return (
     <div className="ladder">
       <div className="lad-title">{title}</div>
+      <p className="dim small lad-legend">T = confidence tier (A best). • = value (2¢+ edge). ? = quote looks stale, ignored.{started ? ' Game started: model and edges hidden.' : ''}</p>
       <div className="lrow head mono"><span className="l-desc">YES MEANS</span><span>T</span><span>MODEL%</span><span>YES¢</span><span>EDGE</span><span>NO¢</span><span>EDGE</span></div>
       {shown.map((c) => (
         <button key={c.contract.ticker} className="lrow mono" onClick={() => onPick(c)}>
           <span className="l-desc">{c.description}</span>
           <span className={`tier tier-${c.tier}`}>{c.tier}</span>
-          <span>{pct(c.probYes, 1)}</span>
+          <span>{started ? '—' : pct(c.probYes, 1)}</span>
           <span>{cents(c.yes.ask)}</span>
           {edge(c.yes)}
           <span>{cents(c.no.ask)}</span>
@@ -624,7 +628,7 @@ function DataTab({ t }: { t: Terminal }) {
             <div className="drow mono">
               <span className="c-desc"><b>{SPORT_LABEL[s]}</b> <small>{t.busy[s] ? BUSY_LABEL[t.busy[s]!] ?? 'working…' : res ? `${pricedN} of ${res.games.length} games priced` : t.errors[s] ? 'not loaded' : 'waiting…'}</small></span>
               <span className="dim">{demo ? 'recorded' : ago(t.snaps[s]?.fetchedAt)}</span>
-              <span className="dim">{demo ? 'recorded' : ago(t.meta.lastOddsRefresh?.[s])}</span>
+              <span className="dim">{demo ? 'sample' : ago(t.meta.lastOddsRefresh?.[s])}</span>
               <span>{demo ? '—' : plan ? (cost === 0 ? 'free' : cost) : '…'}</span>
               <button className="btn" disabled={blocked || !!t.busy[s]} onClick={() => t.refreshOdds(s)} aria-label={`Refresh ${SPORT_NAME[s]} odds`}>
                 {t.busy[s] === 'odds' ? '…' : 'Refresh'}

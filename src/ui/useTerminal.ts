@@ -200,12 +200,18 @@ export function useTerminal() {
     } catch (e) { setStatusError((e as Error).message); }
   }, []);
 
+  const planRetries = useRef<Partial<Record<Sport, number>>>({});
   const loadPlan = useCallback(async (sport: Sport) => {
     try {
       const p = await getJson<Plan>(`/api/odds/plan?sport=${sport}`);
-      if (!Array.isArray(p.keys)) return; // not a plan (bad reply): keep the previous one
+      if (!Array.isArray(p.keys)) throw new Error('bad plan'); // not a plan (bad reply): keep the previous one
       setPlans((x) => ({ ...x, [sport]: { keys: p.keys, unmapped: Array.isArray(p.unmapped) ? p.unmapped : [], cost: Number(p.cost) || 0 } }));
-    } catch { /* offline */ }
+    } catch {
+      // One quiet retry so a single failed call does not leave the Data tab stuck on "…".
+      const n = (planRetries.current[sport] ?? 0) + 1;
+      planRetries.current[sport] = n;
+      if (n <= 2) setTimeout(() => { void loadPlan(sport); }, 4000 * n);
+    }
   }, []);
 
   /** Credit-spending refresh. Manual from Data, or automatic once a day (auto = only games starting within 24 h). */
@@ -274,8 +280,8 @@ export function useTerminal() {
         let attempt = 0;
         try { attempt = Number(localStorage.getItem(attemptKey)) || 0; } catch { /* private mode */ }
         if (Date.now() - attempt < AUTO_RETRY_MS) continue;
-        try { localStorage.setItem(attemptKey, String(Date.now())); } catch { /* private mode */ }
         if (document.hidden) break; // never spend credits while the app is in the background
+        try { localStorage.setItem(attemptKey, String(Date.now())); } catch { /* private mode */ }
         await refreshOdds(s, true);
       }
     } finally {
@@ -304,7 +310,7 @@ export function useTerminal() {
 
   const setMode = useCallback(
     async (m: Mode) => {
-      if (m === modeRef.current && genRef.current > 0) return; // already in this mode
+      if (m === modeRef.current && (genRef.current > 0 || loadingAll.current || Object.keys(snapsRef.current).length > 0)) return; // already in this mode
       const gen = ++genRef.current;
       loadingAll.current = false;
       modeRef.current = m;

@@ -114,7 +114,8 @@ export function toRecord(out: PipelineOutput, trigger: DatasetRecord['trigger'])
         contracts: g.contracts.filter((c) => Math.max(c.yes.edge ?? -1, c.no.edge ?? -1) >= 0.01).map((c) => ({
           t: c.contract.ticker, k: c.contract.kind, s: c.contract.floorStrike ?? c.contract.capStrike, tier: c.tier, p: +c.probYes.toFixed(4),
           ya: c.yes.ask, na: c.no.ask, ys: c.yes.size, ns: c.no.size,
-          ye: c.yes.edge === null ? null : +c.yes.edge.toFixed(4), ne: c.no.edge === null ? null : +c.no.edge.toFixed(4),
+          // A suspect (stale or crossed) quote was never shown as value, so it is not recorded as a pick either.
+          ye: c.yes.edge === null || c.yes.suspect ? null : +c.yes.edge.toFixed(4), ne: c.no.edge === null || c.no.suspect ? null : +c.no.edge.toFixed(4),
         })),
       })),
   };

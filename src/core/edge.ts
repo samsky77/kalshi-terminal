@@ -62,12 +62,17 @@ export function equivalentLine(c: KalshiContract, side: Side | undefined): numbe
  */
 export function tierFor(sport: Sport, c: KalshiContract, side: Side | undefined, cons: Consensus, fitMiss?: ReadonlySet<string>): Tier {
   if (fitMiss?.has(c.kind)) return 'C'; // the sim could not reproduce this market's consensus anchor
-  if (c.kind === 'winner') return 'A';
+  if (c.kind === 'winner') return cons.mlDerived ? 'C' : 'A';
   if (c.kind === 'tie') return cons.pDraw !== undefined ? 'A' : 'C';
   const eq = equivalentLine(c, side);
   const main = c.kind === 'total' ? cons.totalLine : cons.spreadLine;
   if (eq === undefined || main === undefined) return 'C';
   const d = Math.abs(eq - main);
+  // Main line resting on a single book while three or more books quote the game: not a consensus.
+  const support = c.kind === 'total' ? cons.booksTotal : cons.booksSpread;
+  if (support < 2 && cons.books.length >= 3) return 'C';
+  // NHL goal-margin alternates depend on the empty-net model, which is not anchored to any book line.
+  if (sport === 'nhl' && c.kind === 'spread' && d > 1e-9) return 'C';
   if (d < 1e-9) return 'A';
   if (d <= SCORE_UNIT[sport] + 1e-9) return 'B';
   return 'C';
@@ -114,6 +119,8 @@ export function priceContract(
   if (p === null) return null;
   const side = sideOf(c.code);
   const { description, strikeDisplay } = describe(c, teamName);
+  // A market whose consensus anchor the sim could not reproduce is never flagged as value.
+  if (fitMiss?.has(c.kind)) allowFlag = false;
   return {
     contract: c,
     description,

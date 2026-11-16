@@ -1,3 +1,4 @@
+import { normCdf, normInv } from './stats';
 import { median } from './stats';
 import type { Consensus, OddsEvent, OddsOutcome } from './types';
 
@@ -48,7 +49,7 @@ export function modeLine(lines: number[]): number | undefined {
  * Step 1 of the pipeline: per-book no-vig probabilities, then the median across books for the
  * moneyline, the main (modal) spread and the main (modal) total.
  */
-export function buildConsensus(ev: OddsEvent, threeWay: boolean): Consensus | null {
+export function buildConsensus(ev: OddsEvent, threeWay: boolean, marginSd?: number): Consensus | null {
   const pH: number[] = [], pA: number[] = [], pD: number[] = [];
   const spreadByBook: { line: number; p: number }[] = [];
   const totalByBook: { line: number; p: number }[] = [];
@@ -96,7 +97,16 @@ export function buildConsensus(ev: OddsEvent, threeWay: boolean): Consensus | nu
       if (bk.last_update > last) last = bk.last_update;
     }
   }
-  if (!pH.length) return null;
+  let mlDerived = false;
+  if (!pH.length) {
+    // Spread-only games (common in college): derive the win probability from the main spread with a normal margin.
+    const l0 = modeLine(spreadByBook.map((x) => x.line));
+    if (threeWay || !marginSd || l0 === undefined) return null;
+    const pc = Math.min(Math.max(median(spreadByBook.filter((x) => x.line === l0).map((x) => x.p)), 0.01), 0.99);
+    const ph0 = Math.min(Math.max(normCdf(-l0 / marginSd + normInv(pc)), 0.005), 0.995);
+    pH.push(ph0); pA.push(1 - ph0);
+    mlDerived = true;
+  }
 
   let ph = median(pH), pa = median(pA), pd = threeWay ? median(pD) : undefined;
   const s = ph + pa + (pd ?? 0);
@@ -107,7 +117,8 @@ export function buildConsensus(ev: OddsEvent, threeWay: boolean): Consensus | nu
     pAway: pa,
     pDraw: pd,
     books: [...books].sort(),
-    booksMl: pH.length,
+    booksMl: mlDerived ? 0 : pH.length,
+    ...(mlDerived ? { mlDerived } : {}),
     booksSpread: 0,
     booksTotal: 0,
     lastUpdate: last,

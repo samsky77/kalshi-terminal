@@ -1,7 +1,7 @@
 // POST /api/odds/refresh {sport, horizonHours?} -> one credit-spending refresh. The app calls it once a day per sport, only for games starting within horizonHours.
 import { json, parseSport } from '@/server/params';
 import { planRefresh } from '@/server/plan';
-import { oddsStatus, recentBatches, refreshOdds, ReserveError } from '@/server/odds';
+import { BudgetError, oddsStatus, recentBatches, refreshOdds, ReserveError } from '@/server/odds';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,8 +17,22 @@ function sameOrigin(req: Request): boolean {
 }
 
 const COOLDOWN_MS = 15 * 60_000;
+/** One refresh per sport at a time: a second request while one is running waits for and shares its result (no double spend). */
+const inflight = new Map<string, Promise<Response>>();
 
 export async function POST(req: Request) {
+  const clone = req.clone();
+  const body0 = await clone.json().catch(() => null) as { sport?: string } | null;
+  const s0 = parseSport(body0?.sport);
+  if (!s0 || !sameOrigin(req)) return run(req);
+  const running = inflight.get(s0);
+  if (running) return (await running).clone();
+  const p = run(req);
+  inflight.set(s0, p);
+  try { return (await p).clone(); } finally { inflight.delete(s0); }
+}
+
+async function run(req: Request): Promise<Response> {
   if (!sameOrigin(req) || !(req.headers.get('content-type') ?? '').includes('application/json')) return json({ error: 'Refresh is only available from inside the app.' }, 403);
   let raw: unknown = null;
   try { raw = await req.json(); } catch { /* empty */ }
@@ -37,7 +51,7 @@ export async function POST(req: Request) {
     const r = await refreshOdds(sport, plan.keys, plan.counts);
     return json({ ...r, unmapped: plan.unmapped });
   } catch (e) {
-    if (e instanceof ReserveError) return json({ error: e.message, remaining: e.remaining, cost: e.cost }, 409);
+    if (e instanceof ReserveError || e instanceof BudgetError) return json({ error: e.message }, 409);
     return json({ error: 'The odds source could not be reached. Try again in a minute.' }, 502);
   }
 }

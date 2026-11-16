@@ -23,7 +23,8 @@ type PerSport<T> = Partial<Record<Sport, T>>;
 const KALSHI_POLL_MS = 90_000;
 const AUTO_HORIZON_H = 24; // auto refresh covers games starting within this window
 const AUTO_RETRY_MS = 3600_000; // after any automatic attempt, wait an hour before trying that sport again
-const AUTO_MIN_GAP_MS = 10 * 3600_000; // at most about one paid refresh per sport per day
+const AUTO_MIN_GAP_MS = 20 * 3600_000; // at most about one paid refresh per sport per day
+const COMPUTE_TIMEOUT_MS = 45_000;
 
 const FETCH_TIMEOUT_MS = 45_000;
 /** Sports in loading order: quickest to price first, so something useful shows early. */
@@ -112,10 +113,18 @@ export function useTerminal() {
     (sport: Sport, snap: SportSnapshot, odds: OddsBatch[], now?: string): Promise<PipelineOutput | null> =>
       new Promise((resolve) => {
         const id = ++reqId.current;
-        pending.current.set(id, (r) => resolve(r.ok ? r.out! : null));
+        // Watchdog: a hung worker must not leave the sport loading forever. Drop it and let the next request start a fresh one.
+        const timer = setTimeout(() => {
+          if (!pending.current.delete(id)) return;
+          workerRef.current?.terminate();
+          workerRef.current = null;
+          resolve(null);
+        }, COMPUTE_TIMEOUT_MS);
+        pending.current.set(id, (r) => { clearTimeout(timer); resolve(r.ok ? r.out! : null); });
         try {
           worker().postMessage({ id, sport, games: snap.games, odds, now, horizonHours: SIM_HORIZON_H });
         } catch {
+          clearTimeout(timer);
           pending.current.delete(id);
           resolve(null);
         }

@@ -91,6 +91,20 @@ export class ReserveError extends Error {
   }
 }
 
+/** Paid credits this server instance may spend per UTC day, on top of the monthly reserve. Keeps a bug or a crawler from burning the month. */
+export const DAILY_CREDIT_BUDGET = 20;
+let spend = { day: '', credits: 0 };
+function spentToday(): number {
+  const d = new Date().toISOString().slice(0, 10);
+  if (spend.day !== d) spend = { day: d, credits: 0 };
+  return spend.credits;
+}
+export class BudgetError extends Error {
+  constructor(public spent: number, public cost: number) {
+    super(`Refresh refused: today's paid-odds budget (${DAILY_CREDIT_BUDGET} credits) is used up (${spent} spent, this needs ${cost}). It resets at midnight UTC.`);
+  }
+}
+
 export interface RefreshResult {
   mode: 'live' | 'fixture';
   sport: Sport;
@@ -137,6 +151,12 @@ export async function refreshOdds(sport: Sport, keys: string[], expected: Record
     if (batches.length) return { mode: 'live', sport, keys, cost: 0, creditsBefore: before, credits, batches, errors: [...errors, new ReserveError(before, cost).message] };
     throw new ReserveError(before, cost);
   }
+  const spent = spentToday();
+  if (spent + cost > DAILY_CREDIT_BUDGET) {
+    if (batches.length) return { mode: 'live', sport, keys, cost: 0, creditsBefore: before, credits, batches, errors: [...errors, new BudgetError(spent, cost).message] };
+    throw new BudgetError(spent, cost);
+  }
+  spend.credits += cost;
   for (const k of paid) {
     const q = new URLSearchParams({ apiKey: key, regions: 'us', markets: 'h2h,spreads,totals', oddsFormat: 'decimal', dateFormat: 'iso' });
     const r = await getJson<OddsEvent[]>(`${ODDS_BASE}/sports/${k}/odds?${q}`, { throttle, retries: 2 });

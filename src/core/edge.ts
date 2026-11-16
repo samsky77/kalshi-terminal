@@ -81,6 +81,8 @@ export function priceSide(side: 'yes' | 'no', prob: number, ask: number | null, 
   return { side, prob, ask, size, fee, edge, value: allowFlag && edge >= VALUE_MIN_EDGE - 1e-9 && size >= 1 };
 }
 
+const CLUB_SUFFIX = new Set(['fc', 'cf', 'sc', 'afc', 'ac', 'cd', 'sv', 'fk', 'bk', 'ssc', 'fcu']);
+
 export function describe(c: KalshiContract, teamName: (code?: string) => string): { description: string; strikeDisplay: string } {
   if (c.kind === 'winner') return { description: `${teamName(c.code)} win`, strikeDisplay: 'ML' };
   if (c.kind === 'tie') return { description: 'Tie / draw', strikeDisplay: 'TIE' };
@@ -88,8 +90,11 @@ export function describe(c: KalshiContract, teamName: (code?: string) => string)
   if (c.kind === 'spread') {
     // Keep the strike visible on a phone row: "New England Patriots" -> "Patriots".
     const full = teamName(c.code);
-    const words = full.split(' ');
-    const short = words.length >= 3 ? words[words.length - 1] : full;
+    const all = full.split(' ');
+    // Club suffixes (FC, CF, SC ...) are not names: "Manchester City FC" -> "Manchester City", never a bare "FC".
+    const words = all.filter((w) => !CLUB_SUFFIX.has(w.toLowerCase().replace(/\./g, '')));
+    const hadSuffix = words.length < all.length && words.length > 0;
+    const short = hadSuffix ? words.join(' ') : all.length >= 3 ? all[all.length - 1] : full;
     return { description: `${short} by >${s}`, strikeDisplay: `-${s}` };
   }
   return { description: `Total >${s}`, strikeDisplay: `O${s}` };

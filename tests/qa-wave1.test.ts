@@ -143,3 +143,16 @@ describe('worker sim cache (wave 2 blocker)', () => {
     expect(pruneCache(cache).size).toBe(0);
   });
 });
+
+describe('soccer spread labels (wave 2)', () => {
+  it('keeps the distinctive club name instead of a bare suffix', async () => {
+    const { describe: desc } = await import('../src/core/edge');
+    const mk = (code: string) => ({ kind: 'spread', code, floorStrike: 2.5 }) as any;
+    const names: Record<string, string> = { A: 'Manchester City FC', B: 'Real Madrid CF', C: 'New England Patriots', D: 'Rosario' };
+    const t = (c?: string) => names[c ?? ''] ?? '';
+    expect(desc(mk('A'), t).description).toBe('Manchester City by >2.5');
+    expect(desc(mk('B'), t).description).toBe('Real Madrid by >2.5');
+    expect(desc(mk('C'), t).description).toBe('Patriots by >2.5');
+    expect(desc(mk('D'), t).description).toBe('Rosario by >2.5');
+  });
+});

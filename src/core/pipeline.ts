@@ -1,4 +1,4 @@
-import { priceContract, type Side } from './edge';
+import { markSuspectQuotes, priceContract, type Side } from './edge';
 import { matchGames, type MatchReport } from './matcher';
 import { buildConsensus } from './odds';
 import { simulateGame, type SimOutput } from './sim';
@@ -17,6 +17,8 @@ export interface PipelineInput {
   odds: OddsBatch[]; // every cached odds batch for this sport
   now?: Date;
   runs?: number;
+  /** Games starting later than this many hours from now are listed but not simulated (saves most of the phone's CPU). */
+  horizonHours?: number;
   /** Optional cache of simulations keyed by game + consensus, so price-only updates skip re-simulating. */
   simCache?: Map<string, SimOutput>;
 }
@@ -83,6 +85,11 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
         out.push({ game: g, status: 'unpriced', unpricedReason: why, stale: false, contracts: [] });
         continue;
       }
+      if (input.horizonHours !== undefined && Date.parse(g.startTime) - now.getTime() > input.horizonHours * 3600e3) {
+        const days = Math.round(input.horizonHours / 24);
+        out.push({ game: g, status: 'unpriced', unpricedReason: `starts more than ${days} days from now; priced closer to game time`, oddsEventId: m.event.id, homeCode: m.homeCode, awayCode: m.awayCode, homeName: m.event.home_team, awayName: m.event.away_team, stale: false, contracts: [] });
+        continue;
+      }
       const cons = buildConsensus(m.event, input.sport === 'soccer');
       if (!cons) {
         out.push({ game: g, status: 'unpriced', unpricedReason: 'sportsbooks list no usable moneyline', oddsEventId: m.event.id, stale: false, contracts: [] });
@@ -113,6 +120,7 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
         const pc = priceContract(input.sport, c, sim.runs, cons, sideOf, nameOf, !started, fitMiss);
         if (pc) contracts.push(pc);
       }
+      markSuspectQuotes(contracts);
       out.push({
         game: g,
         status: started ? 'started' : 'priced',
@@ -134,13 +142,27 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
   return { sport: input.sport, computedAt: now.toISOString(), games: out, report };
 }
 
+/** Plain-words label for one side of a contract. */
+export function plainSide(pc: PricedContract, side: 'yes' | 'no'): string {
+  const c = pc.contract;
+  const k = c.floorStrike ?? c.capStrike;
+  if (c.kind === 'total') return c.strikeType === 'greater' ? `${side === 'yes' ? 'Over' : 'Under'} ${k}` : side === 'yes' ? pc.description : `Not ${pc.description}`;
+  if (c.kind === 'tie') return side === 'yes' ? 'Tie / draw' : 'No tie / draw';
+  const d = pc.description;
+  if (c.kind === 'winner') return side === 'yes' ? d.replace(/ win$/, ' to win') : `Not: ${d}`;
+  return side === 'yes' ? d.replace(' by >', ' by more than ') : `Not: ${d.replace(' by >', ' by more than ')}`;
+}
+
 export interface ValueRow {
   gameId: string;
   sport: Sport;
   game: string;
   startTime: string;
   ticker: string;
+  eventTicker: string;
   description: string;
+  /** The same bet in plain words for the side shown, e.g. "Under 45.5", "Bears do not win". */
+  plain: string;
   kind: PricedContract['contract']['kind'];
   tier: PricedContract['tier'];
   side: 'yes' | 'no';
@@ -153,10 +175,13 @@ export interface ValueRow {
 }
 
 /** Flatten priced games into the ranked +EV list (value flags only), best edge first. */
-export function valueRows(games: PricedGame[]): ValueRow[] {
+export function valueRows(games: PricedGame[], now?: number): ValueRow[] {
   const rows: ValueRow[] = [];
   for (const g of games) {
     if (g.status !== 'priced') continue;
+    // Results can be shown long after they were computed (offline, restored from storage): never list a game that has started since.
+    if (now !== undefined && Date.parse(g.game.startTime) <= now) continue;
+    const stale = g.stale || (now !== undefined && !!g.oddsFetchedAt && now - Date.parse(g.oddsFetchedAt) > STALE_HOURS * 3600e3);
     for (const pc of g.contracts) {
       for (const s of [pc.yes, pc.no]) {
         if (!s.value || s.edge === null || s.ask === null) continue;
@@ -166,7 +191,9 @@ export function valueRows(games: PricedGame[]): ValueRow[] {
           game: `${g.awayName} @ ${g.homeName}`,
           startTime: g.game.startTime,
           ticker: pc.contract.ticker,
+          eventTicker: pc.contract.eventTicker,
           description: s.side === 'yes' ? pc.description : `NOT ${pc.description}`,
+          plain: plainSide(pc, s.side),
           kind: pc.contract.kind,
           tier: pc.tier,
           side: s.side,
@@ -175,7 +202,7 @@ export function valueRows(games: PricedGame[]): ValueRow[] {
           fee: s.fee,
           edge: s.edge,
           size: s.size,
-          stale: g.stale,
+          stale,
         });
       }
     }

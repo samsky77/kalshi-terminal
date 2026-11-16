@@ -12,6 +12,8 @@ export const ALIASES: Partial<Record<Sport, Record<string, string>>> = {
     'utah': 'Utah Mammoth',
   },
   ncaaf: {
+    'sam houston': 'Sam Houston State Bearkats',
+    'central florida': 'UCF Knights',
     'miami fl': 'Miami Hurricanes',
     'miami oh': 'Miami (OH) RedHawks',
     'pitt': 'Pittsburgh Panthers',
@@ -43,6 +45,8 @@ export const ALIASES: Partial<Record<Sport, Record<string, string>>> = {
     'utep': 'UTEP Miners',
   },
   ncaab: {
+    'sam houston': 'Sam Houston State Bearkats',
+    'central florida': 'UCF Knights',
     'miami fl': 'Miami Hurricanes',
     'miami oh': 'Miami (OH) RedHawks',
     'pitt': 'Pittsburgh Panthers',

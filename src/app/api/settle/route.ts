@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     try {
       const r = await getJson<{ market?: { status?: string; result?: string } }>(`${KALSHI_BASE}/markets/${encodeURIComponent(t)}`, { throttle, retries: 1 });
       const m = r.body?.market;
-      if (r.status === 200 && m && (m.status === 'finalized' || m.status === 'settled') && (m.result === 'yes' || m.result === 'no')) settled[t] = m.result;
+      if (r.status === 200 && m && (m.status === 'finalized' || m.status === 'settled' || m.status === 'determined') && (m.result === 'yes' || m.result === 'no')) settled[t] = m.result;
       else if (r.status !== 200) errors.push(`${t}: HTTP ${r.status}`);
     } catch (e) {
       errors.push(`${t}: ${(e as Error).message}`);

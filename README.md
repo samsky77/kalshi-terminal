@@ -76,7 +76,7 @@ After the first load, the last data opens offline (airplane mode): the app shell
 
 ## 5. Monthly credit budget (The Odds API free tier: 500/month)
 
-Each call costs markets × regions = **3 credits per sport key** (h2h + spreads + totals, region `us`). Refreshes are **manual only**: tap **Refresh** on a sport in the Data tab. The app shows the exact cost and credits left before you tap. It refuses any refresh that would leave fewer than **30** credits, and it only fetches keys that have a matching open Kalshi event.
+Each call costs markets × regions = **3 credits per sport key** (h2h + spreads + totals, region `us`). Odds refresh **automatically about once a day per sport** (only for games starting within 24 hours, never while the app is in the background), or when you tap **Refresh** on the Data tab. US sports and most soccer come from the free ESPN feed first and cost nothing; the paid feed is the fallback when ESPN has no lines. The Data tab shows the cost and credits left. Only the app's own pages can trigger a refresh, and a repeat within 15 minutes reuses the lines already fetched. It refuses any refresh that would leave fewer than **30** credits, and it only fetches keys that have a matching open Kalshi event.
 
 | Refresh | Keys | Credits |
 |---|---|---|

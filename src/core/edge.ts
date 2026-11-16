@@ -78,8 +78,10 @@ export function priceSide(side: 'yes' | 'no', prob: number, ask: number | null, 
   if (ask === null || ask <= 0 || ask >= 1) return { side, prob, ask, size, fee: 0, edge: null, value: false };
   const fee = feePerContract(ask, c.fee);
   const edge = prob - ask - fee;
-  return { side, prob, ask, size, fee, edge, value: allowFlag && edge >= VALUE_MIN_EDGE - 1e-9 && size > 0 };
+  return { side, prob, ask, size, fee, edge, value: allowFlag && edge >= VALUE_MIN_EDGE - 1e-9 && size >= 1 };
 }
+
+const CLUB_SUFFIX = new Set(['fc', 'cf', 'sc', 'afc', 'ac', 'cd', 'sv', 'fk', 'bk', 'ssc', 'fcu']);
 
 export function describe(c: KalshiContract, teamName: (code?: string) => string): { description: string; strikeDisplay: string } {
   if (c.kind === 'winner') return { description: `${teamName(c.code)} win`, strikeDisplay: 'ML' };
@@ -88,8 +90,11 @@ export function describe(c: KalshiContract, teamName: (code?: string) => string)
   if (c.kind === 'spread') {
     // Keep the strike visible on a phone row: "New England Patriots" -> "Patriots".
     const full = teamName(c.code);
-    const words = full.split(' ');
-    const short = words.length >= 3 ? words[words.length - 1] : full;
+    const all = full.split(' ');
+    // Club suffixes (FC, CF, SC ...) are not names: "Manchester City FC" -> "Manchester City", never a bare "FC".
+    const words = all.filter((w) => !CLUB_SUFFIX.has(w.toLowerCase().replace(/\./g, '')));
+    const hadSuffix = words.length < all.length && words.length > 0;
+    const short = hadSuffix ? words.join(' ') : all.length >= 3 ? all[all.length - 1] : full;
     return { description: `${short} by >${s}`, strikeDisplay: `-${s}` };
   }
   return { description: `Total >${s}`, strikeDisplay: `O${s}` };
@@ -118,4 +123,32 @@ export function priceContract(
     yes: priceSide('yes', p, c.yesAsk, c.yesAskSize, c, allowFlag),
     no: priceSide('no', 1 - p, c.noAsk, c.noAskSize, c, allowFlag),
   };
+}
+
+/**
+ * Ladder sanity check. On one ladder (totals, or one team's spreads) "Yes at a lower strike" plus "No at a
+ * higher strike" always pays at least $1, so their asks cannot honestly sum to $1 or less. When they do, one
+ * of the two quotes is stale or orphaned; neither may be flagged as value.
+ */
+export function markSuspectQuotes(contracts: PricedContract[]): void {
+  const ladders = new Map<string, PricedContract[]>();
+  for (const pc of contracts) {
+    const c = pc.contract;
+    if ((c.kind !== 'total' && c.kind !== 'spread') || c.strikeType !== 'greater' || c.floorStrike === undefined) continue;
+    const key = c.kind === 'total' ? 'total' : `spread:${c.code}`;
+    ladders.set(key, [...(ladders.get(key) ?? []), pc]);
+  }
+  for (const rows of ladders.values()) {
+    rows.sort((a, b) => a.contract.floorStrike! - b.contract.floorStrike!);
+    for (let i = 0; i < rows.length; i++) {
+      for (let j = i + 1; j < rows.length; j++) {
+        const lo = rows[i].yes, hi = rows[j].no;
+        if (lo.ask === null || hi.ask === null || rows[i].contract.floorStrike === rows[j].contract.floorStrike) continue;
+        if (lo.ask + hi.ask <= 1 + 1e-9) {
+          lo.suspect = true; lo.value = false;
+          hi.suspect = true; hi.value = false;
+        }
+      }
+    }
+  }
 }

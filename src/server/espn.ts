@@ -9,7 +9,7 @@ import { getJson, Throttle } from './http';
 const throttle = new Throttle(4);
 const BASE = 'https://site.api.espn.com/apis/site/v2/sports';
 
-/** Odds API sport key -> ESPN path (+ query). Soccer and tennis are not covered: ESPN does not carry reliable odds for them. */
+/** Odds API sport key -> ESPN path (+ query). Tennis has one scoreboard per tour (see tennisTour). */
 export const ESPN_PATHS: Record<string, string> = {
   basketball_nba: 'basketball/nba/scoreboard?limit=100',
   americanfootball_nfl: 'football/nfl/scoreboard?limit=100',
@@ -70,8 +70,12 @@ export function americanStrToDecimal(s: string | undefined): number {
   if (!Number.isFinite(n) || n === 0) return NaN;
   return n > 0 ? 1 + n / 100 : 1 + 100 / -n;
 }
-const num = (s: string | undefined) => {
-  const n = Number((s ?? '').replace(/^[ou]/i, ''));
+/** "o45.5" / "-3.5" / "PK" -> number. Missing or blank is NaN, never 0 (Number('') is 0, which made fake pick'em and total-0 lines). */
+export const num = (s: string | undefined) => {
+  const t = (s ?? '').trim().replace(/^[ou]/i, '');
+  if (!t) return NaN;
+  if (/^(pk|pick|pickem|even)$/i.test(t)) return 0;
+  const n = Number(t);
   return Number.isFinite(n) ? n : NaN;
 };
 
@@ -108,13 +112,13 @@ export function eventFromComp(
   }
   const sh = o.pointSpread?.home?.close, sa = o.pointSpread?.away?.close;
   const ph = americanStrToDecimal(sh?.odds), pa = americanStrToDecimal(sa?.odds);
-  if (sh && sa && Number.isFinite(ph) && Number.isFinite(pa) && Number.isFinite(num(sh.line)) && Number.isFinite(num(sa.line))) {
+  if (sh && sa && Number.isFinite(ph) && Number.isFinite(pa) && Number.isFinite(num(sh.line)) && Number.isFinite(num(sa.line)) && Math.abs(num(sh.line) + num(sa.line)) < 1e-9) {
     markets.push({ key: 'spreads', last_update: fetchedAt, outcomes: [
       { name: away, price: pa, point: num(sa.line) }, { name: home, price: ph, point: num(sh.line) }] });
   }
   const to = o.total?.over?.close, tu = o.total?.under?.close;
   const po = americanStrToDecimal(to?.odds), pu = americanStrToDecimal(tu?.odds);
-  if (to && tu && Number.isFinite(po) && Number.isFinite(pu) && Number.isFinite(num(to.line))) {
+  if (to && tu && Number.isFinite(po) && Number.isFinite(pu) && num(to.line) > 0 && (tu.line === undefined || !Number.isFinite(num(tu.line)) || num(tu.line) === num(to.line))) {
     markets.push({ key: 'totals', last_update: fetchedAt, outcomes: [
       { name: 'Over', price: po, point: num(to.line) }, { name: 'Under', price: pu, point: num(to.line) }] });
   }

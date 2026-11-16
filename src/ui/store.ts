@@ -98,7 +98,7 @@ export function toRecord(out: PipelineOutput, trigger: DatasetRecord['trigger'])
     trigger,
     computedAt: out.computedAt,
     games: out.games
-      .filter((g) => g.status !== 'unpriced')
+      .filter((g) => g.status === 'priced')
       .map((g) => ({
         gameId: g.game.id,
         title: `${g.awayName} @ ${g.homeName}`,
@@ -110,7 +110,8 @@ export function toRecord(out: PipelineOutput, trigger: DatasetRecord['trigger'])
           model: g.sim.model, params: g.sim.params, runs: g.sim.runs, seed: g.sim.seed,
           pHomeWin: g.sim.pHomeWin, pAwayWin: g.sim.pAwayWin, pTie: g.sim.pTie, pHomeCoverMain: g.sim.pHomeCoverMain, pOverMain: g.sim.pOverMain,
         },
-        contracts: g.contracts.map((c) => ({
+        // Only contracts at or near a value edge are needed to grade picks; storing every strike filled the phone's storage.
+        contracts: g.contracts.filter((c) => Math.max(c.yes.edge ?? -1, c.no.edge ?? -1) >= 0.01).map((c) => ({
           t: c.contract.ticker, k: c.contract.kind, s: c.contract.floorStrike ?? c.contract.capStrike, tier: c.tier, p: +c.probYes.toFixed(4),
           ya: c.yes.ask, na: c.no.ask, ys: c.yes.size, ns: c.no.size,
           ye: c.yes.edge === null ? null : +c.yes.edge.toFixed(4), ne: c.no.edge === null ? null : +c.no.edge.toFixed(4),
@@ -123,3 +124,20 @@ export const addRecord = (r: DatasetRecord) => tx('dataset', 'readwrite', (s) =>
 export const countRecords = () => tx<number>('dataset', 'readonly', (s) => s.count());
 export const allRecords = () => tx<DatasetRecord[]>('dataset', 'readonly', (s) => s.getAll());
 export const clearRecords = () => tx('dataset', 'readwrite', (s) => s.clear());
+
+/** Delete snapshots saved before the given ISO time. */
+export async function pruneRecords(beforeIso: string): Promise<void> {
+  const d = await db();
+  await new Promise<void>((resolve, reject) => {
+    const t = d.transaction('dataset', 'readwrite');
+    const req = t.objectStore('dataset').openCursor();
+    req.onsuccess = () => {
+      const c = req.result;
+      if (!c) return;
+      if ((c.value as DatasetRecord).savedAt < beforeIso) { c.delete(); c.continue(); }
+      // records are stored in time order: stop at the first one that is new enough
+    };
+    t.oncomplete = () => resolve();
+    t.onerror = () => reject(t.error);
+  });
+}

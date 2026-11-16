@@ -1,10 +1,22 @@
-// KX Terminal service worker: offline app shell + last API responses.
-// Live data is also kept in IndexedDB by the app; this cache is a second layer for the shell.
-const VERSION = 'kxt-v1';
+// KX Terminal service worker: offline app shell.
+// Market data is NOT cached here: the app keeps its last copy in IndexedDB together with its age, so old
+// prices can never be replayed as if they were fresh.
+const VERSION = 'kxt-v2';
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
+// Cache the page and every script and stylesheet it references, so the very first visit already works offline.
+async function precache() {
+  const cache = await caches.open(VERSION);
+  await cache.addAll(SHELL);
+  try {
+    const html = await (await fetch('/', { cache: 'no-store' })).text();
+    const assets = [...new Set([...html.matchAll(/["'(](\/_next\/static\/[^"')\s\\]+)/g)].map((m) => m[1]))];
+    await Promise.all(assets.map((u) => cache.add(u).catch(() => {})));
+  } catch { /* offline during install: the shell alone is cached */ }
+}
+
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(precache().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -13,17 +25,24 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-async function networkFirst(req) {
+// Pages the app has open tell the worker which files they loaded (covers chunks loaded later, e.g. the sim worker).
+self.addEventListener('message', (e) => {
+  const urls = e.data && e.data.type === 'cache-assets' && Array.isArray(e.data.urls) ? e.data.urls : null;
+  if (!urls) return;
+  e.waitUntil(caches.open(VERSION).then((cache) => Promise.all(urls
+    .filter((u) => typeof u === 'string' && new URL(u, self.location.origin).origin === self.location.origin && new URL(u, self.location.origin).pathname.startsWith('/_next/static/'))
+    .map(async (u) => { if (!(await cache.match(u))) await cache.add(u).catch(() => {}); }))));
+});
+
+async function networkFirst(req, timeoutMs) {
   const cache = await caches.open(VERSION);
   try {
-    const res = await fetch(req);
+    const res = await fetch(req, timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : undefined);
     if (res.ok) cache.put(req, res.clone());
     return res;
   } catch {
-    const hit = await cache.match(req, { ignoreSearch: req.mode === 'navigate' });
-    if (hit) return hit;
-    if (req.mode === 'navigate') return (await cache.match('/')) || Response.error();
-    return new Response(JSON.stringify({ error: 'offline' }), { status: 503, headers: { 'content-type': 'application/json' } });
+    const hit = (await cache.match(req, { ignoreSearch: req.mode === 'navigate' })) || (req.mode === 'navigate' ? await cache.match('/') : undefined);
+    return hit || Response.error();
   }
 }
 
@@ -43,7 +62,9 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/')) {
     e.respondWith(cacheFirst(req));
-  } else if (req.mode === 'navigate' || url.pathname.startsWith('/api/kalshi') || url.pathname.startsWith('/api/odds/status') || url.pathname === '/manifest.webmanifest') {
+  } else if (req.mode === 'navigate') {
+    e.respondWith(networkFirst(req, 4000)); // a hanging network falls back to the cached shell after 4 s
+  } else if (url.pathname === '/manifest.webmanifest') {
     e.respondWith(networkFirst(req));
   }
 });

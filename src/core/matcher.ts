@@ -37,6 +37,14 @@ const DIFFERENTIATORS = new Set(['st', 'state', 'tech', 'a', 'm', 'and', 'southe
   'north', 'south', 'east', 'west', 'city', 'united', 'utd', 'ii', 'b', 'women', 'w', 'u21', 'u23', 'atletico', 'real', 'inter', 'sporting']);
 
 /**
+ * Tokens that mark a DIFFERENT team when the sportsbook name carries them and the Kalshi name does not:
+ * "Texas" must not pair with "Texas A&M", "Michigan" with "Michigan State", "Arsenal" with "Arsenal Women",
+ * "Real Madrid" with "Real Madrid Castilla". (Not "united"/"city": Kalshi often drops those.)
+ */
+const ODDS_ONLY_REJECT = new Set(['state', 'tech', 'a', 'm', 'ii', 'b', 'women', 'w', 'u19', 'u21', 'u23', 'castilla', 'reserves',
+  'christian', 'cc', 'commerce', 'southern', 'northern', 'eastern', 'western', 'central', 'valley', 'atlantic']);
+
+/**
  * Similarity of a Kalshi display name to an Odds API name, 0 (no match) up to 2 (exact / alias).
  * Tokens match by prefix ("st"~"state", "r"~"rangers"), each Odds token used once, in any order.
  * score = (matched/|kalshi tokens|) * (matched/|odds tokens|), so the tightest name wins
@@ -68,7 +76,19 @@ export function nameScore(kalshiName: string, oddsName: string, sport?: Sport): 
     }
     used[hit] = true;
     matched++;
-    if (Math.min(t.length, O.req[hit].length) >= 4) strong = true;
+    // Generic words shared by many clubs ("real", "inter", "sporting", "state") never carry a partial match alone.
+    if (Math.min(t.length, O.req[hit].length) >= 4 && !DIFFERENTIATORS.has(t)) strong = true;
+  }
+  // Symmetric guard: a differentiator left over on the sportsbook side means a different team.
+  if (matched > 0 && O.req.some((o, j) => !used[j] && ODDS_ONLY_REJECT.has(o))) return 0;
+  // Both names carry a qualifier, e.g. (MD) vs (CA), and they share nothing: different schools.
+  if (K.opt.length && O.opt.length && !K.opt.some((t) => O.opt.includes(t))) return 0;
+  // Tennis: the surname must agree; a shared first name is not a match.
+  if (sport === 'tennis' && matched > 0 && matched < Math.max(K.req.length, O.req.length)) {
+    const lk = K.req[K.req.length - 1], lo = O.req[O.req.length - 1];
+    if (lk !== lo) return 0;
+    // Same surname, both first names given and different ("Alexander Zverev" vs "Mischa Zverev").
+    if (K.req.length > 1 && O.req.length > 1 && !prefixEq(K.req[0], O.req[0])) return 0;
   }
   if (matched === 0 || missedKey || (matched < K.req.length && !strong)) {
     if (sport === 'tennis') {

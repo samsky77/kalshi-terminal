@@ -61,9 +61,14 @@ export function buildPicks(records: SnapRecord[]): Pick[] {
 
 /** Picks whose games should be over by now and have no settlement yet. */
 export function unsettledTickers(picks: Pick[], settled: Settlements, now = Date.now()): string[] {
-  const out = new Set<string>();
-  for (const p of picks) if (!(p.ticker in settled) && Date.parse(p.startTime) + 3 * 3600e3 < now) out.add(p.ticker);
-  return [...out];
+  // Newest games first, and give up after 10 days (voided or postponed markets never settle yes/no),
+  // so a pile of stuck tickers cannot starve fresh picks of the per-run request budget.
+  const out = new Map<string, number>();
+  for (const p of picks) {
+    const t = Date.parse(p.startTime);
+    if (!(p.ticker in settled) && t + 3 * 3600e3 < now && t > now - 10 * 86400e3) out.set(p.ticker, t);
+  }
+  return [...out.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
 }
 
 export interface Bucket { n: number; wins: number; staked: number; pnl: number; avgProb: number; avgEdge: number }

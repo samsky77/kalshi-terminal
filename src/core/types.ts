@@ -123,6 +123,8 @@ export interface PricedSide {
   fee: number;
   edge: number | null; // dollars per contract
   value: boolean;
+  /** This quote contradicts a neighbouring strike on the same ladder (likely a stale order): never flagged as value. */
+  suspect?: boolean;
 }
 
 export interface PricedContract {

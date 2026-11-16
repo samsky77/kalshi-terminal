@@ -146,12 +146,22 @@ export async function refreshOdds(sport: Sport, keys: string[], expected: Record
       batchCache.set(k, b);
       batches.push(b);
     } else {
-      const body: unknown = r.body;
-      errors.push(`${k}: HTTP ${r.status} ${(typeof body === 'string' ? body : JSON.stringify(body)).slice(0, 120)}`);
+      errors.push(`${k}: the odds provider answered with an error (HTTP ${r.status})`);
       if (r.headers['x-requests-remaining']) lastCredits = readCredits(r.headers);
     }
   }
   return { mode: 'live', sport, keys, cost, creditsBefore: before, credits: lastCredits, batches, errors };
+}
+
+/** Every requested key was fetched within maxAgeMs on this server instance: return those batches, else null. */
+export function recentBatches(keys: string[], maxAgeMs: number): OddsBatch[] | null {
+  const out: OddsBatch[] = [];
+  for (const k of keys) {
+    const b = batchCache.get(k);
+    if (!b || Date.now() - Date.parse(b.fetchedAt) > maxAgeMs) return null;
+    out.push(b);
+  }
+  return out.length ? out : null;
 }
 
 /** Server-side cached batches (no upstream call). */

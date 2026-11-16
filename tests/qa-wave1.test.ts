@@ -115,3 +115,31 @@ describe('formatting', () => {
     expect(when('1970-01-01T00:00:00Z')).toBe('time TBD');
   });
 });
+
+describe('worker sim cache (wave 2 blocker)', () => {
+  it('survives a second run of the same sport and reuses simulations', async () => {
+    const { seedCache, pruneCache } = await import('../src/worker/trackingCache');
+    const snap = kalshiFixture('nfl');
+    const odds = oddsFixture('nfl').batches;
+    const now = new Date(oddsFixture('nfl').recordedAt);
+    const run = (prev?: Map<string, any>) => {
+      const cache = seedCache(prev);
+      const out = runPipeline({ sport: 'nfl', games: snap.games, odds, now, runs: 500, horizonHours: 168, simCache: cache });
+      return { out, kept: pruneCache(cache), cache };
+    };
+    const first = run();
+    expect(first.kept.size).toBeGreaterThan(0);
+    const second = run(first.kept);
+    expect(second.kept.size).toBe(first.kept.size);
+    expect(second.out.games.length).toBe(first.out.games.length);
+    const third = run(second.kept);
+    expect(third.kept.size).toBe(first.kept.size);
+  });
+  it('drops entries the latest run did not use', async () => {
+    const { seedCache, pruneCache } = await import('../src/worker/trackingCache');
+    const stale = new Map<string, any>([['gone', { p: 1 }]]);
+    const cache = seedCache(stale);
+    expect(cache.used.size).toBe(0);
+    expect(pruneCache(cache).size).toBe(0);
+  });
+});

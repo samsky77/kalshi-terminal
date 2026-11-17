@@ -1,4 +1,4 @@
-import { blendFair, conditionalWin, DEFAULT_THRESHOLDS, expectedValue, fairDecimal, gradePick, type GradeThresholds } from './ev';
+import { blendFair, conditionalWin, DEFAULT_THRESHOLDS, expectedValue, fairDecimal, gradePick, MAX_CREDIBLE_EV, type GradeThresholds } from './ev';
 import { priceSelection, selectionKey, settleFractions } from './markets';
 import { consensus } from './odds';
 import type { Grade, MarketType, OutcomeProbs, Selection, SimSamples, Side, SportId } from './types';
@@ -104,7 +104,9 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
       out.push({
         selection: sel, key: selectionKey(sel), books: full.length, bestBook, bestDecimal,
         consensusP: cP, model, fair, fairDecimal: fairDecimal(fair), ev, modelEv, consensusEv,
-        grade: gradePick(ev, modelEv, consensusEv, opt.thresholds ?? DEFAULT_THRESHOLDS), w: opt.marketOnly ? 0 : w, snapshotTs,
+        // A grade needs a real market behind it: enough books (3, props 2) and a credible EV.
+        grade: full.length < (market === 'prop' ? 2 : 3) || ev > MAX_CREDIBLE_EV ? 'none' : gradePick(ev, modelEv, consensusEv, opt.thresholds ?? DEFAULT_THRESHOLDS),
+        w: opt.marketOnly ? 0 : w, snapshotTs,
       });
     });
   }

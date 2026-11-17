@@ -28,8 +28,8 @@ export async function runDemo(fixtures: string, out = resolve(here, '../../app/.
   const env = { DEMO: '1', PROPS_NBA_ENABLED: 'false', PROPS_NFL_ENABLED: 'false' };
   await db.upsert('settings', { key: 'demo', value: true }, 'key');
 
-  // Phase 1: "yesterday" — the recorded slate shifted to 30 hours ago, replayed hour by hour.
-  const pastShift = realNow - RECORDED_AT - 30 * 3600000;
+  // Phase 1: "yesterday" — the recorded slate shifted to ~3 days ago, replayed hour by hour.
+  const pastShift = realNow - RECORDED_AT - 74 * 3600000; // > 36 h before today's copy, so they never match
   let clock = new Date(RECORDED_AT + pastShift - 3 * 3600000);
   const ctxPast = await makeCtx(db, env, { now: () => clock, fixturesDir: fixtures, fixtureShiftMs: pastShift });
   await tick(ctxPast, { sports: DEMO_SPORTS });

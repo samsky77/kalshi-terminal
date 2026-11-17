@@ -49,21 +49,30 @@ export async function pickHash(prevHash: string, row: Record<string, unknown>): 
 export interface ChainCheck {
   ok: boolean;
   checked: number;
+  /** Rows whose contents are still sealed (game not started): link checked, contents not. */
+  sealed?: number;
   /** seq of the first row that fails, if any. */
   brokenAt?: number;
   reason?: string;
 }
 
-/** Recompute every hash in order (rows must be sorted by seq ascending). */
+/**
+ * Recompute every hash in order (rows sorted by seq ascending). Rows marked `sealed: true` are
+ * picks whose game hasn't started: the public sees only their seq and hashes, so their contents
+ * can't be recomputed yet — but their hash is already committed, so they can't be changed later
+ * without breaking every row after them.
+ */
 export async function verifyChain(rows: Record<string, unknown>[]): Promise<ChainCheck> {
   let prev = GENESIS_HASH;
+  let sealed = 0;
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
     if (Number(r.seq) !== i + 1) return { ok: false, checked: i, brokenAt: Number(r.seq), reason: 'sequence gap (a row is missing)' };
     if (r.prev_hash !== prev) return { ok: false, checked: i, brokenAt: Number(r.seq), reason: 'prev_hash does not match the row before' };
+    if (r.sealed === true) { sealed++; prev = String(r.hash); continue; }
     const h = await pickHash(prev, r);
     if (h !== r.hash) return { ok: false, checked: i, brokenAt: Number(r.seq), reason: 'row contents do not match its hash' };
     prev = h;
   }
-  return { ok: true, checked: rows.length };
+  return { ok: true, checked: rows.length, sealed };
 }

@@ -20,3 +20,4 @@ export * from './models/hockey';
 export * from './models/soccer';
 export * from './models/tennis';
 export * from './models/props';
+export * from './books';

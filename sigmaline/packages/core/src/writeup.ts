@@ -4,6 +4,7 @@
  * means that driver is skipped — nothing is guessed. WRITEUP_PROVIDER=llm can be swapped in
  * later, and must receive exactly this facts object with an instruction to add no facts.
  */
+import { bookName } from './books';
 import { formatAmerican } from './odds';
 import type { Selection, SportId } from './types';
 
@@ -19,6 +20,8 @@ export interface WriteupFacts {
   bestDecimal: number;
   book: string;
   modelP: number; // model win prob (no-push)
+  /** True only when an independent model (team ratings / Elo) priced the game, not the market fallback. */
+  modelIndependent?: boolean;
   consensusP: number; // market no-vig
   fairP: number;
   ev: number;
@@ -79,19 +82,20 @@ function candidates(f: WriteupFacts): Candidate[] {
   const side = f.selection.side;
   const us: 'home' | 'away' | undefined = side === 'home' || side === 'away' ? side : undefined;
   const them = us === 'home' ? 'away' : us === 'away' ? 'home' : undefined;
-  if (Number.isFinite(f.modelP) && Number.isFinite(f.consensusP)) {
+  const book = bookName(f.book);
+  if (f.modelIndependent && Number.isFinite(f.modelP) && Number.isFinite(f.consensusP)) {
     const d = f.modelP - f.consensusP;
     if (Math.abs(d) >= 0.01) {
       c.push({
         id: 'model_vs_market', score: Math.abs(d) * 10,
         text: d > 0
           ? `Our ratings alone have this at ${pct(f.modelP)}, the market at ${pct(f.consensusP)}. We blend the two, so the fair number still leans on the market.`
-          : `The market (${pct(f.consensusP)}) is actually a bit higher than our ratings (${pct(f.modelP)}); the value here comes from ${f.book} being slow to move.`,
+          : `The market (${pct(f.consensusP)}) is actually a bit higher than our ratings (${pct(f.modelP)}); the value here comes from ${book} being slow to move.`,
       });
     }
   }
   if (f.booksChecked >= 3 && Number.isFinite(f.consensusP) && f.consensusP * f.bestDecimal > 1) {
-    c.push({ id: 'line_shop', score: (f.consensusP * f.bestDecimal - 1) * 30, text: `${f.book} is out of line with the other ${f.booksChecked - 1} books we checked; even the market's own fair price says this number is generous.` });
+    c.push({ id: 'line_shop', score: (f.consensusP * f.bestDecimal - 1) * 30, text: `${book} is out of line with the other ${f.booksChecked - 1} books we checked; even the market's own fair price says this number is generous.` });
   }
   if (us && them && f.restDays && f.restDays[us] !== undefined && f.restDays[them] !== undefined) {
     const a = f.restDays[us]!, b = f.restDays[them]!;
@@ -144,7 +148,7 @@ function riskSentence(f: WriteupFacts): string {
 export function buildWriteup(f: WriteupFacts): Writeup {
   const picked = candidates(f).slice(0, 3);
   if (!picked.length) {
-    picked.push({ id: 'books', score: 0, text: `${f.book} has the best price of the ${f.booksChecked} book${f.booksChecked === 1 ? '' : 's'} we checked for this market.` });
+    picked.push({ id: 'books', score: 0, text: `${bookName(f.book)} has the best price of the ${f.booksChecked} book${f.booksChecked === 1 ? '' : 's'} we checked for this market.` });
   }
   return { edge: edgeSentence(f), reasons: picked.map((p) => p.text), risk: riskSentence(f), drivers: picked.map((p) => p.id) };
 }

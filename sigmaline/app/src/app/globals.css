@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0a0a;
+  --panel: #141414;
+  --line: #2a2a2a;
+  --line2: #1e1e1e;
+  --ink: #e8e6e0;
+  --muted: #9a968c;
+  --amber: #ffb000;
+  --fair: #5ab0ff;
+  --noedge-bar: #6b675f;
+  color-scheme: dark;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  -webkit-text-size-adjust: 100%;
+}
+
+* { border-radius: 0 !important; }
+
+.label { @apply text-[11px] uppercase tracking-[0.14em] text-muted; }
+.panel { @apply bg-panel border border-line; }
+.num { font-variant-numeric: tabular-nums; }
+.prose-sl { font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+.tap { min-height: 44px; min-width: 44px; }
+
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.skeleton { background: #1e1e1e; animation: sk 1.2s ease-in-out infinite alternate; }
+@keyframes sk { from { opacity: 0.45; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }

@@ -36,6 +36,16 @@ describe('hash chain', () => {
     expect(c.ok).toBe(false);
     expect(c.brokenAt).toBe(3);
   });
+  it('sealed rows keep the link but hide contents', async () => {
+    const rows = await chain(4);
+    const pub = rows.map((r, i) => (i === 2 ? { seq: r.seq, prev_hash: r.prev_hash, hash: r.hash, sealed: true } : r));
+    const c = await verifyChain(pub);
+    expect(c.ok).toBe(true);
+    expect(c.sealed).toBe(1);
+    // altering a sealed row's hash breaks the next row's link
+    pub[2] = { ...pub[2], hash: 'f'.repeat(64) };
+    expect((await verifyChain(pub)).ok).toBe(false);
+  });
   it('detects a deleted row', async () => {
     const rows = await chain(5);
     rows.splice(1, 1);
@@ -140,5 +150,19 @@ describe('write-ups and alerts', () => {
   it('quiet hours wrap midnight', () => {
     expect(inQuietHours('2026-11-18T04:00:00Z', '22:00', '08:00')).toBe(true); // 11pm ET
     expect(inQuietHours('2026-11-17T17:00:00Z', '22:00', '08:00')).toBe(false); // noon ET
+  });
+});
+
+describe('write-ups never claim a model that did not run', () => {
+  it('omits the ratings sentence on market-only games and uses book display names', () => {
+    const base = {
+      sport: 'nba' as const, home: 'Houston Rockets', away: 'Utah Jazz', team: 'Utah Jazz', opponent: 'Houston Rockets',
+      selection: { market: 'ml' as const, side: 'away' as const }, selectionLabel: 'Utah Jazz ML', bestDecimal: 7, book: 'betmgm',
+      modelP: 0.26, consensusP: 0.18, fairP: 0.18, ev: 0.24, booksChecked: 6,
+    };
+    const w = buildWriteup(base);
+    expect(w.reasons.join(' ')).not.toMatch(/ratings/);
+    expect(w.reasons.join(' ')).toMatch(/BetMGM/);
+    expect(buildWriteup({ ...base, modelIndependent: true }).reasons.join(' ')).toMatch(/ratings alone/);
   });
 });

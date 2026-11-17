@@ -90,8 +90,23 @@ export interface EventRow {
   updated_at?: string;
 }
 
-export function normTeam(s: string): string {
-  return s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+/** Club-name affixes that differ between sources ("FC Bayern München" vs "Bayern Munich"). */
+const SOCCER_STRIP = new Set(['fc', 'afc', 'cf', 'cfc', 'sc', 'ssc', 'ac', 'acf', 'as', 'ss', 'us', 'cd', 'ud', 'rc', 'rcd', 'sd', 'ca', 'club', 'de', 'futbol',
+  'calcio', 'bc', 'osc', 'ogc', 'sco', 'aj', 'vfb', 'vfl', 'tsg', 'sv', 'fsv', 'bsc', '1', '04', '05', '29', 'cp', 'sk', 'fk']);
+const SOCCER_ALIAS: Record<string, string> = {
+  'bayern munchen': 'bayern munich', 'internazionale milano': 'inter milan', 'inter': 'inter milan', athletic: 'athletic bilbao',
+  'espanyol barcelona': 'espanyol', 'rayo vallecano madrid': 'rayo vallecano', 'real betis balompie': 'real betis', 'olympique lyonnais': 'lyon',
+  'olympique marseille': 'marseille', 'stade rennais': 'rennes', 'stade brestois': 'brest', 'racing lens': 'lens', 'strasbourg alsace': 'strasbourg',
+  'deportivo alaves': 'alaves', 'atletico madrid': 'atletico madrid', 'celta vigo': 'celta vigo', 'paris saint germain': 'paris saint germain',
+  'wolverhampton wanderers': 'wolverhampton wanderers', 'wolves': 'wolverhampton wanderers', 'tottenham': 'tottenham hotspur',
+  'brighton': 'brighton and hove albion', 'newcastle': 'newcastle united', 'west ham': 'west ham united', 'koln': 'koln', 'hamburger': 'hamburg',
+};
+
+export function normTeam(s: string, sport?: string): string {
+  const base = s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
+  if (sport !== 'soccer') return base;
+  const t = base.split(' ').filter((w) => !SOCCER_STRIP.has(w) && !/^(18|19|20)\d\d$/.test(w)).join(' ');
+  return SOCCER_ALIAS[t] ?? t;
 }
 
 export function eventId(sport: SportId, league: string, commence: string, home: string, away: string): string {

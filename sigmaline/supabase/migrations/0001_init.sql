@@ -353,6 +353,7 @@ create table if not exists player_logs (
   game_date date not null,
   value numeric not null,
   minutes numeric,
+  team text,                                -- the player's team in that game
   primary key (sport, player, stat, game_date)
 );
 

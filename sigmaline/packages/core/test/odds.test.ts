@@ -101,3 +101,22 @@ describe('EV, fair and blend (hand-worked)', () => {
     expect(pickFilters({ snapshotAgeMin: 10, books: 4, isProp: false, keyPlayerUnknown: true }).ok).toBe(false);
   });
 });
+
+describe('cold start: market-only pricing', () => {
+  it('fair = consensus, so only line shopping can create an edge', async () => {
+    const { simulateGame, priceMarkets } = await import('../src');
+    const { samples } = simulateGame({ sport: 'nba', expect: { home: 120, away: 110 }, seed: 1 });
+    const ts = '2026-11-17T00:00:00Z';
+    const q = (book: string, h: number, a: number) => ({ book, market: 'ml' as const, prices: { home: h, away: a }, ts });
+    const rows = priceMarkets(samples, [q('draftkings', 1.8, 2.05), q('fanduel', 1.8, 2.05), q('betmgm', 1.8, 2.25)], {
+      sport: 'nba', threeWay: false, bettable: new Set(['draftkings', 'fanduel', 'betmgm']), w: {}, marketOnly: true,
+    });
+    const away = rows.find((r) => r.selection.side === 'away')!;
+    const home = rows.find((r) => r.selection.side === 'home')!;
+    expect(away.fair.win).toBeCloseTo(away.consensusP, 12);
+    expect(away.bestBook).toBe('betmgm');
+    expect(away.ev).toBeGreaterThan(0.02); // betmgm's 2.25 beats the market
+    expect(home.ev).toBeLessThan(0); // the model's lean toward home is ignored without ratings
+    expect(pickFilters({ snapshotAgeMin: 1, books: 3, isProp: false, keyPlayerUnknown: false, ev: 0.3 }).ok).toBe(false);
+  });
+});

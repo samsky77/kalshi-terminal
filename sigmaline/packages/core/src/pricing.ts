@@ -53,6 +53,12 @@ export interface PriceOptions {
   /** Blend weight per market type. */
   w: Partial<Record<MarketType, number>>;
   thresholds?: GradeThresholds;
+  /**
+   * No independent model for this game (cold start: expectation derived from the market). The fair
+   * price is then the market consensus itself, so only line-shopping value can show as an edge —
+   * otherwise small shape differences between our sim and the books would look like fake edges.
+   */
+  marketOnly?: boolean;
 }
 
 /**
@@ -90,16 +96,15 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
       // already the win probability (no push possible).
       const cP = cons ? cons.probs[i] : NaN;
       const w = opt.w[market] ?? 0.35;
-      const fair = blendFair(model, cP, w);
+      const consFair: OutcomeProbs = { win: cP * (1 - model.push), push: model.push, loss: (1 - cP) * (1 - model.push) };
+      const fair = opt.marketOnly ? (Number.isFinite(cP) ? consFair : { win: NaN, push: NaN, loss: NaN }) : blendFair(model, cP, w);
       const ev = Number.isFinite(bestDecimal) ? expectedValue(fair, bestDecimal) : NaN;
-      const modelEv = Number.isFinite(bestDecimal) ? expectedValue(model, bestDecimal) : NaN;
-      const consensusEv = Number.isFinite(bestDecimal) && Number.isFinite(cP)
-        ? expectedValue({ win: cP * (1 - model.push), push: model.push, loss: (1 - cP) * (1 - model.push) }, bestDecimal)
-        : NaN;
+      const consensusEv = Number.isFinite(bestDecimal) && Number.isFinite(cP) ? expectedValue(consFair, bestDecimal) : NaN;
+      const modelEv = opt.marketOnly ? consensusEv : Number.isFinite(bestDecimal) ? expectedValue(model, bestDecimal) : NaN;
       out.push({
         selection: sel, key: selectionKey(sel), books: full.length, bestBook, bestDecimal,
         consensusP: cP, model, fair, fairDecimal: fairDecimal(fair), ev, modelEv, consensusEv,
-        grade: gradePick(ev, modelEv, consensusEv, opt.thresholds ?? DEFAULT_THRESHOLDS), w, snapshotTs,
+        grade: gradePick(ev, modelEv, consensusEv, opt.thresholds ?? DEFAULT_THRESHOLDS), w: opt.marketOnly ? 0 : w, snapshotTs,
       });
     });
   }

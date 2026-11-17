@@ -67,12 +67,17 @@ export interface FilterInput {
   isProp: boolean;
   /** true if a key player's status is unknown (only when injury data exists). */
   keyPlayerUnknown: boolean;
+  /** EV of the candidate; above `maxEv` the price is almost always stale or a data error. */
+  ev?: number;
 }
 export interface FilterResult { ok: boolean; reasons: string[] }
 
 /** Pick filters (spec §5). A pick failing any of these is never published. */
+export const MAX_CREDIBLE_EV = 0.25;
+
 export function pickFilters(f: FilterInput, maxAgeMin = 90): FilterResult {
   const reasons: string[] = [];
+  if (f.ev !== undefined && f.ev > MAX_CREDIBLE_EV) reasons.push(`EV above ${MAX_CREDIBLE_EV * 100}% (price is probably stale or wrong)`);
   if (!(f.snapshotAgeMin <= maxAgeMin)) reasons.push(`price snapshot older than ${maxAgeMin} min`);
   const minBooks = f.isProp ? 2 : 3;
   if (f.books < minBooks) reasons.push(`only ${f.books} book(s) priced this market (need ${minBooks})`);

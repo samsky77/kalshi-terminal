@@ -108,7 +108,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
                   <span className="label mr-2">Backtest (simulated)</span>
                   {SPORT_DEFS[b.sport as SportId]?.label ?? b.sport} · {b.kind === 'accuracy' ? `${b.games} games · Brier ${Number(b.metrics.brier).toFixed(3)} · log loss ${Number(b.metrics.logLoss).toFixed(3)}` : `${b.games_with_odds} games with odds · ${b.metrics.bets} bets · ROI ${pct(b.metrics.roi)}`}
                   {b.from_date && <span className="text-muted"> · {b.from_date} to {b.to_date}</span>}
-                  <span className="block text-[10px] text-muted">Source: {b.source}{b.kind === 'price' ? ' · priced at closing lines, so CLV is not meaningful' : ''}</span>
+                  <span className="block text-[10px] text-muted">Source: {b.source === 'nflverse-data (CC BY 4.0)' ? 'NFL schedule data: nflverse (CC BY 4.0)' : b.source === 'openfootball (CC0)' ? 'Soccer results: openfootball (CC0)' : b.source}{b.kind === 'price' ? ' · priced at closing lines, so CLV is not meaningful' : ''}</span>
                 </li>
               ))}
             </ul>

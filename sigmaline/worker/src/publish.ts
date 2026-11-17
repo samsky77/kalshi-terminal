@@ -4,6 +4,7 @@ import {
 import { appendPick, getEvents, normTeam, type EventRow, type PickRow } from '@sigmaline/db';
 import type { Ctx } from './context';
 import { saveSim, simulateEvent, type SimResult } from './simulate';
+import { writeup as makeWriteup } from './writeup';
 
 export interface Candidate { p: PricedSelection; ok: boolean; reasons: string[] }
 
@@ -111,7 +112,7 @@ export async function publishDue(ctx: Ctx): Promise<PublishReport[]> {
       if (!c.ok) { report.rejected.push({ label, reasons: c.reasons }); continue; }
       const move = await lineMovement(ctx, e, c.p);
       const facts = writeupFacts(sim, c.p, { injuries: inj.list, ...move });
-      const writeup = { ...buildWriteup(facts), facts };
+      const writeup = { ...(await makeWriteup(facts, ctx.env.WRITEUP_PROVIDER)), facts };
       try {
         const row = await appendPick(ctx.db, {
           id: crypto.randomUUID(), created_at: ctx.now().toISOString(), sport: e.sport_id, league: e.league_id, event_id: e.id,

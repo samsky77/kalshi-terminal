@@ -50,8 +50,17 @@ export interface ModelParams {
 
 export interface ModelVersion { id: string; sport_id: SportId; created_at: string; params: ModelParams; parent: string | null; notes: string | null }
 
+/**
+ * Starting blend weights. Default 0.35 (spec). NFL starts at the 0.15 floor: in the walk-forward
+ * backtest (2017–2025, nflverse closing lines) a results-only rating model scored Brier 0.222 vs the
+ * closing market's 0.210, so a heavier model weight only adds noise (docs/decisions.md). The
+ * nightly job moves every weight by at most ±0.05 when held-out log loss improves.
+ */
+export const INITIAL_W: Partial<Record<SportId, number>> = { nfl: 0.15 };
+
 export function defaultModelParams(sport: SportId): ModelParams {
-  return { w: { ml: W_DEFAULT, spread: W_DEFAULT, total: W_DEFAULT, prop: W_DEFAULT }, halfLifeDays: SPORT_DEFS[sport].halfLifeDays, nSims: 10000 };
+  const w = INITIAL_W[sport] ?? W_DEFAULT;
+  return { w: { ml: w, spread: w, total: w, prop: W_DEFAULT }, halfLifeDays: SPORT_DEFS[sport].halfLifeDays, nSims: 10000 };
 }
 
 export async function currentModel(db: Db, sport: SportId): Promise<ModelVersion> {

@@ -1,0 +1,49 @@
+name: sigmaline-ci
+
+on:
+  push:
+    paths: ['sigmaline/**', '.github/workflows/sigmaline-*.yml']
+  pull_request:
+    paths: ['sigmaline/**', '.github/workflows/sigmaline-*.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: sigmaline
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PG_TEST_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sigmaline/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Build web app
+        run: npm run build
+      - name: Paywall check (routes called directly, no UI)
+        working-directory: sigmaline/app
+        env:
+          SESSION_SECRET: ci-session-secret-ci-session-secret-0000
+        run: |
+          npm run --prefix .. worker -- demo
+          npx next start -p 3200 & sleep 6
+          BASE=http://localhost:3200 node scripts/paywall-check.mjs

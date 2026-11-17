@@ -20,7 +20,7 @@ async function exercise(db: Db) {
   expect(rows).toHaveLength(3);
   expect(rows.map((r) => Number(r.seq))).toEqual([1, 2, 3]);
   const check = await verifyChain(rows as unknown as Record<string, unknown>[]);
-  expect(check).toEqual({ ok: true, checked: 3 });
+  expect(check).toEqual({ ok: true, checked: 3, sealed: 0 });
   // duplicates are refused
   await expect(appendPick(db, pick(1))).rejects.toThrow();
   // games that already started are refused

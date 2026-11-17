@@ -1,0 +1,72 @@
+# Sigmaline scheduled jobs. Scheduled workflows only run from the repository's DEFAULT branch.
+name: sigmaline-worker
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # tick: odds pulls, sims, publish, alerts, closing lines, grading
+    - cron: '23 9 * * *'     # nightly (09:23 UTC ≈ 4:23 AM ET, after late games are graded)
+    - cron: '41 10 * * 1'    # weekly: history import + backtests (Mondays)
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'tick | nightly | history | backtest | budget'
+        required: true
+        default: tick
+
+concurrency:
+  group: sigmaline-worker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: sigmaline
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+      PROPLINE_API_KEY: ${{ secrets.PROPLINE_API_KEY }}
+      SHARPAPI_KEY: ${{ secrets.SHARPAPI_KEY }}
+      SHARPAPI_ENABLED: ${{ vars.SHARPAPI_ENABLED || 'false' }}
+      PROPS_NBA_ENABLED: ${{ vars.PROPS_NBA_ENABLED || 'false' }}
+      PROPS_NFL_ENABLED: ${{ vars.PROPS_NFL_ENABLED || 'false' }}
+      VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+      VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+      VAPID_SUBJECT: ${{ vars.VAPID_SUBJECT || 'mailto:admin@example.com' }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      DISCORD_ERROR_WEBHOOK_URL: ${{ secrets.DISCORD_ERROR_WEBHOOK_URL }}
+      APP_URL: ${{ vars.APP_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sigmaline/package-lock.json
+      - run: npm ci --workspace @sigmaline/worker --include-workspace-root
+      - name: Pick job
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then echo "job=${{ inputs.job }}" >> "$GITHUB_OUTPUT";
+          elif [ "${{ github.event.schedule }}" = "23 9 * * *" ]; then echo "job=nightly" >> "$GITHUB_OUTPUT";
+          elif [ "${{ github.event.schedule }}" = "41 10 * * 1" ]; then echo "job=weekly" >> "$GITHUB_OUTPUT";
+          else echo "job=tick" >> "$GITHUB_OUTPUT"; fi
+      - name: Run
+        run: |
+          case "${{ steps.pick.outputs.job }}" in
+            weekly) npm run worker -- history && npm run worker -- backtest ;;
+            nightly) npm run worker -- tick && npm run worker -- nightly ;;
+            *) npm run worker -- "${{ steps.pick.outputs.job }}" ;;
+          esac
+      - name: Alert on failure
+        if: failure() && env.DISCORD_ERROR_WEBHOOK_URL != ''
+        run: |
+          curl -sS -X POST -H 'content-type: application/json' \
+            -d "{\"content\":\"Sigmaline worker **${{ steps.pick.outputs.job }}** failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+            "$DISCORD_ERROR_WEBHOOK_URL"

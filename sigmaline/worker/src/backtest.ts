@@ -10,7 +10,7 @@ import {
   blendFair, brier, calibrationBuckets, expectedValue, gradePick, logLoss, noVigMultiplicative, priceSelection, profitUnits,
   seedFrom, simulateGame, stakeUnits, SPORT_DEFS, W_DEFAULT, gradeBet, type Forecast, type Selection, type SportId,
 } from '@sigmaline/core';
-import { getEvents, normTeam, type EventRow } from '@sigmaline/db';
+import { currentModel, getEvents, normTeam, type EventRow } from '@sigmaline/db';
 import type { Ctx } from './context';
 import { fitRatings, toResults } from './simulate';
 import { predictGoals, predictPoints } from '@sigmaline/core';
@@ -29,7 +29,7 @@ export async function runBacktest(ctx: Ctx, sport: SportId, opts: { fromDate?: s
   const start = opts.fromDate ?? all[Math.floor(all.length * 0.25)].commence_time; // first quarter warms the ratings up
   const test = all.filter((e) => e.commence_time >= start);
   const nSims = opts.nSims ?? 10000;
-  const w = opts.w ?? W_DEFAULT;
+  const w = opts.w ?? (await currentModel(ctx.db, sport)).params.w.ml;
   const fc: Forecast[] = [], mkt: Forecast[] = [];
   let bets = 0, units = 0, staked = 0, withOdds = 0;
   const curve: { t: string; units: number }[] = [];

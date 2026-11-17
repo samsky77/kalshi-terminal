@@ -1,0 +1,27 @@
+{
+  "name": "sigmaline",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/core",
+    "packages/db",
+    "worker",
+    "app"
+  ],
+  "scripts": {
+    "test": "npm run test -w @sigmaline/core && npm run test -w @sigmaline/db && npm run test -w @sigmaline/worker && npm run test -w @sigmaline/app",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev": "npm run dev -w @sigmaline/app",
+    "build": "npm run build -w @sigmaline/app",
+    "worker": "npm run job -w @sigmaline/worker --"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7",
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15"
+  }
+}

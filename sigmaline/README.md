@@ -82,6 +82,14 @@ The repo root has a `netlify.toml` that builds `sigmaline/app` with Netlify's Ne
 
 Vercel still works too: set its Root Directory to `sigmaline/app`.
 
+**Current deploy:** https://sigmaline.netlify.app (Netlify site `sigmaline`, account `sam-skyalpha`). `APP_URL` and `SESSION_SECRET` are already set there. It was deployed from the CLI, not linked to GitHub. For automatic deploys on push, open **Site configuration → Build & deploy → Link repository** in Netlify.
+
+Deploying by hand from the CLI (build first, then upload the folder the Next.js plugin prepares, in the same run):
+
+```bash
+npx netlify build && npx netlify deploy --no-build --prod --dir sigmaline/.netlify/static
+```
+
 ### 7. GitHub Actions (the worker)
 
 The workflows are `.github/workflows/sigmaline-worker.yml` (every 15 min tick, nightly, weekly backtests) and `sigmaline-ci.yml` (tests, build and paywall check on every push).

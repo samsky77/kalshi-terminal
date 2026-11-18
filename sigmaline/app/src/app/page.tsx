@@ -47,7 +47,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
             {[
               ['01 Simulate', 'Team ratings plus 10,000 Monte Carlo runs give a full distribution of the final score. Moneyline, spread and total all come from that one distribution.'],
               ['02 Compare', 'We strip the vig from every book, take the market consensus and blend it with our model. Then we check the best price you can actually bet.'],
-              ['03 Log it', 'Picks with an edge are logged and alerted 60–90 minutes before the start, hash-chained, and graded against the closing line and the final score.'],
+              ['03 Log it', 'Picks with an edge are logged and alerted as soon as we find them, up to 12 hours before the start. Each one is hash-chained and graded against the closing line and the final score.'],
             ].map(([t, d]) => (
               <li key={t} className="bg-panel p-3"><p className="text-[13px] font-semibold text-amber">{t}</p><p className="prose-sl mt-1 text-[14px] leading-relaxed">{d}</p></li>
             ))}

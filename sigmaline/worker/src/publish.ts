@@ -115,17 +115,26 @@ export function writeupFacts(sim: SimResult, p: PricedSelection, extra: Partial<
 export interface PublishReport { event: string; published: PickRow[]; rejected: { label: string; reasons: string[] }[] }
 
 /**
- * Publish picks for games starting within the pre-game window that have a pre-game snapshot.
- * Each event is published once, from its pre-game snapshot; rows are appended to the hash chain.
+ * Publish picks as soon as a game is within settings.publishHoursBefore (default 12 h) and its latest
+ * prices are fresh (pickFilters rejects snapshots older than 90 min). A game with no qualifying pick
+ * stays open and is re-checked after each new pull, until its pre-game snapshot (60-90 min out),
+ * which is the final check. Each game publishes at most once; rows are appended to the hash chain.
  */
 export async function publishDue(ctx: Ctx): Promise<PublishReport[]> {
   const now = ctx.now();
-  const upcoming = await getEvents(ctx.db, { from: now.toISOString(), to: new Date(now.getTime() + (PREGAME_WINDOW.to + 5) * 60000).toISOString(), status: ['scheduled'] });
+  const pregameMin = PREGAME_WINDOW.to + 5;
+  const windowMin = Math.max(pregameMin, Number(ctx.settings.publishHoursBefore ?? 0) * 60);
+  const upcoming = await getEvents(ctx.db, { from: now.toISOString(), to: new Date(now.getTime() + windowMin * 60000).toISOString(), status: ['scheduled'] });
   const out: PublishReport[] = [];
   for (const e of upcoming) {
     if (e.meta?.published) continue;
-    const sim = await simulateEvent(ctx, e, 'pregame');
+    // Early window (beyond the pre-game window): evaluate the latest prices, once per new pull, and
+    // keep the game open if nothing qualifies. The pre-game window is the final check and closes it.
+    const inPregame = Date.parse(e.commence_time) - now.getTime() <= pregameMin * 60000;
+    let sim = inPregame ? await simulateEvent(ctx, e, 'pregame') : null;
+    if (!sim) sim = await simulateEvent(ctx, e);
     if (!sim) continue;
+    if (!inPregame && e.meta?.early_checked_at === sim.snapshot.pulledAt) continue;
     await saveSim(ctx, sim);
     const inj = await injuriesFor(ctx, e);
     const propPlayers = new Set(sim.priced.filter((p) => p.selection.player).map((p) => normTeam(p.selection.player!)));
@@ -150,7 +159,12 @@ export async function publishDue(ctx: Ctx): Promise<PublishReport[]> {
         report.rejected.push({ label, reasons: [`append failed: ${(err as Error).message}`] });
       }
     }
-    await ctx.db.update('events', { id: e.id }, { meta: { ...e.meta, published: true, published_at: ctx.now().toISOString(), rejected: report.rejected.slice(0, 20) } });
+    const done = inPregame || report.published.length > 0;
+    await ctx.db.update('events', { id: e.id }, {
+      meta: done
+        ? { ...e.meta, published: true, published_at: ctx.now().toISOString(), rejected: report.rejected.slice(0, 20) }
+        : { ...e.meta, early_checked_at: sim.snapshot.pulledAt, rejected: report.rejected.slice(0, 20) },
+    });
     out.push(report);
   }
   return out;

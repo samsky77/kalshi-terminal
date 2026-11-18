@@ -17,7 +17,7 @@ export default function Privacy() {
       <h2>Processors</h2>
       <ul>
         <li><b>Supabase:</b> database hosting.</li>
-        <li><b>Vercel:</b> web hosting. Vercel keeps standard request logs.</li>
+        <li><b>Netlify:</b> web hosting. Netlify keeps standard request logs.</li>
         <li><b>Whop:</b> payments, membership and sign-in.</li>
         <li><b>Push services:</b> Apple, Google or Mozilla, which deliver push notifications to your device.</li>
         <li><b>Discord:</b> if you join the members channel, under Discord&apos;s own policy.</li>

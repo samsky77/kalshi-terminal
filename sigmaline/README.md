@@ -10,7 +10,7 @@ Read-only, information only. Sigmaline never places, holds or brokers bets and n
 
 ```
 sigmaline/
-  app/            Next.js (App Router) + Tailwind PWA — deployed on Vercel
+  app/            Next.js (App Router) + Tailwind PWA — deployed on Netlify
   worker/         scheduled jobs (odds, sims, picks, alerts, grading, nightly, backtests) — run by GitHub Actions
   packages/core/  odds math, models, grading, hash chain, budgeter, write-ups (shared, unit-tested)
   packages/db/    data layer (Supabase / Postgres / demo file)
@@ -25,13 +25,13 @@ sigmaline/
 
 ## What you need to do (owner checklist)
 
-Everything below is free except Vercel Pro ($20/mo), which you need **before the first paying user**.
+Everything below can start on free plans. Check your Netlify plan's limits before the first paying user.
 
 ### 1. Supabase (database)
 
 1. Create a project at supabase.com (free tier).
 2. Open **SQL Editor**, paste all of `sigmaline/supabase/migrations/0001_init.sql`, and run it. Running it twice is safe.
-3. Go to **Project Settings → API** and copy the `Project URL` → `SUPABASE_URL`, the `anon` key → `SUPABASE_ANON_KEY`, and the `service_role` key → `SUPABASE_SERVICE_ROLE_KEY`. The service-role key is a secret. It only ever goes in Vercel and GitHub secrets, never in the browser.
+3. Go to **Project Settings → API** and copy the `Project URL` → `SUPABASE_URL`, the `anon` key → `SUPABASE_ANON_KEY`, and the `service_role` key → `SUPABASE_SERVICE_ROLE_KEY`. The service-role key is a secret. It only ever goes in Netlify and GitHub secrets, never in the browser.
 
 Row-level security is on for every table, with no policies. Browsers can read nothing directly; every read goes through the server after a membership check.
 
@@ -70,13 +70,17 @@ Copy the three printed values into `VAPID_PUBLIC_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC
 - **Members channel:** Channel settings → Integrations → Webhooks → New webhook → copy its URL → `DISCORD_WEBHOOK_URL`. Put the channel's invite link in `NEXT_PUBLIC_DISCORD_INVITE_URL`.
 - **Your private error channel:** create a second webhook → `DISCORD_ERROR_WEBHOOK_URL`. Failed jobs post there, and GitHub also emails you when a scheduled run fails.
 
-### 6. Vercel (web app)
+### 6. Netlify (web app)
 
-1. vercel.com → **Add New Project** → import this GitHub repo.
-2. Set **Root Directory: `sigmaline/app`**. The framework is detected as Next.js; keep the default build command.
-3. Add the environment variables (table below) for Production and Preview, then deploy.
-4. Set `APP_URL` to your production URL, for example `https://sigmaline.app`, and redeploy.
-5. **Upgrade to Vercel Pro ($20/mo) before you take the first payment.** The free Hobby plan is for non-commercial use only.
+The repo root has a `netlify.toml` that builds `sigmaline/app` with Netlify's Next.js runtime. You don't need to set any build settings by hand.
+
+1. app.netlify.com → **Add new site → Import an existing project** → GitHub → pick this repo.
+2. Pick the branch to deploy (`main` once this is merged). Leave the base directory, build command and publish directory blank; `netlify.toml` sets them (base `sigmaline`, `npm run build`, `app/.next`).
+3. **Site configuration → Environment variables**: add the "Netlify" variables from the table below, then **Deploys → Trigger deploy**.
+4. Set `APP_URL` to your site URL (for example `https://sigmaline.netlify.app`, or your custom domain) and redeploy. Use the same URL for the Whop OAuth redirect and webhook in step 2.
+5. Before you take the first payment, check that your Netlify plan's limits (function invocations, bandwidth) fit your traffic.
+
+Vercel still works too: set its Root Directory to `sigmaline/app`.
 
 ### 7. GitHub Actions (the worker)
 
@@ -101,19 +105,19 @@ Everything is listed in `sigmaline/.env.example`.
 
 | Variable | Where it goes | Purpose |
 |---|---|---|
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Vercel + GitHub | Database (server only) |
-| `SUPABASE_ANON_KEY` | Vercel | Reserved (RLS denies anon reads) |
-| `WHOP_API_KEY`, `WHOP_CLIENT_ID`, `WHOP_CLIENT_SECRET`, `WHOP_WEBHOOK_SECRET`, `WHOP_PRODUCT_ID` | Vercel | Sign-in, membership check (10-min cache), webhooks |
-| `NEXT_PUBLIC_WHOP_CHECKOUT_URL` | Vercel | "Join" button |
-| `SESSION_SECRET` | Vercel | 32+ random characters (`openssl rand -hex 32`) |
-| `APP_URL` | Vercel + GitHub var | OAuth redirect and alert deep links |
-| `ADMIN_EMAIL` | Vercel | Your Whop email → `/admin` |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Netlify + GitHub | Database (server only) |
+| `SUPABASE_ANON_KEY` | Netlify | Reserved (RLS denies anon reads) |
+| `WHOP_API_KEY`, `WHOP_CLIENT_ID`, `WHOP_CLIENT_SECRET`, `WHOP_WEBHOOK_SECRET`, `WHOP_PRODUCT_ID` | Netlify | Sign-in, membership check (10-min cache), webhooks |
+| `NEXT_PUBLIC_WHOP_CHECKOUT_URL` | Netlify | "Join" button |
+| `SESSION_SECRET` | Netlify | 32+ random characters (`openssl rand -hex 32`) |
+| `APP_URL` | Netlify + GitHub var | OAuth redirect and alert deep links |
+| `ADMIN_EMAIL` | Netlify | Your Whop email → `/admin` |
 | `ODDS_API_KEY`, `PROPLINE_API_KEY`, `SHARPAPI_KEY`, `SHARPAPI_ENABLED` | GitHub | Data providers |
 | `PROPS_NBA_ENABLED`, `PROPS_NFL_ENABLED` | GitHub var | Prop feature flags (default off) |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | GitHub | Sending push |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Vercel | Subscribing to push |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Netlify | Subscribing to push |
 | `DISCORD_WEBHOOK_URL`, `DISCORD_ERROR_WEBHOOK_URL` | GitHub | Member alerts / your error alerts |
-| `NEXT_PUBLIC_DISCORD_INVITE_URL` | Vercel | "Join the members channel" link |
+| `NEXT_PUBLIC_DISCORD_INVITE_URL` | Netlify | "Join the members channel" link |
 | `WRITEUP_PROVIDER` | GitHub | `template` (default). An LLM can only ever receive the structured facts. |
 
 ---
@@ -206,6 +210,6 @@ See `docs/model.md` and `docs/decisions.md`.
 | Push on an installed iPhone PWA and Android Chrome; Discord; no duplicates | ⚠️ Code complete: service worker, VAPID, iPhone install guide, quiet hours, dedupe via `alert_log` (tested). **Needs a real-device check** after deploy: install on iPhone (iOS 16.4+), turn on alerts, then trigger a `tick`. |
 | Backtest and live labelled separately everywhere | ✅ |
 | Contrast and 44px touch targets at 360px | ✅ `app/scripts/a11y-check.cjs` (axe-core WCAG 2.1 AA + 44px + no horizontal scroll) passes on every screen. |
-| README covers setup, env vars, Vercel, Supabase, Whop, Actions, Hobby → Pro | ✅ This file. |
+| README covers setup, env vars, Netlify, Supabase, Whop, Actions | ✅ This file. |
 
 Data credits: NFL schedule data, nflverse (CC BY 4.0). Soccer results, openfootball (CC0).

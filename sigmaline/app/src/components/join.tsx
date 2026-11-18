@@ -8,7 +8,7 @@ export function JoinButton({ href, label = 'Join — $25/mo' }: { href: string; 
     <div>
       <label className="tap flex cursor-pointer items-center gap-3 text-[13px]">
         <input type="checkbox" className="h-5 w-5 accent-[#FFB000]" checked={ok} onChange={(e) => setOk(e.target.checked)} />
-        <span>I am 21 or older and betting is legal where I live.</span>
+        <span>I am legally allowed to bet where I live.</span>
       </label>
       <a
         href={ok ? href : undefined}

@@ -26,7 +26,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
             <input type="hidden" name="next" value={next} />
             <label className="tap flex cursor-pointer items-center gap-3 text-[13px]">
               <input type="checkbox" name="age" value="1" required className="h-5 w-5 accent-[#FFB000]" />
-              <span>I confirm I am 21 or older.</span>
+              <span>I am legally allowed to bet where I live.</span>
             </label>
             <button type="submit" className="tap mt-3 w-full bg-amber px-4 text-[14px] font-bold uppercase tracking-[0.14em] text-black">Sign in with Whop</button>
           </form>

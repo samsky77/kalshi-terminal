@@ -19,6 +19,7 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write   # GitHub OIDC: the app hands this workflow its keys, so no repository secrets are needed
 
 jobs:
   run:
@@ -46,9 +47,22 @@ jobs:
       APP_URL: ${{ vars.APP_URL || 'https://sigmaline.netlify.app' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch keys from the app (GitHub OIDC)
+        if: env.DATABASE_URL == '' && env.SUPABASE_URL == ''
+        run: |
+          set -euo pipefail
+          oidc=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sigmaline-worker" | jq -r .value)
+          echo "::add-mask::$oidc"
+          body=$(curl -sS -X POST -H "Authorization: Bearer $oidc" -w '\n%{http_code}' "${APP_URL%/}/api/worker/config")
+          code=$(printf '%s' "$body" | tail -n1); json=$(printf '%s' "$body" | sed '$d')
+          if [ "$code" != "200" ]; then echo "::warning::The app refused the worker's OIDC token (HTTP $code): $json"; exit 0; fi
+          printf '%s' "$json" | jq -r '.env | to_entries[] | .value' | while IFS= read -r v; do echo "::add-mask::$v"; done
+          printf '%s' "$json" | jq -r '.env | to_entries[] | "export \(.key)=\(.value | @sh)"' > "$RUNNER_TEMP/worker.env"
+          echo "Loaded $(printf '%s' "$json" | jq -r '.env | keys | join(", ")') from the app."
       - name: Check configuration
         id: cfg
         run: |
+          if [ -f "$RUNNER_TEMP/worker.env" ]; then . "$RUNNER_TEMP/worker.env"; fi
           if [ -z "$DATABASE_URL" ] && [ -z "$SUPABASE_URL" ]; then
             echo "::warning::No database secret (DATABASE_URL or SUPABASE_URL) is set yet, so the worker is skipped. Add the secrets in Settings → Secrets and variables → Actions."
             echo "ready=false" >> "$GITHUB_OUTPUT"
@@ -74,6 +88,7 @@ jobs:
       - name: Run
         if: steps.cfg.outputs.ready == 'true'
         run: |
+          if [ -f "$RUNNER_TEMP/worker.env" ]; then . "$RUNNER_TEMP/worker.env"; fi
           case "${{ steps.pick.outputs.job }}" in
             weekly) npm run worker -- history && npm run worker -- backtest ;;
             nightly) npm run worker -- tick && npm run worker -- nightly ;;

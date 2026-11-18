@@ -1,3 +1,5 @@
+> **Sigmaline** (the paid sports-betting terminal) lives in [`sigmaline/`](sigmaline/README.md). Start with that README's owner checklist. The rest of this file describes the older KX Terminal app, which is kept unchanged.
+
 # KX Terminal
 
 A phone-only, read-only "Bloomberg-style" value finder for Kalshi sports markets: NBA, NFL, NHL, college football, men's college basketball, tennis and soccer.

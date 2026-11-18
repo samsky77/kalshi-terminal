@@ -1,0 +1,13 @@
+# Netlify config for Sigmaline (sigmaline/app). The repo root also holds the older KX Terminal,
+# which is not deployed by this file.
+[build]
+  base = "sigmaline"
+  command = "npm run build"
+  publish = "app/.next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

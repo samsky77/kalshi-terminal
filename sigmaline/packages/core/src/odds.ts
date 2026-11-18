@@ -63,8 +63,14 @@ export function noVigPower(decimals: number[]): number[] {
   return p.map((x) => x / s);
 }
 
+/**
+ * Vig removal for consensus: the power method for every market. Proportional removal leaves the
+ * favourite-longshot bias in (books load margin onto the longshot), so de-vigged longshots read too
+ * likely and the best longshot price at any book looks like value; live, that produced a slate of
+ * +400…+1400 "edges" on tennis underdogs and alternate lines. For even prices the two agree.
+ */
 export function noVig(decimals: number[]): number[] {
-  return decimals.length >= 3 ? noVigPower(decimals) : noVigMultiplicative(decimals);
+  return noVigPower(decimals);
 }
 
 /** Weighted median: smallest value whose cumulative weight reaches half the total. */

@@ -120,3 +120,26 @@ describe('cold start: market-only pricing', () => {
     expect(pickFilters({ snapshotAgeMin: 1, books: 3, isProp: false, keyPlayerUnknown: false, ev: 0.3 }).ok).toBe(false);
   });
 });
+
+describe('deep-market guard', () => {
+  it('does not grade thin alternate totals or implausible game-line EV', async () => {
+    const { simulateGame, priceMarkets } = await import('../src');
+    const { samples } = simulateGame({ sport: 'nba', expect: { home: 112, away: 110 }, seed: 3 });
+    const ts = '2026-11-17T00:00:00Z';
+    const books = ['draftkings', 'fanduel', 'betmgm', 'betrivers', 'fanatics', 'espnbet', 'hardrockbet', 'ballybet', 'b9', 'b10'];
+    const main = books.map((book) => ({ book, market: 'total' as const, line: 222.5, prices: { over: 1.91, under: 1.91 }, ts }));
+    // A far alternate line: 3 high-margin books shade the longshot, FanDuel is normal -> looks like a big edge.
+    const alt = [
+      { book: 'fanduel', market: 'total' as const, line: 206.5, prices: { over: 1.1667, under: 5.1 }, ts },
+      { book: 'napoleon', market: 'total' as const, line: 206.5, prices: { over: 1.22, under: 3.75 }, ts },
+      { book: 'sts', market: 'total' as const, line: 206.5, prices: { over: 1.24, under: 4.0 }, ts },
+      { book: 'superbet_pl', market: 'total' as const, line: 206.5, prices: { over: 1.22, under: 3.7 }, ts },
+    ];
+    const rows = priceMarkets(samples, [...main, ...alt], { sport: 'nba', threeWay: false, bettable: new Set(books), w: {}, marketOnly: true });
+    const altUnder = rows.find((r) => r.selection.market === 'total' && r.selection.line === 206.5 && r.selection.side === 'under')!;
+    expect(altUnder.ev).toBeGreaterThan(0.05); // the raw number still looks like an edge...
+    expect(altUnder.grade).toBe('none'); // ...but it is not graded
+    const mainRows = rows.filter((r) => r.selection.line === 222.5);
+    expect(mainRows.every((r) => r.books === 10)).toBe(true);
+  });
+});

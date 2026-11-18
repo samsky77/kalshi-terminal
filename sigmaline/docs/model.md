@@ -3,7 +3,7 @@
 ## Pipeline for one game (every scheduler tick)
 
 1. **Snapshot.** Latest odds per book, market and line from PropLine (plus The Odds API when the market is thin). Each row is labelled `pregame` (60–90 min out), `closing` (about 25 min before to 10 min after the start) or `refresh`.
-2. **Consensus.** Strip the vig from each book: multiplicative for 2-way markets, the power method for 3-way. Then take the weighted median across books, with Pinnacle at ×2, and renormalise.
+2. **Consensus.** Strip the vig from each book with the power method (2-way and 3-way); proportional removal overstated longshots and produced false underdog edges live. Then take the weighted median across books, with Pinnacle at ×2, and renormalise.
 3. **Expectation.**
    - **Ratings:** opponent-adjusted, recency-weighted team ratings from stored finals (`packages/core/src/ratings.ts`). Used when both teams have enough games.
    - **Fallback:** the market-implied expectation. The game is then priced *market-only* (see decisions #13).

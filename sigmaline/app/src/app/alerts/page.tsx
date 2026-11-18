@@ -22,7 +22,7 @@ export default async function AlertsPage({ searchParams }: { searchParams: Promi
         <div className="mx-auto max-w-3xl px-4 pt-3">
           <h1 className="text-[18px] font-semibold">Alerts</h1>
           <p className="prose-sl mt-1 text-[14px] text-muted">
-            You get one alert per new pick with EV of {Math.round(s.alertEv * 1000) / 10}% or more, sent 60–90 minutes before the start. It looks like: <span className="font-mono text-ink">A · NYK +2.5 (−110) · EV +7.5% · 7:00 PM</span>
+            You get one alert per new pick with EV of {Math.round(s.alertEv * 1000) / 10}% or more, sent as soon as the pick is logged (up to 12 hours before the start). It looks like: <span className="font-mono text-ink">A · NYK +2.5 (−110) · EV +7.5% · 7:00 PM</span>
           </p>
         </div>
         <Section title="Push on this device"><PushSetup vapidKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''} /></Section>

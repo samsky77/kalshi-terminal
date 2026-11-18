@@ -12,6 +12,8 @@ export interface AppSettings {
   bettableBooks: string[];
   quotas: Record<string, { period: 'day' | 'month'; limit: number }>;
   refreshHours: number;
+  /** Picks may publish once a game is this many hours out (latest fresh prices); 1.5 = pre-game window only. */
+  publishHoursBefore: number;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -20,10 +22,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   bettableBooks: ['draftkings', 'fanduel', 'betmgm', 'williamhill_us', 'betrivers', 'espnbet', 'fanatics', 'hardrockbet', 'ballybet', 'betparx', 'fliff'],
   quotas: { oddsapi: { period: 'month', limit: 500 }, propline: { period: 'day', limit: 1000 }, sharpapi: { period: 'day', limit: 5000 } },
   refreshHours: 6,
+  publishHoursBefore: 12,
 };
 
 const SETTING_KEYS: Record<keyof AppSettings, string> = {
-  thresholds: 'thresholds', alertEv: 'alert_ev', bettableBooks: 'bettable_books', quotas: 'quotas', refreshHours: 'refresh_hours',
+  thresholds: 'thresholds', alertEv: 'alert_ev', bettableBooks: 'bettable_books', quotas: 'quotas', refreshHours: 'refresh_hours', publishHoursBefore: 'publish_hours_before',
 };
 
 export async function getSettings(db: Db): Promise<AppSettings> {

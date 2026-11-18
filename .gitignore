@@ -9,3 +9,6 @@ lighthouse-report*
 
 # Local Netlify folder
 .netlify
+
+# Personal Claude Code overrides
+.claude/settings.local.json

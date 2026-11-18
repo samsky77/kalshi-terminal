@@ -110,8 +110,22 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
       });
     });
   }
+  // Deep-market guard: a spread/total line quoted by fewer than half as many books as the deepest
+  // line of that market (min 5) is an alternate line where a few high-margin books dominate the
+  // consensus and the longshot side reads as a large false edge. It stays priced but is not graded.
+  // Game-line EV above GAME_LINE_MAX_CREDIBLE_EV is likewise treated as a data error.
+  const deepest = new Map<string, number>();
+  for (const p of out) deepest.set(p.selection.market, Math.max(deepest.get(p.selection.market) ?? 0, p.books));
+  for (const p of out) {
+    const m = p.selection.market;
+    if ((m === 'spread' || m === 'total') && p.books < Math.max(5, Math.ceil((deepest.get(m) ?? 0) * 0.5))) p.grade = 'none';
+    if (m !== 'prop' && p.ev > GAME_LINE_MAX_CREDIBLE_EV) p.grade = 'none';
+  }
   return out.sort((a, b) => (b.ev || -9) - (a.ev || -9));
 }
+
+/** Game lines (moneyline / spread / total) rarely carry real edges this large; above it is a bad quote. */
+export const GAME_LINE_MAX_CREDIBLE_EV = 0.10;
 
 /** Compact integer pmf of the simulated margin (home − away) and total, stored in sim_runs. */
 export interface DistSummary {

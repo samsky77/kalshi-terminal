@@ -139,20 +139,43 @@ export class PgDb implements Db {
     await this.insRows(table, Array.isArray(rows) ? rows : [rows], (cols) => {
       const set = cols.filter((c) => !keys.includes(c)).map((c) => `${ident(c)} = excluded.${ident(c)}`);
       return ` on conflict (${keys.map(ident).join(',')}) do ${set.length ? `update set ${set.join(', ')}` : 'nothing'}`;
-    });
+    }, keys);
   }
   async insertIgnore(table: string, rows: Row[], onConflict: string): Promise<number> {
     const keys = onConflict.split(',').map((s) => s.trim());
     return this.insRows(table, rows, () => ` on conflict (${keys.map(ident).join(',')}) do nothing`);
   }
-  private async insRows(table: string, rows: Row[], suffix: (cols: string[]) => string): Promise<number> {
+  /**
+   * Multi-row INSERTs: rows are grouped by their column set (in order) and sent in chunks, instead of
+   * one round trip per row (tens of thousands of odds snapshots took minutes through the pooler).
+   * For upserts, a later row with the same conflict key replaces an earlier one within a chunk, as the
+   * per-row version did; Postgres rejects touching the same row twice in one statement.
+   */
+  private async insRows(table: string, rows: Row[], suffix: (cols: string[]) => string, conflictKeys?: string[]): Promise<number> {
     if (!rows.length) return 0;
     const t = await this.types(table);
     let n = 0;
-    for (const r of rows) {
-      const cols = Object.keys(r).filter((k) => r[k] !== undefined);
-      const params = cols.map((c) => this.val(r[c], t.get(c)));
-      const sql = `insert into ${ident(table)} (${cols.map(ident).join(',')}) values (${cols.map((_, i) => `$${i + 1}`).join(',')})${suffix(cols)}`;
+    let i = 0;
+    while (i < rows.length) {
+      const cols = Object.keys(rows[i]).filter((k) => rows[i][k] !== undefined);
+      const sig = cols.join('\u0000');
+      const maxRows = Math.max(1, Math.min(500, Math.floor(60000 / Math.max(1, cols.length))));
+      const chunk: Row[] = [];
+      while (i < rows.length && chunk.length < maxRows) {
+        const r = rows[i];
+        if (Object.keys(r).filter((k) => r[k] !== undefined).join('\u0000') !== sig) break;
+        chunk.push(r);
+        i++;
+      }
+      let batch = chunk;
+      if (conflictKeys?.length) {
+        const byKey = new Map<string, Row>();
+        for (const r of chunk) byKey.set(JSON.stringify(conflictKeys.map((k) => r[k] ?? null)), r);
+        batch = [...byKey.values()];
+      }
+      const params: unknown[] = [];
+      const tuples = batch.map((r) => `(${cols.map((c) => { params.push(this.val(r[c], t.get(c))); return `$${params.length}`; }).join(',')})`);
+      const sql = `insert into ${ident(table)} (${cols.map(ident).join(',')}) values ${tuples.join(',')}${suffix(cols)}`;
       const res = await this.pool.query(sql, params);
       n += res.rowCount ?? 0;
     }

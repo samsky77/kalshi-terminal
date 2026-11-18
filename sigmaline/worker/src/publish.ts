@@ -21,16 +21,41 @@ export function publishable(sport: string, p: PricedSelection, env: Record<strin
   return null;
 }
 
+/** Game-line edges above this are almost always a stale or mis-mapped quote, not value. */
+export const MAX_GAME_LINE_PICK_EV = 0.10;
+/** A spread/total pick needs at least this share of the deepest line's book count (and 5 books). */
+export const MIN_LINE_DEPTH_SHARE = 0.5;
+
+/**
+ * Deep-market guard for spreads and totals. Alternate lines far from the main number are quoted by a
+ * handful of books, several of which load all their margin onto the longshot; de-vigging those
+ * inflates the longshot and shows large false edges (seen live: "Under 206.5 +410" when the main
+ * total was ~222, 7 books vs 69 at the main line). Picks are therefore limited to lines whose book
+ * count is at least half that of the deepest line in the same market.
+ */
+export function lineDepthReason(p: PricedSelection, deepest: Map<string, number>): string | null {
+  const m = p.selection.market;
+  if (m !== 'spread' && m !== 'total') return null;
+  const top = deepest.get(m) ?? 0;
+  const need = Math.max(5, Math.ceil(top * MIN_LINE_DEPTH_SHARE));
+  return p.books < need ? `thin alternate line (${p.books} books, main line has ${top})` : null;
+}
+
 /** Choose picks: graded A/B, passing every filter, best EV per market type (and per player prop). */
 export function choosePicks(sim: SimResult, ctx: Ctx, keyPlayerUnknown: boolean): Candidate[] {
   const now = ctx.now().getTime();
   const ageMin = (now - Date.parse(sim.snapshot.pulledAt)) / 60000;
   const best = new Map<string, Candidate>();
+  const deepest = new Map<string, number>();
+  for (const p of sim.priced) deepest.set(p.selection.market, Math.max(deepest.get(p.selection.market) ?? 0, p.books));
   for (const p of sim.priced) {
     if (p.grade === 'none' || !p.bestBook) continue;
     const reasons: string[] = [];
     const f = pickFilters({ snapshotAgeMin: ageMin, books: p.books, isProp: p.selection.market === 'prop', keyPlayerUnknown, ev: p.ev });
     reasons.push(...f.reasons);
+    const thin = lineDepthReason(p, deepest);
+    if (thin) reasons.push(thin);
+    if (p.selection.market !== 'prop' && p.ev > MAX_GAME_LINE_PICK_EV) reasons.push(`EV ${(p.ev * 100).toFixed(1)}% is above the ${MAX_GAME_LINE_PICK_EV * 100}% credibility cap for game lines`);
     const block = publishable(sim.event.sport_id, p, ctx.env);
     if (block) reasons.push(block);
     const slot = p.selection.market === 'prop' ? `prop:${p.selection.player}:${p.selection.stat}` : p.selection.market;

@@ -82,7 +82,14 @@ The repo root has a `netlify.toml` that builds `sigmaline/app` with Netlify's Ne
 
 Vercel still works too: set its Root Directory to `sigmaline/app`.
 
-**Current deploy:** https://sigmaline.netlify.app (Netlify site `sigmaline`, account `sam-skyalpha`). `APP_URL` and `SESSION_SECRET` are already set there. It was deployed from the CLI, not linked to GitHub. For automatic deploys on push, open **Site configuration → Build & deploy → Link repository** in Netlify.
+**Current deploy:** https://sigmaline.netlify.app (Netlify site `sigmaline`, account `sam-skyalpha`).
+
+| Piece | Status |
+|---|---|
+| Database | Supabase project `fmfbwaeyiiinghsripph` (us-east-1), migration applied. The app and worker log in as the `sigmaline_app` role through `DATABASE_URL` (Supabase session pooler, IPv4) instead of the service-role key. |
+| Netlify variables set | `DATABASE_URL`, `APP_URL`, `SESSION_SECRET`, `ADMIN_EMAIL`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` |
+| GitHub Actions secrets needed | `DATABASE_URL`, `ODDS_API_KEY`, `PROPLINE_API_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`. Until a database secret exists, the worker workflow skips itself instead of failing. |
+| Still to do | Whop (product, OAuth app, webhook) → the six `WHOP_*` / checkout variables in Netlify. Discord webhooks are optional. | It was deployed from the CLI, not linked to GitHub. For automatic deploys on push, open **Site configuration → Build & deploy → Link repository** in Netlify.
 
 Deploying by hand from the CLI (build first, then upload the folder the Next.js plugin prepares, in the same run):
 

@@ -1,0 +1,15 @@
+{
+  "id": "CAS-013",
+  "title": "Profit chart has five points all labelled \"Nov 18\" while the record header says Nov 17 - Nov 21",
+  "severity": "P3",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/results",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Read chart x-axis and table"
+  ],
+  "expected": "Distinct dates or labels",
+  "actual": "Duplicate \"Nov 18 / Nov 18\" axis labels.",
+  "evidence": "evidence/CAS-r.png",
+  "suspected_area": "chart labels"
+}

@@ -50,7 +50,7 @@ export function GradeBadge({ grade, size = 'sm' }: { grade: 'A' | 'B' | 'none'; 
   if (grade === 'none') return <span className="text-[11px] uppercase tracking-[0.1em] text-muted">No edge</span>;
   const cls = size === 'lg' ? 'h-16 w-16 text-[34px]' : 'h-6 w-6 text-[13px]';
   return (
-    <span className={`inline-flex items-center justify-center bg-amber font-bold text-black ${cls}`} aria-label={`Grade ${grade}`} title={`Grade ${grade}`}>
+    <span className={`inline-flex items-center justify-center bg-amber font-bold text-black ${cls}`} role="img" aria-label={`Grade ${grade}`} title={`Grade ${grade}`}>
       {grade}
     </span>
   );
@@ -69,5 +69,5 @@ export function Section({ title, children, right }: { title: string; children: R
 }
 
 export function Main({ children }: { children: React.ReactNode }) {
-  return <main id="main" className="pb-4">{children}</main>;
+  return <main id="main" tabIndex={-1} className="pb-4 focus:outline-none">{children}</main>;
 }

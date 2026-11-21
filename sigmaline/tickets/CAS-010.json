@@ -1,0 +1,15 @@
+{
+  "id": "CAS-010",
+  "title": "Units (u), ROI and CLV never explained; ROI and CLV shown on only 5 bets with no sample-size caution",
+  "severity": "P2",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/results",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Read Live record, landing preview (-1.50u, ROI -25.0%, AVG CLV +4.0%)"
+  ],
+  "expected": "Short definitions: 1u = one flat stake, CLV = did you beat the final price; note that 5 bets prove nothing",
+  "actual": "Landing and Results show units/ROI/CLV bare. \"A = 2u, B = 1u\" appears only on Results. AVG CLV +4% beside -25% ROI is confusing. \"100% beat the close\" unexplained. ROI -100% in NBA row from 2 bets.",
+  "evidence": "evidence/CAS-r.png",
+  "suspected_area": "copy"
+}

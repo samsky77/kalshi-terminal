@@ -37,7 +37,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
         <Section title="Job health">
           <table className="w-full text-[12px]">
-            <thead><tr className="text-left">{['Job', 'Last run', 'Status'].map((h) => <th key={h} className="label py-1 font-normal">{h}</th>)}</tr></thead>
+            <th scope="col"ead><tr className="text-left">{['Job', 'Last run', 'Status'].map((h) => <th scope="col" key={h} className="label py-1 font-normal">{h}</th>)}</tr></thead>
             <tbody>
               {[...lastByJob.values()].map((j) => (
                 <tr key={j.id} className="border-t border-line2"><td className="py-2">{j.job}</td><td>{new Date(j.started_at).toLocaleString('en-US', { timeZone: 'America/New_York' })}</td><td className={j.status === 'ok' ? '' : 'text-amber'}>{j.status}</td></tr>
@@ -50,7 +50,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
         <Section title="Provider quotas (budgeter)">
           <table className="w-full text-[12px]">
-            <thead><tr className="text-left">{['Provider', 'Used', 'Quota', 'Mode', 'Projected'].map((h) => <th key={h} className="label py-1 font-normal">{h}</th>)}</tr></thead>
+            <th scope="col"ead><tr className="text-left">{['Provider', 'Used', 'Quota', 'Mode', 'Projected'].map((h) => <th scope="col" key={h} className="label py-1 font-normal">{h}</th>)}</tr></thead>
             <tbody>
               {(Object.entries(quota) as [ProviderId, (typeof quota)[string]][]).map(([p, q]) => {
                 const h = hist.filter((r) => r.provider === p).map((r) => Number(r.used));
@@ -79,7 +79,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
         <Section title="Model settings (current versions)">
           <table className="w-full text-[12px]">
-            <thead><tr className="text-left">{['Sport', 'Version', 'w ML/SP/TOT', 'Half-life'].map((h) => <th key={h} className="label py-1 font-normal">{h}</th>)}</tr></thead>
+            <th scope="col"ead><tr className="text-left">{['Sport', 'Version', 'w ML/SP/TOT', 'Half-life'].map((h) => <th scope="col" key={h} className="label py-1 font-normal">{h}</th>)}</tr></thead>
             <tbody>
               {models.map((m) => (
                 <tr key={m.id} className="border-t border-line2"><td className="py-2">{SPORT_DEFS[m.sport_id].tab}</td><td>{m.id}</td><td>{m.params.w.ml.toFixed(2)} / {m.params.w.spread.toFixed(2)} / {m.params.w.total.toFixed(2)}</td><td>{m.params.halfLifeDays}d</td></tr>

@@ -1,0 +1,15 @@
+{
+  "id": "CAS-017",
+  "title": "\"Market probability\" / \"Line movement\" sections show a single number with no context",
+  "severity": "P3",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/game/nba-af11e1ec682678dd",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Read MARKET PROBABILITY \"One snapshot so far: 85%\" and NHL LINE MOVEMENT \"One snapshot so far: +1.5\""
+  ],
+  "expected": "Say whose probability, which line, and when more will appear",
+  "actual": "85% is the fair/model number, not the market (market implies 83%). \"+1.5\"/\"-2.5\" has no label.",
+  "evidence": "evidence/CAS-g.png",
+  "suspected_area": "game page"
+}

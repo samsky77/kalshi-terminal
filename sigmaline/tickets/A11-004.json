@@ -1,0 +1,17 @@
+{
+  "id": "A11-004",
+  "title": "Disabled \"Start 7-day free trial\" link is not focusable/announced as disabled and is not tied to the 21+ checkbox [4.1.2 Name, Role, Value]",
+  "severity": "P2",
+  "persona": "accessibility tester",
+  "url": "http://localhost:3200/?membership=inactive",
+  "device": "Chromium 360px (QA-PAYWALL)",
+  "steps": [
+    "Open QA-PAYWALL /?membership=inactive",
+    "Inspect the trial control while the checkbox is unchecked",
+    "Tab through the section"
+  ],
+  "expected": "While the checkbox is unchecked the trial control is announced as a disabled button/link (or stays focusable with aria-disabled and a described-by hint: \"Confirm you are 21+ first\"). Checkbox and button are programmatically related.",
+  "actual": "Control is <a aria-disabled=\"true\"> with no href, so it has no link role, is not in the tab order, and a screen reader reads it as plain text \"Start 7-day free trial\" rather than a disabled control. Nothing explains that the checkbox gates it (no aria-describedby). The checkbox label also says \"I am legally allowed to bet where I live\" while the product copy elsewhere says 21+. Same component on /login.",
+  "evidence": "Outer HTML: <a aria-disabled=\"true\" class=\"tap ... cursor-not-allowed ...\">Start 7-day free trial</a>; checkbox has aria-describedby null",
+  "suspected_area": "app/src/components/join.tsx"
+}

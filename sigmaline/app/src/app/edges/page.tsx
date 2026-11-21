@@ -84,7 +84,8 @@ export default async function EdgeFinder({ searchParams }: { searchParams: Promi
           <ul>
             {rows.map((r) => (
               <FreshRow key={`${r.event_id}|${r.selection_key}`} ts={r.price_ts} staleMin={sm} serverNow={now} className="border-b border-line2">
-                <Link href={`/game/${encodeURIComponent(r.event_id)}`} prefetch={false} className="grid grid-cols-[1fr_auto] gap-2 py-2 hover:bg-panel">
+                <Link href={`/game/${encodeURIComponent(r.event_id)}`} prefetch={false} className="grid grid-cols-[1fr_auto] gap-2 py-2 hover:bg-panel"
+                  aria-label={`${r.event.label}, ${time(r.event.commence_time)} Eastern. ${r.label} ${american(r.best_decimal)} at ${bookName(r.best_book)}, fair ${american(r.fair_decimal)}, edge ${pct(r.ev)}, grade ${r.grade}${r.fair_source === 'consensus' ? ', consensus-only' : ''}.`}>
                   <span className="min-w-0">
                     <span className="block text-[11px] uppercase tracking-[0.1em] text-muted">{SPORT_DEFS[r.event.sport].tab} · {r.market === 'prop' ? 'Prop' : 'Game line'} · {time(r.event.commence_time)}</span>
                     <span className="block truncate text-[12px] text-muted">{r.event.label}</span>

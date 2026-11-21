@@ -1,0 +1,15 @@
+{
+  "id": "CAS-018",
+  "title": "Start times lack timezone and day on the slate; matchup uses nicknames that are ambiguous",
+  "severity": "P3",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/slate?sport=cbb",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Read slate rows: \"Lions @ Mavericks\", \"Bears @ Saints\", \"12:42 AM\""
+  ],
+  "expected": "Show ET and a day for same-day after-midnight games; full team names",
+  "actual": "Many identical nicknames (Bulldogs, Tigers, Bears, Wildcats) in college sports; game page header says ET but slate does not. Tennis uses \"@\" for players.",
+  "evidence": "page text (no screenshot)",
+  "suspected_area": "slate row"
+}

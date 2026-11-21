@@ -1,0 +1,16 @@
+{
+  "id": "A11-001",
+  "title": "Slate pages have no heading at all (no h1/h2) [1.3.1 Info and Relationships]",
+  "severity": "P2",
+  "persona": "accessibility tester",
+  "url": "http://localhost:3100/slate?sport=nba",
+  "device": "iPhone-size 360x780 / desktop Chromium",
+  "steps": [
+    "Open /slate?sport=nba",
+    "Query document.querySelectorAll(\"h1,h2,h3,h4,h5,h6\")"
+  ],
+  "expected": "A page title heading (h1 such as \"Slate\") so screen-reader users can jump by heading and know where they are; sport/market context in the heading.",
+  "actual": "Zero headings on /slate (every sport, Lines and Props). Edges, Alerts, Account, Results all have an h1. Landmarks exist (nav \"Sport\", nav \"Market type\") but main has no heading.",
+  "evidence": "tickets/evidence/A11-slate-360.png; DOM query returned []",
+  "suspected_area": "app/src/app/slate/page.tsx"
+}

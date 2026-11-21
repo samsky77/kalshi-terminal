@@ -1,0 +1,15 @@
+{
+  "id": "CAS-011",
+  "title": "Two records on Results disagree and are hard to reconcile: live record -1.50u vs \"Every edge we've shown\" +3.99u",
+  "severity": "P2",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/results",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Compare live record with edge-log block"
+  ],
+  "expected": "A line saying why the numbers differ (2u/1u stakes vs flat 1u, extra picks, both sides counted)",
+  "actual": "Same page shows a losing and a winning total. Intro says \"every pick is logged before its game starts\" vs \"the moment it first appears\". CLV equals edge % on every settled row and close equals taken price, which looks fake/unexplained.",
+  "evidence": "evidence/CAS-r.png",
+  "suspected_area": "results copy"
+}

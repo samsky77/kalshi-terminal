@@ -1,0 +1,16 @@
+{
+  "id": "CAS-002",
+  "title": "A-grade pick says model + consensus agree, but Key factors says \"market consensus only\", and \"10,000 sims\" is shown anyway",
+  "severity": "P1",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/game/cbb-4173bf9ec636d687",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Open Saint Mary's Gaels ML (grade A)",
+    "Read MODEL row in Key factors and the \"consensus-only\" tag on every market row"
+  ],
+  "expected": "If no model ran, say so near the grade and do not claim simulation / model agreement. Landing and slate say \"every game simulated 10,000 times\"",
+  "actual": "Grade A shown with MODEL: \"market consensus only (not enough results yet for ratings)\"; chart titled \"10,000 runs\". FAQ/Edge Finder say A needs model AND consensus.",
+  "evidence": "evidence/CAS-g.png",
+  "suspected_area": "grades.ts / game page copy"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "CAS-020",
+  "title": "Edge Finder Book filter lists only BetMGM and DraftKings",
+  "severity": "P3",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/edges",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Open Book filter"
+  ],
+  "expected": "All books that appear in results (FanDuel, BetRivers too)",
+  "actual": "FanDuel/BetRivers prices appear on slate and in the edge log but cannot be filtered.",
+  "evidence": "page text (no screenshot)",
+  "suspected_area": "edges filter"
+}

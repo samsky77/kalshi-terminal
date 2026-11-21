@@ -1,0 +1,15 @@
+{
+  "id": "CAS-021",
+  "title": "Wording can read as a sure thing: \"Top pick\", \"The bets worth making\", A grade next to -476 favorite",
+  "severity": "P3",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Read landing hero \"Only the bets worth making\" and game page TOP PICK"
+  ],
+  "expected": "Soften and add \"can still lose\" near the picks, not only in the FAQ",
+  "actual": "Disclaimer is in footer/FAQ only; Results show 3 of 5 live bets lost.",
+  "evidence": "evidence/CAS-l.png",
+  "suspected_area": "copy"
+}

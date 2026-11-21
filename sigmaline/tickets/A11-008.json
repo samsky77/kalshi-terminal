@@ -1,0 +1,16 @@
+{
+  "id": "A11-008",
+  "title": "Data tables missing scope on th (admin, game-page chart tables); minor reflow overflow at 320px [1.3.1 Info and Relationships]",
+  "severity": "P3",
+  "persona": "accessibility tester",
+  "url": "http://localhost:3100/admin",
+  "device": "Chromium",
+  "steps": [
+    "Open /admin and /game/<id>, inspect <th> elements",
+    "Set viewport 320px wide on /game/nba-af11e1ec682678dd and /admin"
+  ],
+  "expected": "th cells carry scope=\"col\"/\"row\"; page does not scroll horizontally at 320px.",
+  "actual": "Admin tables and the hidden chart-data table on game pages have <th> without scope (axe th-has-data-cells needs-review on admin). At 320px /game scrollWidth is 323 and /admin 321 (3 px / 1 px horizontal scroll). 360px passes everywhere, tap targets all >= 44px, and no 360 horizontal scroll.",
+  "evidence": "Playwright scrollWidth at 320: /game 323, /admin 321",
+  "suspected_area": "app/src/app/admin/page.tsx, app/src/app/game/[id]/page.tsx"
+}

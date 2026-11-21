@@ -34,6 +34,7 @@ export default async function SlatePage({ searchParams }: { searchParams: Promis
       <Header demo={demoMode()} />
       <SportTabs active={sport} hrefFor={(s) => qs({ sport: s })} />
       <Main>
+        <h1 className="sr-only">{SPORT_DEFS[sport].label} slate: {view === 'props' ? 'player props' : 'game lines'}</h1>
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 px-4 py-2">
           <nav aria-label="Market type" className="flex gap-1">
             {(['lines', 'props'] as View[]).map((v) => (
@@ -43,7 +44,7 @@ export default async function SlatePage({ searchParams }: { searchParams: Promis
               </Link>
             ))}
           </nav>
-          <Link href={qs({ edges: !edgesOnly })} prefetch={false} role="switch" aria-checked={edgesOnly}
+          <Link href={qs({ edges: !edgesOnly })} prefetch={false} aria-label={`Edges only: ${edgesOnly ? 'on, show every game' : 'off, show only games with an edge'}`}
             className={`tap inline-flex items-center gap-2 border px-3 text-[11px] font-semibold uppercase tracking-[0.12em] ${edgesOnly ? 'border-amber text-amber' : 'border-line text-muted'}`}>
             <span aria-hidden className={`inline-block h-2.5 w-2.5 ${edgesOnly ? 'bg-amber' : 'border border-muted'}`} />
             Edges only
@@ -88,7 +89,8 @@ async function Lines({ sport, edgesOnly, now, sm }: { sport: SportId; edgesOnly:
           const isToday = new Date(r.event.commence_time).toLocaleDateString('en-US', { timeZone: 'America/New_York' }) === today;
           return (
             <FreshRow key={r.event.id} ts={p?.price_ts ?? null} staleMin={sm} serverNow={now} className="border-b border-line2">
-              <Link href={`/game/${encodeURIComponent(r.event.id)}`} prefetch={false} className="grid min-h-[60px] grid-cols-[52px_1fr_auto] items-center gap-2 py-2 hover:bg-panel">
+              <Link href={`/game/${encodeURIComponent(r.event.id)}`} prefetch={false} className="grid min-h-[60px] grid-cols-[52px_1fr_auto] items-center gap-2 py-2 hover:bg-panel"
+                aria-label={`${r.event.label}, ${time(r.event.commence_time)} Eastern. ${p ? `${p.label} ${american(p.best_decimal)} at ${bookName(p.best_book)}, fair ${american(p.fair_decimal)}, ${edge ? `edge ${pct(p.ev)}, grade ${p.grade}` : 'no edge'}` : 'no prices yet'}.`}>
                 <span className="text-[12px] leading-tight text-muted">
                   {time(r.event.commence_time)}
                   {!isToday && <span className="block text-[11px] uppercase">{dayLabel(r.event.commence_time, now)}</span>}

@@ -1,0 +1,16 @@
+{
+  "id": "CAS-005",
+  "title": "Key factors state facts the page cannot support: \"Injuries: none listed\", \"Rest 2 days\" on every sport",
+  "severity": "P2",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/game/nfl-4bb1f3f0fc22d529",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Open NFL, CFB, tennis, NBA, NHL game pages",
+    "Read Rest and Injuries"
+  ],
+  "expected": "No claim, or \"injury data not available\", when no source ran",
+  "actual": "\"none listed\" reads as \"healthy\". Rest is 2 days for every team in every sport (NFL teams normally have ~7 days; tennis/CFB identical). Looks like a default.",
+  "evidence": "page text (no screenshot)",
+  "suspected_area": "key factors builder"
+}

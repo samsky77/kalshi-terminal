@@ -1,0 +1,17 @@
+{
+  "id": "A11-006",
+  "title": "Skip link activates but focus is left on <body>; <main> is not programmatically focusable [2.4.1 Bypass Blocks]",
+  "severity": "P3",
+  "persona": "accessibility tester",
+  "url": "http://localhost:3100/slate?sport=nba",
+  "device": "Chromium desktop",
+  "steps": [
+    "Press Tab once (skip link shows, with visible focus)",
+    "Press Enter",
+    "Check document.activeElement"
+  ],
+  "expected": "Focus moves to main (tabindex=-1) so the next Tab lands in page content in all browsers.",
+  "actual": "URL gets #main but document.activeElement is BODY. Works in Chrome via the sequential-focus start point, but Safari/older browsers may restart at the top. Skip link visibility and focus ring are good.",
+  "evidence": "Playwright: after Enter activeElement BODY, hash #main",
+  "suspected_area": "app/src/components/chrome.tsx Main, app/src/app/layout.tsx"
+}

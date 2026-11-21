@@ -1,0 +1,15 @@
+{
+  "id": "CAS-004",
+  "title": "\"That X-point gap is the edge\" contradicts the EV % shown next to it",
+  "severity": "P2",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/game/nba-af11e1ec682678dd",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Read \"Why we like it\""
+  ],
+  "expected": "Edge number in text matches the EV/edge on the card",
+  "actual": "Text: \"83%... we make it 85%. That 2.6-point gap is the edge\" while card says EV +3.2% (CBB: 4.9-point gap vs +7.3%). Two different \"edge\" numbers; rounded 83/85 looks like a 2-point gap.",
+  "evidence": "evidence/CAS-g.png",
+  "suspected_area": "write-up template"
+}

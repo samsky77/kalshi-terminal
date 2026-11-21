@@ -1,0 +1,17 @@
+{
+  "id": "A11-002",
+  "title": "Slate / Edge Finder row links read as one long unlabeled string; fair price and edge values have no labels [1.3.1 Info and Relationships]",
+  "severity": "P2",
+  "persona": "accessibility tester",
+  "url": "http://localhost:3100/slate?sport=nba",
+  "device": "Chromium 360px + screen reader tree",
+  "steps": [
+    "Open /slate?sport=nba and inspect the row <a>",
+    "Note column header row has aria-hidden=\"true\"",
+    "Compute accessible name"
+  ],
+  "expected": "Each value announced with its meaning, e.g. \"Fair price -580, edge +3.2%, grade B\", or a list/table structure with real column headers.",
+  "actual": "Whole row is a single link whose name is a concatenation like \"12:42 AM Jazz @ Rockets Houston Rockets ML -476 DraftKings updated 12 min ago Logged pick -580 +3.2% B\". The \"Start / Best line / Fair - Edge\" header is aria-hidden, so \"-580\" (fair) and \"+3.2%\" (edge) are announced with no label. Link starts with a time, not the game. Same pattern on /edges rows (\"fair -580\" is labelled there, the edge % is not).",
+  "evidence": "DOM excerpt: <span class=\"text-[12px] text-fair\">-580</span><span class=\"text-[13px] text-amber\">+3.2%</span> with no sr-only text",
+  "suspected_area": "app/src/app/slate/page.tsx (row markup), app/src/app/edges/page.tsx"
+}

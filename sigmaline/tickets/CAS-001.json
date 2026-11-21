@@ -1,0 +1,16 @@
+{
+  "id": "CAS-001",
+  "title": "Same game shows 85.3% win chance in the pick card but 74% in the chart caption and bucket table",
+  "severity": "P1",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/game/nba-af11e1ec682678dd",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Open game page",
+    "Compare WIN % (85.3%) with chart caption \"wins (74% of runs)\" and sum of \"yes\" buckets (~73.9%)"
+  ],
+  "expected": "One win probability everywhere on the page",
+  "actual": "Top card 85.3%; chart says 74%. Same on CBB Saint Mary's: 71.1% vs 74%. A casual reader cannot tell which is true.",
+  "evidence": "evidence/CAS-g.png",
+  "suspected_area": "sim histogram vs fair prob (suspected: chart uses simulation, card uses market consensus)"
+}

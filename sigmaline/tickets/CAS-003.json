@@ -1,0 +1,16 @@
+{
+  "id": "CAS-003",
+  "title": "Both sides of the same game are graded B and logged as picks (Rockets ML and Jazz ML)",
+  "severity": "P1",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/edges",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Open /edges and /game/nba-af11e1ec682678dd",
+    "See Houston ML -476 (B) and Utah ML +600 (B) both listed; /results also logs both, Jazz win +6.00u counted in \"Every edge we've shown\""
+  ],
+  "expected": "One side per game, or a line saying why both appear (different books) and that backing both is not advice",
+  "actual": "Two opposite bets both look recommended; the +3.99u edge-log total benefits from backing both sides. Prices imply under 100% combined (possible bad/stale price).",
+  "evidence": "evidence/CAS-r.png",
+  "suspected_area": "edge selection / log dedupe"
+}

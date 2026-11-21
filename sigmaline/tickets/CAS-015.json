@@ -1,0 +1,15 @@
+{
+  "id": "CAS-015",
+  "title": "Placeholder text on Alerts: \"The members Discord invite link will appear here.\"",
+  "severity": "P3",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/alerts",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Open Alerts"
+  ],
+  "expected": "Real link or \"Discord not set up yet\"",
+  "actual": "Reads as unfinished placeholder.",
+  "evidence": "page text (no screenshot)",
+  "suspected_area": "alerts page"
+}

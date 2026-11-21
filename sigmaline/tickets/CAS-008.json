@@ -1,0 +1,15 @@
+{
+  "id": "CAS-008",
+  "title": "\"TOP PICK\" heading with no pick, plus an empty/meaningless chart legend",
+  "severity": "P3",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/game/nhl-8a68efecb23182dd",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Open any game without an edge"
+  ],
+  "expected": "Heading \"No pick\" or hide chart legend \"Pick wins\"",
+  "actual": "TOP PICK followed by \"No live edge\"; chart legend references a pick that does not exist. Tennis/CFB show \"Simulated final margin --\" with no explanation.",
+  "evidence": "page text (no screenshot)",
+  "suspected_area": "game page"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "CAS-014",
+  "title": "Alerts promise conflicts: landing says alerts for \"every new pick\", Alerts page says only EV 4%+",
+  "severity": "P2",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/alerts",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Compare landing pricing bullets with Alerts intro"
+  ],
+  "expected": "Same rule in both places; say that most B picks (2-4%) will not alert",
+  "actual": "B grade starts at 2% but alerts only fire at 4%+.",
+  "evidence": "page text (no screenshot)",
+  "suspected_area": "copy"
+}

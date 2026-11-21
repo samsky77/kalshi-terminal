@@ -1,0 +1,17 @@
+{
+  "id": "A11-007",
+  "title": "Form control and tab borders (#2A2A2A) are 1.38:1 against the page: filter selects, Reset, inactive tabs, off switch [1.4.11 Non-text Contrast]",
+  "severity": "P3",
+  "persona": "accessibility tester",
+  "url": "http://localhost:3100/edges",
+  "device": "Chromium",
+  "steps": [
+    "Open /edges",
+    "Look at the six <select>s (bg #141414, border #2A2A2A) and the Reset button",
+    "Compute contrast of border vs #0A0A0A"
+  ],
+  "expected": "Boundaries/indicators needed to identify controls reach 3:1.",
+  "actual": "border-line #2A2A2A on #0A0A0A = 1.38:1 (on panel #141414 = 1.28:1). Selects and Reset have no other cue than text/arrow; the Edges-only off state and inactive sport/market tabs rely on text only. All text tokens pass: amber 10.81/10.06, muted 6.71/6.24, fair 8.57/7.97 on black/panel; STALE rows (muted forced) 6.71; black on amber badge 11.46.",
+  "evidence": "Computed contrast figures above; axe color-contrast reports no violations",
+  "suspected_area": "app/tailwind.config.ts line colour, filter classes in app/src/app/edges/page.tsx"
+}

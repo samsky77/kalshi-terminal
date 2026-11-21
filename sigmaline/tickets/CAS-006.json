@@ -1,0 +1,15 @@
+{
+  "id": "CAS-006",
+  "title": "\"Projected pace\" label is wrong for NFL, CFB, NHL, tennis and shows points total with a % vs league average nobody can check",
+  "severity": "P2",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/game/nfl-4bb1f3f0fc22d529",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Open NFL game: \"PROJECTED PACE 49.3 total (+12% vs league avg)\""
+  ],
+  "expected": "Sport-appropriate label (e.g. projected total points); no unsupported league-average comparison; none when MODEL is consensus-only",
+  "actual": "NFL/CFB show \"pace\" (a basketball term); NHL says \"goals\"; figure presented as projection although no model ran; league average not shown.",
+  "evidence": "page text (no screenshot)",
+  "suspected_area": "key factors builder"
+}

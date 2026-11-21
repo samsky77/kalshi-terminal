@@ -1,0 +1,15 @@
+{
+  "id": "A11-005",
+  "title": "Grade badge uses aria-label on a bare span (prohibited, name may be dropped) [4.1.2 Name, Role, Value]",
+  "severity": "P3",
+  "persona": "accessibility tester",
+  "url": "http://localhost:3100/ , /results, /slate, /edges, /game/<id>",
+  "device": "Chromium; axe",
+  "steps": [
+    "Open any page showing a grade, run axe aria-prohibited-attr (needs-review)"
+  ],
+  "expected": "Badge text is exposed as \"Grade B\" reliably (visible text prefixed with sr-only \"Grade\", or role=\"img\" with aria-label).",
+  "actual": "<span aria-label=\"Grade B\" title=\"Grade B\">B</span> has no role; axe flags aria-prohibited-attr (incomplete) on landing (5), results (20), game pages, slate. Many screen readers ignore the label and read just \"B\". The black-on-amber contrast itself is fine (11.46:1).",
+  "evidence": "axe incomplete: aria-prohibited-attr, \"aria-label attribute is not well supported on a span with no valid role attribute\"",
+  "suspected_area": "app/src/components/chrome.tsx GradeBadge"
+}

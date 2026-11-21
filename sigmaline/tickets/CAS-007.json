@@ -1,0 +1,15 @@
+{
+  "id": "CAS-007",
+  "title": "Game with no prices says \"No live edge. Every fresh market below is priced at or near fair.\" but has no markets",
+  "severity": "P2",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/game/nfl-75318d1dbb01589a",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Open Steelers @ Bengals (slate says \"No prices yet\")"
+  ],
+  "expected": "\"No prices posted yet - check back closer to kickoff\"",
+  "actual": "Claims markets are priced near fair; Books checked 0, empty table, \"No snapshots yet\". Slate row also says \"No edge\" for a game with no prices.",
+  "evidence": "page text (no screenshot)",
+  "suspected_area": "game page / slate row copy"
+}

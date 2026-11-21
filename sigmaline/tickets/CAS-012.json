@@ -1,0 +1,15 @@
+{
+  "id": "CAS-012",
+  "title": "Same pick listed twice: once settled (Nov 17) and once open (Nov 21)",
+  "severity": "P2",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/results",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "See Saint Mary's Gaels ML, UNLV, Rockets, Hawks in both Nov 17 and Nov 21 rows; Nov 17 graded, Nov 21 \"Open\""
+  ],
+  "expected": "One entry per game, or distinct games",
+  "actual": "Same teams, price and game shown as Win/Loss and as Open. Likely demo-data artifact (guess).",
+  "evidence": "evidence/CAS-r.png",
+  "suspected_area": "demo data / edge log"
+}

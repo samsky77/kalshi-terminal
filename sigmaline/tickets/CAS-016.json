@@ -1,0 +1,15 @@
+{
+  "id": "CAS-016",
+  "title": "Empty states do not say what to do next (props, soccer, edges)",
+  "severity": "P3",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/slate?sport=soccer",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Open Soccer; open any Props tab; filter Edge Finder to nothing"
+  ],
+  "expected": "Offer a next step (try another sport, turn on Alerts, check back)",
+  "actual": "Soccer shows \"0 UPCOMING GAMES · 10,000 SIMS EACH\" plus \"No upcoming Soccer games...\"; Props say \"no player props right now\" with no hint; Props empty text for a sport with no games talks about \"upcoming games\".",
+  "evidence": "page text (no screenshot)",
+  "suspected_area": "slate empty states"
+}

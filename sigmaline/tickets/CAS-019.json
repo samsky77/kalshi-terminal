@@ -1,0 +1,15 @@
+{
+  "id": "CAS-019",
+  "title": "Spreads and puck lines shown with no explanation of which side/why",
+  "severity": "P3",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/slate?sport=nhl",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Read NHL slate: \"Vancouver Canucks +1.5 -169 ... No edge\""
+  ],
+  "expected": "Label \"Best price on any side\" or explain the side shown",
+  "actual": "Casual user sees a pick-like line with \"No edge\" and does not know why it is shown; \"+1.5\" and \"ML\" unexplained; heavy price (-476, -909) shown without noting you risk far more than you win.",
+  "evidence": "page text (no screenshot)",
+  "suspected_area": "slate row"
+}

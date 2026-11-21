@@ -1,0 +1,15 @@
+{
+  "id": "CAS-009",
+  "title": "Unexplained jargon: EV, Fair, Best, Edge, consensus-only, no-vig",
+  "severity": "P2",
+  "persona": "Casual bettor (not a math person)",
+  "url": "http://localhost:3100/slate",
+  "device": "iPhone 13 (Playwright, QA-OPEN)",
+  "steps": [
+    "Read slate header \"BEST LINE · BOOK / FAIR · EDGE\", game table headers EV/FAIR/BEST, \"consensus-only\" on every row"
+  ],
+  "expected": "One-line plain-English hint (tap/underline) for each term, e.g. \"Fair = what the line should be without the bookmaker's cut\"",
+  "actual": "Only the landing FAQ touches edge/EV; slate, game page and Edge Finder use FAIR, EV, consensus-only with no definition. Edge Finder explains edge with \"fair probability x decimal odds - 1\", which a casual user cannot use.",
+  "evidence": "evidence/CAS-g.png",
+  "suspected_area": "copy"
+}

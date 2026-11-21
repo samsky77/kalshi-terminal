@@ -1,0 +1,18 @@
+{
+  "id": "A11-003",
+  "title": "\"Edges only\" switch is a link with role=switch: Space does not toggle it, it reloads the page [4.1.2 Name, Role, Value]",
+  "severity": "P2",
+  "persona": "accessibility tester",
+  "url": "http://localhost:3100/slate?sport=nba",
+  "device": "Chromium desktop, keyboard",
+  "steps": [
+    "Open /slate?sport=nba",
+    "Tab to \"Edges only\" (role=switch aria-checked=false)",
+    "Press Space",
+    "Press Enter"
+  ],
+  "expected": "A role=switch toggles with Space (and Enter) in place and announces the new state without a full navigation.",
+  "actual": "It is <a role=\"switch\" aria-checked=\"false\" href=\"/slate?sport=nba&edges=1\">. Space does nothing (URL unchanged); only Enter, as for a link, navigates to a new URL. aria-checked is correct after reload, but the control is a navigation link, so assistive tech users get switch semantics with link behaviour.",
+  "evidence": "Playwright: after Space url unchanged; after Enter url ...&edges=1",
+  "suspected_area": "app/src/app/slate/page.tsx line ~46. Fix: use a real button/checkbox with a form GET, or drop role=switch and use aria-pressed/current on a link"
+}

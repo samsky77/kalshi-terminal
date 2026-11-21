@@ -1,6 +1,7 @@
 import { clv, gradeBet, profitUnits, SPORT_DEFS, type Selection, type SportId } from '@sigmaline/core';
 import { getEvents, latestPull, normTeam, quoteFromSnapshot, type EventRow, type PickRow } from '@sigmaline/db';
 import { mayPull, recordUsage, type Ctx } from './context';
+import { gameDates } from './edges';
 import { leagueRefs } from './ingest';
 import { selectionConsensus, statValue } from './simulate';
 import type { ScoreRow } from './providers/types';
@@ -104,7 +105,7 @@ export async function gradePicks(ctx: Ctx): Promise<number> {
     else {
       let props: Record<string, number> | undefined;
       if (sel.market === 'prop' && sel.player && sel.stat) {
-        const log = (await ctx.db.select<{ value: number }>('player_logs', { eq: { sport: e.sport_id, player: sel.player, stat: sel.stat, game_date: e.commence_time.slice(0, 10) }, limit: 1 }))[0];
+        const log = (await ctx.db.select<{ value: number }>('player_logs', { eq: { sport: e.sport_id, player: sel.player, stat: sel.stat }, in: { game_date: gameDates(e) }, limit: 1 }))[0];
         if (!log) {
           // wait up to 24h for the player's box score, then void (player did not play / no data)
           if (ctx.now().getTime() - Date.parse(e.final_at ?? e.commence_time) < 24 * 3600000) continue;

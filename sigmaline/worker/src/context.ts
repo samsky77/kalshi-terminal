@@ -1,4 +1,4 @@
-import { budgetMode, canSpend, type ProviderId, type PullKind, type UsageState } from '@sigmaline/core';
+import { budgetMode, canSpend, DROP_REASONS, type DropReason, type ProviderId, type PullKind, type UsageState } from '@sigmaline/core';
 import { addUsage, getSettings, periodUsage, type AppSettings, type Db } from '@sigmaline/db';
 import { FixtureProvider } from './providers/fixtures';
 import { OddsApiProvider } from './providers/oddsapi';
@@ -36,6 +36,8 @@ export interface Ctx {
   /** Usage so far today (UTC) per provider, for pacing monthly quotas. */
   usedToday: Map<ProviderId, number>;
   demo: boolean;
+  /** Feed-filter counts accumulated over this run (item 8), written once to feed_filter_log. */
+  feedStats: { rowsIn: number; rowsKept: number; counts: Record<DropReason, number> };
 }
 
 export async function makeCtx(db: Db, env: Env, opts: { now?: () => Date; fixturesDir?: string; fixtureShiftMs?: number } = {}): Promise<Ctx> {
@@ -59,7 +61,8 @@ export async function makeCtx(db: Db, env: Env, opts: { now?: () => Date; fixtur
     usage.set(p, { provider: p, period: q.period, limit: q.limit, used: await periodUsage(db, p, q.period), periodStart: '' });
     usedToday.set(p, await periodUsage(db, p, 'day'));
   }
-  return { db, env, settings, providers, now: opts.now ?? (() => new Date()), log: (m, x) => console.log(`[${new Date().toISOString()}] ${m}`, x ?? ''), usage, usedToday, demo };
+  return { db, env, settings, providers, now: opts.now ?? (() => new Date()), log: (m, x) => console.log(`[${new Date().toISOString()}] ${m}`, x ?? ''), usage, usedToday, demo,
+    feedStats: { rowsIn: 0, rowsKept: 0, counts: Object.fromEntries(DROP_REASONS.map((r) => [r, 0])) as Record<DropReason, number> } };
 }
 
 /** Ask the budgeter whether `provider` may spend `cost` on a `kind` pull right now. */

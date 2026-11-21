@@ -21,3 +21,4 @@ export async function dbFromEnv(env: Record<string, string | undefined> = proces
 export function isDemo(env: Record<string, string | undefined> = process.env): boolean {
   return !(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) && !env.DATABASE_URL;
 }
+export * from './feed';

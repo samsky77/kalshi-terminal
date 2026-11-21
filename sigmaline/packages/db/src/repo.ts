@@ -165,12 +165,15 @@ export function quoteFromSnapshot(s: SnapshotRow): MarketQuote {
 
 /** Latest pull for an event (all books from the most recent pull), optionally of one kind. */
 export async function latestPull(db: Db, eventIdv: string, kind?: SnapshotRow['kind']): Promise<{ pulledAt: string | null; kind: string | null; snapshots: SnapshotRow[] }> {
-  const all = await db.select<SnapshotRow>('odds_snapshots', { eq: { event_id: eventIdv, ...(kind ? { kind } : {}) }, order: [{ col: 'pulled_at', asc: false }] });
-  if (!all.length) return { pulledAt: null, kind: null, snapshots: [] };
-  const top = all[0].pulled_at;
+  // Two small reads instead of loading every snapshot the event ever had (that made ticks take minutes).
+  const eq = { event_id: eventIdv, ...(kind ? { kind } : {}) };
+  const head = await db.select<SnapshotRow>('odds_snapshots', { eq, order: [{ col: 'pulled_at', asc: false }], limit: 1, columns: 'pulled_at,kind' });
+  if (!head.length) return { pulledAt: null, kind: null, snapshots: [] };
+  const top = head[0].pulled_at;
   // Everything pulled within 2 minutes of the newest pull counts as the same snapshot (props + lines).
-  const snaps = all.filter((s) => Date.parse(top) - Date.parse(s.pulled_at) < 120000);
-  return { pulledAt: top, kind: all[0].kind, snapshots: snaps };
+  const from = new Date(Date.parse(top) - 119999).toISOString();
+  const snaps = await db.select<SnapshotRow>('odds_snapshots', { eq, gte: { pulled_at: from }, order: [{ col: 'pulled_at', asc: false }] });
+  return { pulledAt: top, kind: head[0].kind, snapshots: snaps };
 }
 
 // ── Picks ───────────────────────────────────────────────────────────────────

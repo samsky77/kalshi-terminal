@@ -1,4 +1,4 @@
-import { CLOSING_WINDOW, PREGAME_WINDOW, quotesFromEvent, SPORT_DEFS, type OddsApiEvent, type ProviderId, type PullKind, type SportId } from '@sigmaline/core';
+import { CLOSING_WINDOW, mainLine, PREGAME_WINDOW, PROP_MARKETS, quotesFromEvent, SPORT_DEFS, type MarketQuote, type OddsApiEvent, type ProviderId, type PullKind, type SportId } from '@sigmaline/core';
 import { eventId, getEvents, normTeam, type EventRow, type SnapshotRow } from '@sigmaline/db';
 import { mayPull, recordUsage, type Ctx } from './context';
 import type { DataProvider, LeagueRef } from './providers/types';
@@ -95,7 +95,11 @@ export async function pullOdds(ctx: Ctx, sport: SportId, leagueId: string, kind:
         const providerIds = eventIds
           ? known.filter((k) => eventIds.includes(k.id)).map((k) => k.provider_ids[pid]).filter(Boolean)
           : undefined;
-        const res = await prov.getOdds(ref, { markets: GAME_MARKETS, eventIds: providerIds && providerIds.length ? providerIds : undefined });
+        // PropLine's bulk endpoint returns every game in the sport, props included, for ONE request,
+        // so props ride along at no extra cost. The Odds API charges per market and per event for
+        // props (500 credits/month), so it only ever gets game lines.
+        const markets = pid === 'propline' ? [...GAME_MARKETS, ...PROP_MARKETS[sport]] : GAME_MARKETS;
+        const res = await prov.getOdds(ref, { markets, eventIds: providerIds && providerIds.length ? providerIds : undefined });
         await recordUsage(ctx, pid, res.cost, res.remaining);
         const rows: SnapshotRow[] = [];
         for (const ev of res.data) {
@@ -106,11 +110,12 @@ export async function pullOdds(ctx: Ctx, sport: SportId, leagueId: string, kind:
           // time to start — a pull made for one game's pre-game window must not count as another
           // game's pre-game snapshot.
           const rowKind = snapshotKind(Date.parse(e.commence_time), ctx.now().getTime());
-          for (const q of quotesFromEvent(ev, res.priceFormat, pulledAt)) {
-            if (q.market === 'prop') continue;
-            rows.push({ event_id: e.id, provider: pid, book: q.book, market: q.market, line: q.line ?? null, player: null, stat: null, prices: q.prices as Record<string, number>, ts: q.ts, kind: rowKind, pulled_at: pulledAt });
-            const s = bookCount.get(e.id) ?? new Set(); s.add(q.book); bookCount.set(e.id, s);
+          const stats = { suspended: 0 };
+          for (const q of keepDeepLines(quotesFromEvent(ev, res.priceFormat, pulledAt, stats))) {
+            rows.push({ event_id: e.id, provider: pid, book: q.book, market: q.market, line: q.line ?? null, player: q.player ?? null, stat: q.stat ?? null, prices: q.prices as Record<string, number>, ts: q.ts, kind: rowKind, pulled_at: pulledAt });
+            if (q.market !== 'prop') { const s = bookCount.get(e.id) ?? new Set(); s.add(q.book); bookCount.set(e.id, s); }
           }
+          ctx.feedStats.counts.suspended += stats.suspended;
         }
         if (rows.length) await ctx.db.insert('odds_snapshots', rows as unknown as Record<string, unknown>[]);
         total += rows.length;
@@ -165,4 +170,23 @@ export async function pullProps(ctx: Ctx, sport: SportId, leagueId: string, even
     }
   }
   return n;
+}
+
+/**
+ * Storage guard (BASELINE B1/B20): keep a game-line quote only if its line is the market's main line
+ * or at least 3 books quote it, and a prop quote only if at least 2 books quote that player/stat/line.
+ * Thinner alternate lines can never be graded (see the pricer's depth guard), so storing every book's
+ * every rung only filled the database (76k rows for one NCAAF pull).
+ */
+export function keepDeepLines(quotes: MarketQuote[]): MarketQuote[] {
+  const key = (q: MarketQuote) => [q.market, q.line ?? '', q.player ?? '', q.stat ?? ''].join('|');
+  const books = new Map<string, Set<string>>();
+  for (const q of quotes) { const k = key(q); const s = books.get(k) ?? new Set<string>(); s.add(q.book); books.set(k, s); }
+  const main = { spread: mainLine(quotes, 'spread'), total: mainLine(quotes, 'total') };
+  return quotes.filter((q) => {
+    const n = books.get(key(q))!.size;
+    if (q.market === 'ml') return true;
+    if (q.market === 'prop') return n >= 2;
+    return q.line === main[q.market] || n >= 3;
+  });
 }

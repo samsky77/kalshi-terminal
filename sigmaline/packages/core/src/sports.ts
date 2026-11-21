@@ -81,3 +81,34 @@ export function sportOfOddsKey(key: string): SportId | null {
   for (const s of Object.values(SPORT_DEFS)) if (s.leagues.some((l) => l.oddsApiKey === key)) return s.id;
   return null;
 }
+
+/**
+ * Player-prop market keys requested per sport (item 3). Keys come from PropLine's and The Odds API's
+ * published market lists (checked 2026-11-21, see BASELINE.md §3). They are requests, not promises:
+ * PropLine names any key it doesn't offer in the X-PropLine-Missing-Markets header and returns
+ * nothing for it, and the app shows only markets that actually came back. Tennis aces / games-won
+ * props are mentioned by PropLine without published keys, so tennis requests none until a key is
+ * confirmed from a live response (shown as "no props from the provider" in the app).
+ */
+export const PROP_MARKETS: Record<SportId, string[]> = {
+  nba: ['player_points', 'player_rebounds', 'player_assists', 'player_threes', 'player_points_rebounds_assists', 'player_blocks', 'player_steals', 'player_turnovers'],
+  cbb: ['player_points', 'player_rebounds', 'player_assists', 'player_threes'],
+  nfl: ['player_pass_yds', 'player_pass_tds', 'player_pass_completions', 'player_pass_attempts', 'player_pass_interceptions', 'player_rush_yds', 'player_rush_attempts', 'player_receptions', 'player_reception_yds', 'player_anytime_td'],
+  cfb: ['player_pass_yds', 'player_pass_tds', 'player_rush_yds', 'player_receptions', 'player_reception_yds'],
+  nhl: ['player_points', 'player_goals', 'player_assists', 'player_shots_on_goal', 'player_blocked_shots', 'goalie_saves'],
+  soccer: ['player_goals', 'player_shots_on_goal', 'player_assists', 'player_cards'],
+  tennis: [],
+};
+
+/** Display names for prop stats. Unknown keys fall back to a tidied key. */
+const PROP_LABEL: Record<string, string> = {
+  player_points: 'Points', player_rebounds: 'Rebounds', player_assists: 'Assists', player_threes: '3-pointers', player_points_rebounds_assists: 'Pts+Reb+Ast',
+  player_blocks: 'Blocks', player_steals: 'Steals', player_turnovers: 'Turnovers', player_pass_yds: 'Passing yds', player_pass_tds: 'Passing TDs',
+  player_pass_completions: 'Completions', player_pass_attempts: 'Pass attempts', player_pass_interceptions: 'Interceptions', player_rush_yds: 'Rushing yds',
+  player_rush_attempts: 'Rush attempts', player_receptions: 'Receptions', player_reception_yds: 'Receiving yds', player_anytime_td: 'Anytime TD',
+  player_goals: 'Goals', player_shots_on_goal: 'Shots on goal', player_blocked_shots: 'Blocked shots', goalie_saves: 'Saves', player_cards: 'Cards',
+};
+export function propLabel(stat: string | null | undefined): string {
+  if (!stat) return '';
+  return PROP_LABEL[stat] ?? stat.replace(/^(player|goalie)_/, '').replace(/_/g, ' ');
+}

@@ -39,9 +39,11 @@ export interface Db {
 }
 
 // ── Memory ──────────────────────────────────────────────────────────────────
-const APPEND_ONLY = new Set(['picks', 'pick_results']);
+const APPEND_ONLY = new Set(['picks', 'pick_results', 'edge_price_updates']);
+/** edges_log: only these columns may be written by UPDATE, and only while still empty (mirrors 0002's trigger). */
+export const EDGE_SETTLE_ONCE = ['closing_price', 'closing_p', 'clv', 'closing_at', 'result', 'units', 'settled_at'];
 const SERIAL: Record<string, string> = {
-  odds_snapshots: 'id', consensus_lines: 'id', sim_runs: 'id', calibration_reports: 'id', model_changes: 'id',
+  odds_snapshots: 'id', consensus_lines: 'id', edge_price_updates: 'id', data_anomalies: 'id', feed_filter_log: 'id', sim_runs: 'id', calibration_reports: 'id', model_changes: 'id',
   backtest_runs: 'id', push_subscriptions: 'id', alert_log: 'id', job_runs: 'id', teams: 'id', players: 'id',
 };
 
@@ -105,7 +107,7 @@ export class MemoryDb implements Db {
     return structuredClone(r) as T;
   }
   async upsert(table: string, rows: Row | Row[], onConflict: string): Promise<void> {
-    if (APPEND_ONLY.has(table)) throw new Error(`table ${table} is append-only`);
+    if (APPEND_ONLY.has(table) || table === 'edges_log') throw new Error(`table ${table} is append-only`);
     const keys = onConflict.split(',').map((s) => s.trim());
     for (const r of Array.isArray(rows) ? rows : [rows]) {
       const t = this.t(table);
@@ -127,10 +129,39 @@ export class MemoryDb implements Db {
   }
   async update(table: string, match: Row, patch: Row): Promise<void> {
     if (APPEND_ONLY.has(table)) throw new Error(`table ${table} is append-only: UPDATE is not allowed`);
+    if (table === 'edges_log') {
+      for (const k of Object.keys(patch)) if (!EDGE_SETTLE_ONCE.includes(k)) throw new Error('edges_log: original fields cannot be changed');
+      for (const r of this.t(table)) {
+        if (!matches(r, { eq: match })) continue;
+        for (const k of Object.keys(patch)) if (r[k] !== null && r[k] !== undefined && r[k] !== patch[k]) throw new Error('edges_log: closing and settlement fields can only be filled once');
+      }
+    }
     for (const r of this.t(table)) if (matches(r, { eq: match })) Object.assign(r, structuredClone(patch));
     this.save();
   }
+  /** Same rule as SQL prune_snapshots(): keep pregame/closing, and each event's first + latest refresh pull. */
+  pruneSnapshots(): number {
+  const t = this.tables.odds_snapshots ?? [];
+  const ev = new Map((this.tables.events ?? []).map((e) => [e.id, Date.parse(String(e.commence_time))]));
+  const span = new Map<unknown, [number, number]>();
+  for (const r of t) if (r.kind === 'refresh') {
+    const ms = Date.parse(String(r.pulled_at)); const c = span.get(r.event_id);
+    span.set(r.event_id, c ? [Math.min(c[0], ms), Math.max(c[1], ms)] : [ms, ms]);
+  }
+  const now = Date.now();
+  const keep = t.filter((r) => {
+    if (r.kind !== 'refresh') return true;
+    if ((ev.get(r.event_id) ?? now) < now - 86400000) return false;
+    const [a, b] = span.get(r.event_id)!; const ms = Date.parse(String(r.pulled_at));
+    return ms <= a + 120000 || ms >= b - 120000;
+  });
+  const n = t.length - keep.length;
+  this.tables.odds_snapshots = keep;
+  this.save();
+  return n;
+  }
   async rpc<T = unknown>(fn: string, args: Row): Promise<T> {
+    if (fn === 'prune_snapshots') return this.pruneSnapshots() as T;
     if (fn !== 'append_pick') throw new Error(`unknown rpc ${fn}`);
     const p = args.p as Row;
     const picks = this.t('picks');

@@ -1,3 +1,4 @@
+import { propLabel } from './sports';
 import type { BetResult, FinalScore, OutcomeProbs, Selection, SimSamples, SportId } from './types';
 
 /** Asian quarter lines (x.25 / x.75) settle as two half-bets on the neighbouring lines. */
@@ -112,7 +113,11 @@ export function selectionLabel(sel: Selection, home: string, away: string): stri
     case 'ml': return sel.side === 'draw' ? 'Draw' : `${team} ML`;
     case 'spread': return `${team} ${ln(sel.line ?? 0)}`;
     case 'total': return `${sel.side === 'over' ? 'Over' : 'Under'} ${sel.line}`;
-    case 'prop': return `${sel.player} ${sel.side === 'over' ? 'o' : 'u'}${sel.line} ${sel.stat}`;
+    case 'prop': {
+      // "1 or more" markets (anytime scorer / TD) read as Yes / No.
+      if (sel.line === 0.5 && /anytime|goals$|_td$/.test(sel.stat ?? '')) return `${sel.player} ${propLabel(sel.stat)}${/anytime/.test(sel.stat ?? '') ? '' : ' 1+'}: ${sel.side === 'over' ? 'Yes' : 'No'}`;
+      return `${sel.player} ${sel.side === 'over' ? 'Over' : 'Under'} ${sel.line} ${propLabel(sel.stat)}`;
+    }
   }
 }
 

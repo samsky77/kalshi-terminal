@@ -27,11 +27,13 @@ export class FixtureProvider implements DataProvider {
       this.cache.set(k, evs);
     }
     const shift = (s: string) => new Date(Date.parse(s) + this.shiftMs).toISOString();
+    // A book can't have updated a price in the future: clamp replayed last_update times to now.
+    const ts = (s: string) => new Date(Math.min(Date.parse(s) + this.shiftMs, Date.now())).toISOString();
     return this.cache.get(k)!
       .filter((e) => league.sport === 'soccer' ? e.sport_key === league.key : league.sport === 'tennis' ? e.sport_key.startsWith('tennis_') : true)
       .map((e) => ({
         ...e, commence_time: shift(e.commence_time),
-        bookmakers: (e.bookmakers ?? []).map((b) => ({ ...b, last_update: b.last_update ? shift(b.last_update) : undefined, markets: b.markets.map((m) => ({ ...m, last_update: m.last_update ? shift(m.last_update) : undefined })) })),
+        bookmakers: (e.bookmakers ?? []).map((b) => ({ ...b, last_update: b.last_update ? ts(b.last_update) : undefined, markets: b.markets.map((m) => ({ ...m, last_update: m.last_update ? ts(m.last_update) : undefined })) })),
       }));
   }
   async getEvents(league: LeagueRef): Promise<ProviderResult<OddsApiEvent[]>> {

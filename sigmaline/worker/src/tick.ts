@@ -5,6 +5,8 @@ import { mayPull, recordUsage, type Ctx } from './context';
 import { captureClosing, gradePicks, ingestPropResults, ingestScores } from './grade';
 import { leagueRefs, pullOdds, pullProps } from './ingest';
 import { publishDue } from './publish';
+import { closeEdges, settleEdges } from './edges';
+import { buildFeedCache } from './feedcache';
 import { clearRatingsCache, saveSim, simulateEvent, statValue } from './simulate';
 
 const PROP_MARKETS: Partial<Record<SportId, string[]>> = {
@@ -71,7 +73,7 @@ async function refreshPlayerLogs(ctx: Ctx, sport: SportId, leagueId: string, eve
   }
 }
 
-export interface TickReport { pulls: unknown[]; simulated: number; published: number; closing: number; finals: number; graded: number; alerts: unknown }
+export interface TickReport { pulls: unknown[]; simulated: number; published: number; closing: number; finals: number; graded: number; alerts: unknown; edgesClosed?: number; edgesSettled?: number; feed?: unknown; cache?: unknown }
 
 /**
  * One scheduler tick (every ~15 minutes from GitHub Actions):
@@ -82,6 +84,7 @@ export interface TickReport { pulls: unknown[]; simulated: number; published: nu
  */
 export async function tick(ctx: Ctx, opts: { sports?: SportId[] } = {}): Promise<TickReport> {
   clearRatingsCache();
+  await pruneSnapshots(ctx);
   const sports = opts.sports ?? SPORTS;
   const now = ctx.now();
   const rep: TickReport = { pulls: [], simulated: 0, published: 0, closing: 0, finals: 0, graded: 0, alerts: null };
@@ -117,8 +120,10 @@ export async function tick(ctx: Ctx, opts: { sports?: SportId[] } = {}): Promise
         const evs = (await getEvents(ctx.db, { ids: p.eventIds }));
         const markets = PROP_MARKETS[sport];
         const flag = SPORT_DEFS[sport].propsFlag;
+        // Prop prices arrive with the bulk PropLine pull. Player game logs (for the player simulation)
+        // cost one request per player, so they are only fetched for sports whose prop flag is on.
         if (markets && flag && ctx.env[flag] === 'true') {
-          await pullProps(ctx, sport, p.league, evs, markets);
+          if (r.provider !== 'propline') await pullProps(ctx, sport, p.league, evs, markets);
           await refreshPlayerLogs(ctx, sport, p.league, evs);
         }
       }
@@ -149,5 +154,36 @@ export async function tick(ctx: Ctx, opts: { sports?: SportId[] } = {}): Promise
   rep.finals = await ingestScores(ctx);
   await ingestPropResults(ctx);
   rep.graded = await gradePicks(ctx);
+  rep.edgesClosed = await closeEdges(ctx);
+  rep.edgesSettled = await settleEdges(ctx);
+  rep.cache = await buildFeedCache(ctx);
+  rep.feed = await writeFeedStats(ctx, 'tick');
   return rep;
+}
+
+/** One feed_filter_log row per run: how many priced rows were dropped, and why (item 8). */
+export async function writeFeedStats(ctx: Ctx, job: string): Promise<unknown> {
+  const f = ctx.feedStats;
+  if (!f.rowsIn) return null;
+  const row = { run_at: ctx.now().toISOString(), job, rows_in: f.rowsIn, rows_kept: f.rowsKept, counts: f.counts };
+  ctx.log(`feed filter: ${f.rowsKept}/${f.rowsIn} rows kept`, f.counts);
+  try { await ctx.db.insert('feed_filter_log', row); } catch (err) { ctx.log(`feed_filter_log: ${(err as Error).message}`); }
+  // Counts are per run: start the next one from zero (the demo reuses one context for many ticks).
+  ctx.feedStats = { rowsIn: 0, rowsKept: 0, counts: Object.fromEntries(Object.keys(f.counts).map((k) => [k, 0])) as typeof f.counts };
+  return row;
+}
+
+/**
+ * Snapshot retention (BASELINE B1): keep pre-game and closing snapshots and each event's first and
+ * latest refresh pull; drop the rest. Runs every tick so the database stays inside the free tier.
+ */
+export async function pruneSnapshots(ctx: Ctx): Promise<number> {
+  try {
+    const n = Number(await ctx.db.rpc<number>('prune_snapshots', { max_rows: 400000 })) || 0;
+    if (n) ctx.log(`retention: pruned ${n} old refresh snapshots`);
+    return n;
+  } catch (err) {
+    ctx.log(`retention skipped: ${(err as Error).message} (apply supabase/migrations/0002_edges_trial_feed.sql)`);
+    return 0;
+  }
 }

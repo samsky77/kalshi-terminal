@@ -2,10 +2,11 @@ import {
   consensus, eloUpdate, eloWinProb, fitGoalsRatings, fitPointsRatings, mainLine, marketImpliedExpectation, noVig, predictGoals,
   predictPoints, priceMarkets, PROP_BETA, projectFromLogs, restAdjust, seedFrom, simulateGame, simulateProps, SPORT_DEFS, summarize,
   type Expectation, type GameResult, type GoalsRatings, type MarketAnchor, type MarketQuote, type PlayerProjection, type PointsRatings,
-  type PricedSelection, type SimSamples, type SportId, type DistSummary,
+  type PricedSelection, type SimSamples, type SportId, type DistSummary, addCounts, filterFeed, GRADE_CONFIG,
 } from '@sigmaline/core';
 import { currentModel, getEvents, latestPull, normTeam, quoteFromSnapshot, type EventRow, type ModelVersion, type SnapshotRow } from '@sigmaline/db';
 import type { Ctx } from './context';
+import { logEdges } from './edges';
 
 // ── Ratings (cached per run) ────────────────────────────────────────────────
 type Ratings = { kind: 'points'; r: PointsRatings } | { kind: 'goals'; r: GoalsRatings } | { kind: 'elo'; r: Record<string, { rating: number; n: number }> };
@@ -184,20 +185,38 @@ export async function simulateEvent(ctx: Ctx, e: EventRow, kind?: SnapshotRow['k
   };
 }
 
-/** Persist a simulation: one sim_runs row and the latest market_prices per selection. */
+/**
+ * Persist a simulation: one sim_runs row, the price board (market_prices) and the edge log.
+ * Every priced row goes through the feed filter first (item 8): rows with no price / no fair price,
+ * started events and duplicates are hidden; |edge| over the sanity cap goes to data_anomalies; stale
+ * prices stay on the board ungraded. Fresh graded rows are logged to edges_log (item 5).
+ */
 export async function saveSim(ctx: Ctx, s: SimResult): Promise<number> {
   const run = await ctx.db.insertReturning<{ id: number }>('sim_runs', {
     event_id: s.event.id, model_version: s.model.id, seed: s.seed, n_sims: s.samples.n,
     inputs: { expectation: s.expectation, source: s.expectationSource, anchor: s.anchor, rest: s.rest, params: s.params, snapshot: s.snapshot, propsUsed: s.propsUsed },
     summary: s.summary, histogram: null, snapshot_ts: s.snapshot.pulledAt, created_at: ctx.now().toISOString(),
   });
-  const rows = s.priced.map((p) => ({
+  const f = filterFeed(s.priced, { nowMs: ctx.now().getTime(), commenceMs: Date.parse(s.event.commence_time) });
+  ctx.feedStats.rowsIn += s.priced.length;
+  ctx.feedStats.rowsKept += f.keep.length;
+  ctx.feedStats.counts = addCounts(ctx.feedStats.counts, f.counts);
+  const board = [...f.keep, ...f.stale];
+  const rows = board.map((p) => ({
     event_id: s.event.id, selection_key: p.key, sim_run_id: Number(run.id), market: p.selection.market, selection: p.selection,
     line: p.selection.line ?? null, fair_decimal: fin(p.fairDecimal), fair_probs: p.fair, model_probs: p.model, consensus_p: fin(p.consensusP),
     best_decimal: fin(p.bestDecimal), best_book: p.bestBook, books: p.books, ev: fin(p.ev), model_ev: fin(p.modelEv), consensus_ev: fin(p.consensusEv),
-    grade: p.grade, snapshot_ts: s.snapshot.pulledAt, updated_at: ctx.now().toISOString(),
+    grade: p.grade, snapshot_ts: s.snapshot.pulledAt, price_ts: p.bestTs, fair_source: p.fairSource, updated_at: ctx.now().toISOString(),
   }));
   if (rows.length) await ctx.db.upsert('market_prices', rows, 'event_id,selection_key');
+  if (f.anomalies.length) {
+    await ctx.db.insert('data_anomalies', f.anomalies.map((p) => ({
+      detected_at: ctx.now().toISOString(), sport: s.event.sport_id, event_id: s.event.id, market: p.selection.market, selection: p.key,
+      line: p.selection.line ?? null, book: p.bestBook, price: fin(p.bestDecimal), fair_price: fin(p.fairDecimal), edge_pct: fin(p.ev), books: p.books,
+      price_ts: p.bestTs, reason: `|edge| ${(Math.abs(p.ev) * 100).toFixed(1)}% above the ${GRADE_CONFIG.sanityCap * 100}% sanity cap`,
+    })));
+  }
+  try { await logEdges(ctx, s.event, s.model.id, f.keep); } catch (err) { ctx.log(`edge log failed ${s.event.id}: ${(err as Error).message}`); }
   return Number(run.id);
 }
 

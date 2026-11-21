@@ -91,6 +91,8 @@ export class PgDb implements Db {
     return new PgDb(new Pool({ connectionString: url, max: 4 }));
   }
   async close() { await this.pool.end(); }
+  /** Raw statement (maintenance only, e.g. VACUUM, which can't run inside a function). */
+  async exec(sql: string): Promise<void> { await this.pool.query(sql); }
   private async types(table: string): Promise<Map<string, string>> {
     let m = this.colTypes.get(table);
     if (!m) {

@@ -12,6 +12,7 @@ import {
 } from '@sigmaline/core';
 import { allPicks, currentModel, getEvents, normTeam, saveModelVersion, type PickResultRow } from '@sigmaline/db';
 import type { Ctx } from './context';
+import { pruneSnapshots } from './tick';
 import { fitRatings, toResults } from './simulate';
 
 interface SimRunRow { event_id: string; model_version: string; summary: DistSummary; inputs: { source: string; anchor: MarketAnchor; snapshot?: { kind: string } }; created_at: string }
@@ -46,6 +47,15 @@ async function observations(ctx: Ctx, sport: SportId, days: number) {
 
 export async function nightly(ctx: Ctx): Promise<Record<string, unknown>> {
   const report: Record<string, unknown> = {};
+  // Retention + space reclaim. VACUUM needs a direct Postgres connection (DATABASE_URL) and table
+  // ownership; without it, autovacuum still makes the freed space reusable, so the DB stops growing.
+  report.pruned = await pruneSnapshots(ctx);
+  const raw = ctx.db as unknown as { exec?: (sql: string) => Promise<void> };
+  if (raw.exec) {
+    for (const t of ['odds_snapshots', 'market_prices', 'sim_runs']) {
+      try { await raw.exec(`vacuum (analyze) ${t}`); } catch (err) { ctx.log(`vacuum ${t}: ${(err as Error).message}`); }
+    }
+  }
   const picks = await allPicks(ctx.db);
   const results = new Map((await ctx.db.select<PickResultRow>('pick_results')).map((r) => [r.pick_id, r]));
   for (const sport of SPORTS) {

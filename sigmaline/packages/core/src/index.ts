@@ -9,6 +9,7 @@ export * from './stats';
 export * from './sports';
 export * from './engine';
 export * from './pricing';
+export * from './feed';
 export * from './hash';
 export * from './writeup';
 export * from './budget';

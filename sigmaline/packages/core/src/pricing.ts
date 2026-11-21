@@ -32,7 +32,15 @@ export interface PricedSelection {
   consensusEv: number;
   grade: Grade;
   w: number;
+  /** Newest book timestamp in the market (provider last_update). */
   snapshotTs: string;
+  /** The best-priced book's own last_update for this quote (provider time, not fetch time). */
+  bestTs: string | null;
+  /**
+   * Where the fair price came from: 'blend' (simulation blended with consensus), 'consensus'
+   * (no independent model for this game or player — the fair price is the no-vig consensus).
+   */
+  fairSource: 'blend' | 'consensus';
 }
 
 function sidesFor(market: MarketType, threeWay: boolean): Side[] {
@@ -85,29 +93,35 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
     const snapshotTs = [...byBook.values()].reduce((m, q) => (q.ts > m ? q.ts : m), '');
     sides.forEach((side, i) => {
       const sel: Selection = { market, side, line: lineForSide(market, side, line), player, stat };
-      const model = priceSelection(samples, sel, opt.sport);
-      if (!Number.isFinite(model.win)) return;
-      let bestBook: string | null = null, bestDecimal = NaN;
+      let model = priceSelection(samples, sel, opt.sport);
+      // A prop with no player simulation is priced consensus-only, never dropped or faked.
+      const simmed = Number.isFinite(model.win);
+      if (!simmed) {
+        if (market !== 'prop') return;
+        model = { win: NaN, push: 0, loss: NaN };
+      }
+      const marketOnly = !!opt.marketOnly || !simmed;
+      let bestBook: string | null = null, bestDecimal = NaN, bestTs: string | null = null;
       for (const q of byBook.values()) {
         const d = q.prices[side];
         if (!d || d <= 1 || !opt.bettable.has(q.book)) continue;
-        if (!(d <= bestDecimal)) { bestDecimal = d; bestBook = q.book; }
+        if (!(d <= bestDecimal)) { bestDecimal = d; bestBook = q.book; bestTs = q.ts; }
       }
       // Consensus probability on the no-push scale. For 3-way, the draw-inclusive no-vig prob is
       // already the win probability (no push possible).
       const cP = cons ? cons.probs[i] : NaN;
       const w = opt.w[market] ?? 0.35;
       const consFair: OutcomeProbs = { win: cP * (1 - model.push), push: model.push, loss: (1 - cP) * (1 - model.push) };
-      const fair = opt.marketOnly ? (Number.isFinite(cP) ? consFair : { win: NaN, push: NaN, loss: NaN }) : blendFair(model, cP, w);
+      const fair = marketOnly ? (Number.isFinite(cP) ? consFair : { win: NaN, push: NaN, loss: NaN }) : blendFair(model, cP, w);
       const ev = Number.isFinite(bestDecimal) ? expectedValue(fair, bestDecimal) : NaN;
       const consensusEv = Number.isFinite(bestDecimal) && Number.isFinite(cP) ? expectedValue(consFair, bestDecimal) : NaN;
-      const modelEv = opt.marketOnly ? consensusEv : Number.isFinite(bestDecimal) ? expectedValue(model, bestDecimal) : NaN;
+      const modelEv = marketOnly ? consensusEv : Number.isFinite(bestDecimal) ? expectedValue(model, bestDecimal) : NaN;
       out.push({
         selection: sel, key: selectionKey(sel), books: full.length, bestBook, bestDecimal,
         consensusP: cP, model, fair, fairDecimal: fairDecimal(fair), ev, modelEv, consensusEv,
         // A grade needs a real market behind it: enough books (3, props 2) and a credible EV.
         grade: full.length < (market === 'prop' ? GRADE_CONFIG.minBooks.prop : GRADE_CONFIG.minBooks.game) || ev > GRADE_CONFIG.maxCredibleEdge.prop ? 'none' : gradePick(ev, modelEv, consensusEv),
-        w: opt.marketOnly ? 0 : w, snapshotTs,
+        w: marketOnly ? 0 : w, snapshotTs, bestTs, fairSource: marketOnly ? 'consensus' : 'blend',
       });
     });
   }
@@ -115,11 +129,14 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
   // line of that market (min 5) is an alternate line where a few high-margin books dominate the
   // consensus and the longshot side reads as a large false edge. It stays priced but is not graded.
   // Game-line EV above GAME_LINE_MAX_CREDIBLE_EV is likewise treated as a data error.
+  // Props get the same guard per player and stat (milestone / alternate rungs are thin).
+  const depthKey = (p: PricedSelection) => (p.selection.market === 'prop' ? `prop|${p.selection.player}|${p.selection.stat}` : p.selection.market);
   const deepest = new Map<string, number>();
-  for (const p of out) deepest.set(p.selection.market, Math.max(deepest.get(p.selection.market) ?? 0, p.books));
+  for (const p of out) deepest.set(depthKey(p), Math.max(deepest.get(depthKey(p)) ?? 0, p.books));
   for (const p of out) {
     const m = p.selection.market;
     if ((m === 'spread' || m === 'total') && p.books < Math.max(5, Math.ceil((deepest.get(m) ?? 0) * 0.5))) p.grade = 'none';
+    if (m === 'prop' && p.books < Math.max(GRADE_CONFIG.minBooks.prop, Math.ceil((deepest.get(depthKey(p)) ?? 0) * 0.5))) p.grade = 'none';
     if (m !== 'prop' && p.ev > GAME_LINE_MAX_CREDIBLE_EV) p.grade = 'none';
   }
   return out.sort((a, b) => (b.ev || -9) - (a.ev || -9));

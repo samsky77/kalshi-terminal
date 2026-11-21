@@ -1,13 +1,14 @@
 import 'server-only';
 import {
-  buildWriteup, budgetMode, consensus, pickHistogram, selectionLabel, SPORT_DEFS,
+  buildWriteup, budgetMode, consensus, GRADE_CONFIG, pickHistogram, selectionLabel, SPORT_DEFS,
   type DistSummary, type Grade, type MarketAnchor, type OutcomeProbs, type Selection, type SportId, type WriteupFacts, type Writeup,
 } from '@sigmaline/core';
 import {
-  aggregate, allPicks, breakdown, cumulativeCurve, getEvent, getEvents, getSettings, periodUsage, publicVisible, windowStart,
-  type EventRow, type PickResultRow, type PickRow, type RecordRow,
+  aggregate, allPicks, breakdown, buildEdges, buildProps, buildSlate, cumulativeCurve, FEED_KEYS, getEvent, getEvents, getSettings, isLiveEdge,
+  periodUsage, publicVisible, readFeed, windowStart,
+  type EdgesPayload, type EventRow, type PickResultRow, type PickRow, type PropsPayload, type RecordRow, type SlatePayload,
 } from '@sigmaline/db';
-import { getDb } from './db';
+import { demoMode, getDb } from './db';
 
 export interface PriceRow {
   event_id: string;
@@ -27,26 +28,34 @@ export interface PriceRow {
   consensus_ev: number | null;
   grade: Grade;
   snapshot_ts: string | null;
+  price_ts: string | null;
+  fair_source: 'blend' | 'consensus';
 }
 
-export interface SlateRow {
-  event: EventRow;
-  label: string;
-  top: PriceRow | null;
-  /** Shown when there is no edge: the main spread (or ML) best price. */
-  main: PriceRow | null;
-  published: boolean;
-  started: boolean;
-  snapshotTs: string | null;
+/**
+ * Stale threshold for this deployment. Always GRADE_CONFIG.staleMinutes in production; the local demo
+ * replays recorded odds, so DEMO_STALE_MINUTES may stretch it there (demo file database only).
+ */
+export function staleMinutes(): number {
+  const d = Number(process.env.DEMO_STALE_MINUTES);
+  return demoMode() && d > 0 ? d : GRADE_CONFIG.staleMinutes;
 }
+
+/** Feed cache is rebuilt every tick (~15 min); older than this, the app builds the feed itself. */
+const FEED_MAX_AGE_MS = 20 * 60000;
 
 const num = (x: unknown) => (x === null || x === undefined ? null : Number(x));
 function normPrice(r: any): PriceRow {
-  return { ...r, line: num(r.line), fair_decimal: num(r.fair_decimal), consensus_p: num(r.consensus_p), best_decimal: num(r.best_decimal), ev: num(r.ev), model_ev: num(r.model_ev), consensus_ev: num(r.consensus_ev), books: Number(r.books) };
+  return {
+    ...r, price_ts: r.price_ts ?? r.snapshot_ts ?? null, fair_source: r.fair_source === 'consensus' ? 'consensus' : 'blend', line: num(r.line),
+    fair_decimal: num(r.fair_decimal), consensus_p: num(r.consensus_p), best_decimal: num(r.best_decimal), ev: num(r.ev), model_ev: num(r.model_ev),
+    consensus_ev: num(r.consensus_ev), books: Number(r.books),
+  };
 }
 
-export function isPriceStale(snapshotTs: string | null, now = Date.now()): boolean {
-  return !snapshotTs || now - Date.parse(snapshotTs) > 6 * 3600000;
+/** Every price on the slate is past the stale threshold (refreshes paused / budget exhausted). */
+export function isPriceStale(ts: string | null, now = Date.now()): boolean {
+  return !ts || now - Date.parse(ts) > staleMinutes() * 60000;
 }
 
 export async function quotaState() {
@@ -60,40 +69,31 @@ export async function quotaState() {
   return out;
 }
 
-/** Slate: every game today and tomorrow for a sport, with its best edge, sorted by EV. */
-export async function slate(sport: SportId, now = new Date()): Promise<{ rows: SlateRow[]; asOf: string | null; providers: string[] }> {
+/** Slate for one sport (game lines): cached payload, edges re-checked for staleness at read time. */
+export async function slate(sport: SportId, now = new Date()): Promise<SlatePayload> {
   const db = await getDb();
-  const start = new Date(now.getTime() - 4 * 3600000);
-  const tomorrowEnd = new Date(now); tomorrowEnd.setUTCHours(24 * 2 + 10, 0, 0, 0); // through tomorrow night (US time)
-  const evs = (await getEvents(db, { sport, from: start.toISOString(), to: tomorrowEnd.toISOString() }))
-    .filter((e) => e.source === 'live' && e.status !== 'final' && e.status !== 'void' && e.status !== 'postponed');
-  const ids = evs.map((e) => e.id);
-  const prices = ids.length ? (await db.select<any>('market_prices', { in: { event_id: ids } })).map(normPrice) : [];
-  const picks = ids.length ? await db.select<PickRow>('picks', { in: { event_id: ids } }) : [];
-  const providers = ids.length ? [...new Set((await db.select<{ provider: string }>('odds_snapshots', { in: { event_id: ids.slice(0, 50) }, limit: 2000 })).map((s) => s.provider))] : [];
-  let asOf: string | null = null;
-  const rows: SlateRow[] = evs.map((e) => {
-    const ps = prices.filter((p) => p.event_id === e.id && p.market !== 'prop');
-    const graded = ps.filter((p) => p.grade !== 'none' && p.ev !== null).sort((a, b) => (b.ev ?? 0) - (a.ev ?? 0));
-    const top = graded[0] ?? null;
-    const main = top ?? mainPrice(ps);
-    const ts = ps.reduce<string | null>((m, p) => (p.snapshot_ts && (!m || p.snapshot_ts > m) ? p.snapshot_ts : m), null);
-    if (ts && (!asOf || ts > asOf)) asOf = ts;
-    return {
-      event: e, label: sport === 'soccer' || sport === 'tennis' ? `${e.away} @ ${e.home}` : `${short(e.away)} @ ${short(e.home)}`, top, main, published: picks.some((p) => p.event_id === e.id),
-      started: Date.parse(e.commence_time) <= now.getTime(), snapshotTs: ts,
-    };
-  });
+  const p = (!demoMode() && (await readFeed<SlatePayload>(db, FEED_KEYS.slate(sport), FEED_MAX_AGE_MS, now.getTime()))) || (await buildSlate(db, sport, now, staleMinutes()));
+  const nowMs = now.getTime(), sm = staleMinutes();
+  const rows = p.rows
+    .filter((r) => Date.parse(r.event.commence_time) > nowMs) // started games have no valid pre-game price
+    .map((r) => (r.top && !isLiveEdge(r.top, r.event.commence_time, nowMs, sm) ? { ...r, top: null } : r));
   rows.sort((a, b) => (b.top?.ev ?? -1) - (a.top?.ev ?? -1) || a.event.commence_time.localeCompare(b.event.commence_time));
-  return { rows, asOf, providers };
+  return { ...p, rows };
 }
 
-/** Main line to display when there is no edge: modal spread, else moneyline favourite. */
-function mainPrice(ps: PriceRow[]): PriceRow | null {
-  const sp = ps.filter((p) => p.market === 'spread' && p.selection.side === 'home' && p.best_decimal);
-  if (sp.length) return sp.sort((a, b) => b.books - a.books)[0];
-  const ml = ps.filter((p) => p.market === 'ml' && p.best_decimal);
-  return ml.sort((a, b) => b.books - a.books)[0] ?? null;
+/** Every live edge (all sports, lines and props), re-checked for staleness at read time. */
+export async function edgeFeed(now = new Date()): Promise<EdgesPayload> {
+  const db = await getDb();
+  const p = (!demoMode() && (await readFeed<EdgesPayload>(db, FEED_KEYS.edges, FEED_MAX_AGE_MS, now.getTime()))) || (await buildEdges(db, now, staleMinutes()));
+  const nowMs = now.getTime(), sm = staleMinutes();
+  return { ...p, rows: p.rows.filter((r) => isLiveEdge(r, r.event.commence_time, nowMs, sm)) };
+}
+
+/** Props board for one sport (every market the provider returned, main line per player/stat). */
+export async function propsFeed(sport: SportId, now = new Date()): Promise<PropsPayload> {
+  const db = await getDb();
+  const p = (!demoMode() && (await readFeed<PropsPayload>(db, FEED_KEYS.props(sport), FEED_MAX_AGE_MS, now.getTime()))) || (await buildProps(db, sport, now));
+  return { ...p, rows: p.rows.filter((r) => Date.parse(r.event.commence_time) > now.getTime()) };
 }
 
 export interface GameDetail {
@@ -106,6 +106,7 @@ export interface GameDetail {
   movement: { t: string; value: number; label: string }[];
   movementKind: 'line' | 'prob';
   writeup: Writeup | null;
+  propWriteup: { label: string; writeup: Writeup } | null;
   factors: { label: string; value: string }[];
   providers: string[];
 }
@@ -161,11 +162,27 @@ export async function gameDetail(id: string): Promise<GameDetail | null> {
       bestDecimal: top.best_decimal, book: top.best_book ?? '', modelP: condWin(top.model_probs), consensusP: top.consensus_p ?? NaN,
       fairP: condWin(top.fair_probs), ev: top.ev ?? 0, booksChecked: top.books, modelMargin: sim.summary.meanHome - sim.summary.meanAway,
       modelTotal: sim.summary.meanHome + sim.summary.meanAway, restDays: sim.inputs.rest, injuries,
-      modelIndependent: sim.inputs.source === 'ratings' || sim.inputs.source === 'tennis-elo',
+      modelIndependent: (sim.inputs.source === 'ratings' || sim.inputs.source === 'tennis-elo') && top.fair_source !== 'consensus',
+      drawP: sport === 'soccer' ? sim.summary.draw : undefined, bestOf: sport === 'tennis' ? (event.meta as { bestOf?: number }).bestOf : undefined,
+      fairSource: top.fair_source,
     });
   }
+  // Prop write-up: the best graded prop, from the same stored facts (never invented).
+  let propWriteup: { label: string; writeup: Writeup } | null = null;
+  const topProp = prices.filter((p) => p.market === 'prop' && p.grade !== 'none' && p.best_decimal).sort((a, b) => (b.ev ?? 0) - (a.ev ?? 0))[0];
+  if (topProp) {
+    const label = selectionLabel(topProp.selection, event.home, event.away);
+    propWriteup = {
+      label,
+      writeup: buildWriteup({
+        sport, home: event.home, away: event.away, selection: topProp.selection, selectionLabel: label, bestDecimal: topProp.best_decimal!, book: topProp.best_book ?? '',
+        modelP: condWin(topProp.model_probs), consensusP: topProp.consensus_p ?? NaN, fairP: condWin(topProp.fair_probs), ev: topProp.ev ?? 0,
+        booksChecked: topProp.books, fairSource: topProp.fair_source, modelIndependent: topProp.fair_source !== 'consensus',
+      }),
+    };
+  }
   const factors = await keyFactors(event, sim, prices);
-  return { event, prices, top, pick, sim, histogram, movement, movementKind, writeup, factors, providers: sim?.inputs?.snapshot?.providers ?? [] };
+  return { event, prices, top, pick, sim, histogram, movement, movementKind, writeup, propWriteup, factors, providers: sim?.inputs?.snapshot?.providers ?? [] };
 }
 
 const condWin = (o: OutcomeProbs) => (o.win + o.loss > 0 ? o.win / (o.win + o.loss) : NaN);
@@ -242,4 +259,35 @@ export async function publicChain(member: boolean, now = new Date()) {
 export async function backtests() {
   const db = await getDb();
   return db.select<{ id: number; sport: string; kind: string; label: string; games: number; games_with_odds: number; metrics: any; curve: any; from_date: string | null; to_date: string | null; source: string; created_at: string }>('backtest_runs', { order: [{ col: 'created_at', asc: false }], limit: 50 });
+}
+
+export interface EdgeLogEntry {
+  edge_key: string; first_shown_at: string; sport: string; event_name: string; start_time: string; market: string; selection_label: string;
+  book: string; price_taken: number; fair_price: number; edge_pct: number; grade: 'A' | 'B'; fair_source: string;
+  closing_price: number | null; clv: number | null; result: string | null; units: number | null;
+}
+
+/**
+ * The edge log (every edge the moment it was first shown). Public visitors see an edge only once its
+ * game has started, like sealed picks; members see everything. Units are at a flat 1-unit stake.
+ */
+export async function edgeLog(member: boolean, now = new Date(), limit = 100) {
+  const db = await getDb();
+  let rows: EdgeLogEntry[] = [];
+  try {
+    rows = (await db.select<any>('edges_log', { ...(member ? {} : { lte: { start_time: now.toISOString() } }), order: [{ col: 'first_shown_at', asc: false }], limit: 5000 }))
+      .map((r) => ({ ...r, price_taken: Number(r.price_taken), fair_price: Number(r.fair_price), edge_pct: Number(r.edge_pct), closing_price: num(r.closing_price), clv: num(r.clv), units: num(r.units) }));
+  } catch { rows = []; } // migration 0002 not applied yet
+  const settled = rows.filter((r) => r.result && r.result !== 'void');
+  const withClv = rows.filter((r) => r.clv !== null);
+  const units = settled.reduce((a, r) => a + (r.units ?? 0), 0);
+  return {
+    rows: rows.slice(0, limit),
+    stats: {
+      shown: rows.length, settled: settled.length, units, roi: settled.length ? units / settled.length : null,
+      avgEdge: rows.length ? rows.reduce((a, r) => a + r.edge_pct, 0) / rows.length : null,
+      avgClv: withClv.length ? withClv.reduce((a, r) => a + (r.clv ?? 0), 0) / withClv.length : null, clvN: withClv.length,
+      beatClose: withClv.length ? withClv.filter((r) => (r.clv ?? 0) > 0).length / withClv.length : null,
+    },
+  };
 }

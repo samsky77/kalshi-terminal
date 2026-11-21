@@ -3,7 +3,7 @@
  * `feed_cache`; the app reads one small row per request instead of thousands of market_prices rows.
  * The same builder runs in the app as a fallback (demo / cold cache), so both always agree.
  */
-import { isStale, selectionLabel, type Grade, type OutcomeProbs, type Selection, type SportId } from '@sigmaline/core';
+import { GRADE_CONFIG, isStale, selectionLabel, type Grade, type OutcomeProbs, type Selection, type SportId } from '@sigmaline/core';
 import type { Db } from './db';
 import { getEvents, type EventRow } from './repo';
 
@@ -68,8 +68,8 @@ export function feedEvent(e: EventRow): FeedEvent {
 }
 
 /** A row may carry an edge right now: graded, priced, fresh and its event not started. */
-export function isLiveEdge(p: FeedPrice, commence: string, nowMs: number): boolean {
-  return p.grade !== 'none' && p.ev !== null && p.best_decimal !== null && Date.parse(commence) > nowMs && !isStale(p.price_ts, nowMs);
+export function isLiveEdge(p: FeedPrice, commence: string, nowMs: number, staleMin: number = GRADE_CONFIG.staleMinutes): boolean {
+  return p.grade !== 'none' && p.ev !== null && p.best_decimal !== null && Date.parse(commence) > nowMs && !isStale(p.price_ts, nowMs, staleMin);
 }
 
 async function windowEvents(db: Db, sport: SportId | null, now: Date): Promise<EventRow[]> {
@@ -93,7 +93,7 @@ function mainPrice(ps: FeedPrice[]): FeedPrice | null {
 }
 
 /** Slate for one sport: upcoming games only (started games have no valid pre-game price). */
-export async function buildSlate(db: Db, sport: SportId, now = new Date()): Promise<SlatePayload> {
+export async function buildSlate(db: Db, sport: SportId, now = new Date(), staleMin: number = GRADE_CONFIG.staleMinutes): Promise<SlatePayload> {
   const evs = await windowEvents(db, sport, now);
   const ids = evs.map((e) => e.id);
   const raw = ids.length ? await pricesFor(db, ids) : [];
@@ -105,8 +105,8 @@ export async function buildSlate(db: Db, sport: SportId, now = new Date()): Prom
   const rows: SlateRow[] = evs.map((e) => {
     const all = raw.filter((p) => p.event_id === e.id).map((r) => normPrice(r, e.home, e.away));
     const ps = all.filter((p) => p.market !== 'prop');
-    const live = ps.filter((p) => isLiveEdge(p, e.commence_time, nowMs)).sort((a, b) => (b.ev ?? 0) - (a.ev ?? 0));
-    filtered += ps.filter((p) => p.grade !== 'none' && !isLiveEdge(p, e.commence_time, nowMs)).length;
+    const live = ps.filter((p) => isLiveEdge(p, e.commence_time, nowMs, staleMin)).sort((a, b) => (b.ev ?? 0) - (a.ev ?? 0));
+    filtered += ps.filter((p) => p.grade !== 'none' && !isLiveEdge(p, e.commence_time, nowMs, staleMin)).length;
     for (const p of ps) if (p.price_ts && (!asOf || p.price_ts > asOf)) asOf = p.price_ts;
     return {
       event: feedEvent(e), top: live[0] ?? null, main: live[0] ?? mainPrice(ps), published: picks.some((p) => p.event_id === e.id),
@@ -118,7 +118,7 @@ export async function buildSlate(db: Db, sport: SportId, now = new Date()): Prom
 }
 
 /** Every live edge across all sports (game lines and props), best first. */
-export async function buildEdges(db: Db, now = new Date()): Promise<EdgesPayload> {
+export async function buildEdges(db: Db, now = new Date(), staleMin: number = GRADE_CONFIG.staleMinutes): Promise<EdgesPayload> {
   const evs = await windowEvents(db, null, now);
   const byId = new Map(evs.map((e) => [e.id, e]));
   const raw = evs.length ? await pricesFor(db, evs.map((e) => e.id)) : [];
@@ -128,7 +128,7 @@ export async function buildEdges(db: Db, now = new Date()): Promise<EdgesPayload
     if (r.grade === 'none') continue;
     const e = byId.get(r.event_id)!;
     const p = normPrice(r, e.home, e.away);
-    if (isLiveEdge(p, e.commence_time, nowMs)) rows.push({ ...p, event: feedEvent(e) });
+    if (isLiveEdge(p, e.commence_time, nowMs, staleMin)) rows.push({ ...p, event: feedEvent(e) });
   }
   rows.sort((a, b) => (b.ev ?? 0) - (a.ev ?? 0));
   return { builtAt: now.toISOString(), rows };
@@ -182,3 +182,42 @@ export async function writeFeed(db: Db, key: string, payload: unknown, now = new
 }
 
 
+
+// ── Edge Finder filters (item 4) ────────────────────────────────────────────
+export interface EdgeFilters {
+  sport?: SportId | 'all';
+  type?: 'all' | 'game' | 'prop';
+  book?: string | 'all';
+  /** Minimum edge as a fraction (0.03 = 3%). */
+  minEdge?: number;
+  grade?: 'all' | 'A' | 'B';
+  sort?: 'edge' | 'start' | 'updated';
+}
+
+/** Parse Edge Finder query params; anything unknown falls back to "all" / defaults. */
+export function parseEdgeFilters(q: Record<string, string | undefined>, sports: readonly string[]): Required<EdgeFilters> {
+  const min = Number(q.min);
+  return {
+    sport: (sports.includes(q.sport ?? '') ? q.sport : 'all') as SportId | 'all',
+    type: q.type === 'game' || q.type === 'prop' ? q.type : 'all',
+    book: q.book && /^[a-z0-9_]{1,40}$/.test(q.book) ? q.book : 'all',
+    minEdge: Number.isFinite(min) && min > 0 && min <= 25 ? min / 100 : 0,
+    grade: q.grade === 'A' || q.grade === 'B' ? q.grade : 'all',
+    sort: q.sort === 'start' || q.sort === 'updated' ? q.sort : 'edge',
+  };
+}
+
+export function applyEdgeFilters(rows: EdgeRow[], f: EdgeFilters): EdgeRow[] {
+  const out = rows.filter((r) =>
+    (!f.sport || f.sport === 'all' || r.event.sport === f.sport) &&
+    (!f.type || f.type === 'all' || (f.type === 'prop' ? r.market === 'prop' : r.market !== 'prop')) &&
+    (!f.book || f.book === 'all' || r.best_book === f.book) &&
+    (r.ev ?? -1) >= (f.minEdge ?? 0) &&
+    (!f.grade || f.grade === 'all' || r.grade === f.grade));
+  const by: Record<string, (a: EdgeRow, b: EdgeRow) => number> = {
+    edge: (a, b) => (b.ev ?? 0) - (a.ev ?? 0),
+    start: (a, b) => a.event.commence_time.localeCompare(b.event.commence_time) || (b.ev ?? 0) - (a.ev ?? 0),
+    updated: (a, b) => (b.price_ts ?? '').localeCompare(a.price_ts ?? '') || (b.ev ?? 0) - (a.ev ?? 0),
+  };
+  return out.sort(by[f.sort ?? 'edge']);
+}

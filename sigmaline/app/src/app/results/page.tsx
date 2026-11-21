@@ -4,7 +4,7 @@ import { LineChart, AMBER } from '@/components/charts';
 import { Footer, GradeBadge, Header, Main, Section } from '@/components/chrome';
 import { VerifyChain } from '@/components/verify-chain';
 import { getViewer } from '@/lib/auth';
-import { backtests, results, type Window } from '@/lib/data';
+import { backtests, edgeLog, results, type Window } from '@/lib/data';
 import { demoMode } from '@/lib/db';
 import { american, bookName, pct, shortDate, units } from '@/lib/format';
 
@@ -19,7 +19,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   const w = (['7', '30', '90', 'all'].includes(sp.w ?? '') ? sp.w : 'all') as Window;
   const q = (sp.q ?? '').trim().toLowerCase();
   const viewer = await getViewer();
-  const [d, bts] = await Promise.all([results(w, viewer.active), backtests()]);
+  const [d, bts, el] = await Promise.all([results(w, viewer.active), backtests(), edgeLog(viewer.active)]);
   const s = d.stats;
   const log = q ? d.rows.filter((r) => `${r.event_name} ${r.label} ${r.book} ${r.sport} ${r.market}`.toLowerCase().includes(q)) : d.rows;
   const range = s.from && s.to ? `${shortDate(s.from)} – ${shortDate(s.to)}` : 'no bets yet';
@@ -59,6 +59,38 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         </Section>
         <Section title="By market">
           <Breakdown rows={d.byMarket.map((b) => ({ ...b, name: ({ ml: 'Moneyline', spread: 'Spread', total: 'Total', prop: 'Player props' } as Record<string, string>)[b.key] ?? b.key }))} />
+        </Section>
+
+        <Section title="Every edge we've shown">
+          <p className="mb-2 text-[12px] text-muted">
+            Separate from the picks above: every graded edge is written to an append-only log the moment it first appears in the feed, with the price and the time. Nobody can edit or delete a row; closing line and result are filled in once, afterwards. Flat 1-unit stakes.{!viewer.active && ' Edges for games that haven’t started are hidden until kick-off.'}
+          </p>
+          <dl className="panel grid grid-cols-2 gap-px bg-line sm:grid-cols-4">
+            <Stat label="Edges shown" value={String(el.stats.shown)} />
+            <Stat label="Units (1u flat)" value={el.stats.settled ? units(el.stats.units) : '—'} amber sub={el.stats.settled ? `${el.stats.settled} settled` : undefined} />
+            <Stat label="Avg edge shown" value={el.stats.avgEdge === null ? '—' : pct(el.stats.avgEdge)} />
+            <Stat label="Avg CLV" value={el.stats.avgClv === null ? '—' : pct(el.stats.avgClv)} sub={el.stats.clvN ? `${Math.round((el.stats.beatClose ?? 0) * 100)}% beat the close` : undefined} />
+          </dl>
+          {el.rows.length > 0 && (
+            <div className="mt-2 overflow-x-auto" tabIndex={0} role="region" aria-label="Edge log table, scrolls sideways">
+              <table className="w-full min-w-[560px] text-[12px]">
+                <thead><tr className="text-left">{['First shown', 'Edge', 'Book', 'Price', 'Edge %', 'CLV', 'Result'].map((h) => <th key={h} scope="col" className="label py-1 pr-2 font-normal">{h}</th>)}</tr></thead>
+                <tbody>
+                  {el.rows.map((r) => (
+                    <tr key={r.edge_key} className="border-t border-line2 align-top">
+                      <td className="py-2 pr-2 text-muted">{shortDate(r.first_shown_at)}<span className="block text-[10px]">{new Date(r.first_shown_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })} ET</span></td>
+                      <td className="py-2 pr-2"><span className="mr-1 inline-block"><GradeBadge grade={r.grade} /></span>{r.selection_label}<span className="block text-[10px] text-muted">{r.event_name}</span></td>
+                      <td className="py-2 pr-2">{bookName(r.book)}</td>
+                      <td className="py-2 pr-2">{american(r.price_taken)}</td>
+                      <td className="py-2 pr-2 text-amber">{pct(r.edge_pct)}</td>
+                      <td className="py-2 pr-2">{r.clv === null ? '—' : pct(r.clv)}</td>
+                      <td className="py-2 pr-2">{r.result ? `${resultText[r.result] ?? r.result}${r.units !== null && r.result !== 'void' ? ` ${units(r.units)}` : ''}` : 'Open'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Section>
 
         <Section title="Bet log" right={<a className="tap inline-flex items-center text-[12px] text-amber underline" href={`/api/results/csv?w=${w}`}>Export CSV</a>}>

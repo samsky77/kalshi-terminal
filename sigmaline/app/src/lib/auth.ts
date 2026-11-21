@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { getMember, type MemberRow } from '@sigmaline/db';
 import { demoMode, getDb } from './db';
@@ -56,10 +57,14 @@ export async function viewerFromToken(token: string | undefined): Promise<Viewer
   return { session, member, active, admin };
 }
 
-export async function getViewer(): Promise<Viewer> {
+/**
+ * Deduplicated per request (React cache): a page and its layout both call requirePaid, which used to
+ * mean two membership checks (and possibly two Whop calls) per slate load.
+ */
+export const getViewer = cache(async (): Promise<Viewer> => {
   const jar = await cookies();
   return viewerFromToken(jar.get(SESSION_COOKIE)?.value);
-}
+});
 
 /** For API routes: read the session from the request cookie header. */
 export async function viewerFromRequest(req: Request): Promise<Viewer> {

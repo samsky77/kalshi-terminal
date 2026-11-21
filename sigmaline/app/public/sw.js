@@ -1,6 +1,10 @@
 /* Sigmaline service worker: offline shell + Web Push. Paid data is never cached. */
-const SHELL = 'sl-shell-v1';
-const SHELL_URLS = ['/offline.html', '/manifest.webmanifest', '/icons/icon-192.png'];
+const SHELL = 'sl-shell-v2';
+const PAGES = 'sl-pages-v2';
+// App shell: offline page, manifest, icons and fonts. Public pages (landing, results, legal) are cached
+// network-first so they open offline; paid pages and every /api/ response are never cached.
+const SHELL_URLS = ['/offline.html', '/manifest.webmanifest', '/icons/icon-192.png', '/fonts/plex-mono-400.woff2', '/fonts/plex-mono-600.woff2', '/fonts/plex-sans-var.woff2'];
+const PUBLIC_PAGES = ['/', '/results', '/legal/terms', '/legal/privacy', '/legal/responsible-gambling'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_URLS)).then(() => self.skipWaiting()));
@@ -14,10 +18,14 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin !== location.origin || url.pathname.startsWith('/api/')) return;
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).catch(() => caches.match('/offline.html')));
+    const isPublic = PUBLIC_PAGES.includes(url.pathname) && !url.search;
+    e.respondWith(fetch(req).then((r) => {
+      if (isPublic && r.ok && r.type === 'basic' && !r.redirected) { const copy = r.clone(); caches.open(PAGES).then((c) => c.put(req, copy)); }
+      return r;
+    }).catch(async () => (isPublic && (await caches.match(req))) || caches.match('/offline.html')));
     return;
   }
-  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/')) {
+  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/') || url.pathname.startsWith('/fonts/')) {
     e.respondWith(caches.open(SHELL).then(async (c) => (await c.match(req)) || fetch(req).then((r) => { if (r.ok) c.put(req, r.clone()); return r; })));
   }
 });

@@ -17,12 +17,12 @@ export function Header({ nav = 'member', demo = false }: { nav?: 'member' | 'pub
         <span className="label text-right">{dateLong()}</span>
       </div>
       {nav !== 'none' && (
-        <nav aria-label="Main" className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-2 text-[12px] uppercase tracking-[0.12em]">
+        <nav aria-label="Main" className="mx-auto flex max-w-3xl overflow-x-auto px-1 text-[12px] uppercase tracking-[0.06em] sm:gap-1 sm:tracking-[0.12em]">
           {(nav === 'member'
-            ? [['/slate', 'Slate'], ['/results', 'Results'], ['/alerts', 'Alerts'], ['/account', 'Account']]
+            ? [['/slate', 'Slate'], ['/edges', 'Edges'], ['/results', 'Results'], ['/alerts', 'Alerts'], ['/account', 'Account']]
             : [['/', 'Home'], ['/results', 'Results'], ['/login', 'Sign in']]
           ).map(([href, label]) => (
-            <Link key={href} href={href} className="tap flex items-center px-3 text-muted hover:text-ink">{label}</Link>
+            <Link key={href} href={href} prefetch={false} className="tap flex shrink-0 items-center px-[9px] text-muted hover:text-ink sm:px-3">{label}</Link>
           ))}
         </nav>
       )}

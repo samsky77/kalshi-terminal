@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { selectionLabel } from '@sigmaline/core';
+import { isStale, selectionLabel } from '@sigmaline/core';
 import { MarginHistogram, LineChart, BLUE } from '@/components/charts';
 import { Footer, GradeBadge, Header, Main, Section } from '@/components/chrome';
-import { gameDetail, type PriceRow } from '@/lib/data';
+import { gameDetail, staleMinutes, type PriceRow } from '@/lib/data';
+import { Ago, FreshRow } from '@/components/ago';
+import { PropRow } from '@/components/prop-row';
 import { demoMode } from '@/lib/db';
 import { american, bookName, dayTime, pct } from '@/lib/format';
 import { requirePaid } from '@/lib/guard';
@@ -20,8 +22,11 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
   if (!g) notFound();
   const { event: e, top, pick } = g;
   const label = top ? selectionLabel(top.selection, e.home, e.away) : null;
+  const now = Date.now();
+  const sm = staleMinutes();
+  const started = Date.parse(e.commence_time) <= now;
   const markets = g.prices.filter((p) => p.market !== 'prop');
-  const props = g.prices.filter((p) => p.market === 'prop' && p.grade !== 'none');
+  const props = g.prices.filter((p) => p.market === 'prop');
   return (
     <>
       <Header demo={demoMode()} />
@@ -36,13 +41,19 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           <p className="label mt-1">{dayTime(e.commence_time)} ET · {e.league_id.toUpperCase()}{e.status === 'final' ? ` · Final ${e.away_score}-${e.home_score}` : ''}</p>
         </div>
 
+        {started && (
+          <p className="mx-auto mt-3 max-w-3xl border border-line px-4 py-2 text-[12px] text-muted" role="status">
+            This game has started. Pre-game prices are closed, so nothing below is graded or counted as an edge; live betting isn&apos;t covered.
+          </p>
+        )}
         <Section title={pick ? 'Top pick · logged' : 'Top pick'}>
-          {top && top.grade !== 'none' && top.best_decimal ? (
+          {top && top.grade !== 'none' && top.best_decimal && !started && !isStale(top.price_ts, now, sm) ? (
             <div className="panel p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[24px] font-semibold leading-tight text-amber">{label}</p>
                   <p className="mt-1 text-[13px] text-ink">{american(top.best_decimal)} <span className="text-muted">at {bookName(top.best_book)}</span></p>
+                  <Ago ts={top.price_ts} staleMin={sm} serverNow={now} />
                   {pick && <p className="mt-1 text-[11px] text-muted">Logged {dayTime(pick.created_at)} ET · #{pick.seq} · {pick.stake_units}u (record only)</p>}
                 </div>
                 <GradeBadge grade={top.grade} size="lg" />
@@ -54,7 +65,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
               </dl>
             </div>
           ) : (
-            <p className="panel p-3 text-[13px] text-muted">No edge found. Every market below is priced at or near fair.</p>
+            <p className="panel p-3 text-[13px] text-muted">{pick && started ? `Logged pick: ${pick.label} at ${american(Number(pick.price_decimal))} (${bookName(pick.book)}), grade ${pick.grade}.` : 'No live edge. Every fresh market below is priced at or near fair.'}</p>
           )}
         </Section>
 
@@ -64,7 +75,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           </Section>
         )}
 
-        <Section title="All markets">
+        <Section title="All markets" right={<span className="label">Prices go stale after {sm} min</span>}>
           <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="All markets table">
             <table className="w-full text-[12px]">
               <thead>
@@ -77,11 +88,21 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
                 </tr>
               </thead>
               <tbody>
-                {markets.map((p) => <MarketRow key={p.selection_key} p={p} home={e.home} away={e.away} />)}
-                {props.map((p) => <MarketRow key={p.selection_key} p={p} home={e.home} away={e.away} />)}
+                {markets.map((p) => <MarketRow key={p.selection_key} p={p} home={e.home} away={e.away} now={now} sm={sm} started={started} />)}
               </tbody>
             </table>
           </div>
+        </Section>
+
+        <Section title="Player props" right={<span className="label">{props.length} prices</span>}>
+          {props.length ? (
+            <>
+              {props.every((p) => p.fair_source === 'consensus') && (
+                <p className="mb-1 text-[12px] text-muted"><span className="mr-1 border border-line px-1 text-[10px] uppercase tracking-[0.1em] text-ink">Consensus-only</span>No player simulation for this game: each fair price is the no-vig consensus of every book.</p>
+              )}
+              <ul>{props.map((p) => <PropRow key={p.selection_key} r={{ ...p, label: selectionLabel(p.selection, e.home, e.away), grade: started ? 'none' : p.grade }} now={now} sm={sm} />)}</ul>
+            </>
+          ) : <p className="panel p-3 text-[13px] text-muted">No player props for this game from our data provider yet.</p>}
         </Section>
 
         <Section title={g.movementKind === 'line' ? 'Line movement' : 'Market probability'}>
@@ -106,6 +127,16 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           </Section>
         )}
 
+        {g.propWriteup && !started && (
+          <Section title={`Prop: ${g.propWriteup.label}`}>
+            <div className="prose-sl panel p-3 text-[15px] leading-relaxed">
+              <p>{g.propWriteup.writeup.edge}</p>
+              <ul className="mt-2 list-disc pl-5">{g.propWriteup.writeup.reasons.map((r, i) => <li key={i} className="mt-1">{r}</li>)}</ul>
+              <p className="mt-2 text-muted">{g.propWriteup.writeup.risk}</p>
+            </div>
+          </Section>
+        )}
+
         <Section title="Key factors">
           <dl className="panel divide-y divide-line2 text-[12px]">
             {g.factors.map((f) => (
@@ -122,15 +153,19 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
   );
 }
 
-function MarketRow({ p, home, away }: { p: PriceRow; home: string; away: string }) {
-  const edge = p.grade !== 'none';
+function MarketRow({ p, home, away, now, sm, started }: { p: PriceRow; home: string; away: string; now: number; sm: number; started: boolean }) {
+  const edge = p.grade !== 'none' && !started;
   return (
-    <tr className={`border-t border-line2 ${edge ? '' : 'text-muted'}`}>
-      <td className="py-2 pr-2">{selectionLabel(p.selection, home, away)}<span className="block text-[10px] text-muted">{bookName(p.best_book)} · {p.books} {p.books === 1 ? 'book' : 'books'}</span></td>
+    <FreshRow as="tr" ts={p.price_ts} staleMin={sm} serverNow={now} className={`border-t border-line2 ${edge ? '' : 'text-muted'}`}>
+      <td className="py-2 pr-2">
+        {selectionLabel(p.selection, home, away)}
+        <span className="block text-[10px] text-muted">{bookName(p.best_book)} · {p.books} {p.books === 1 ? 'book' : 'books'}{p.fair_source === 'consensus' ? ' · consensus-only' : ''}</span>
+        <Ago ts={p.price_ts} staleMin={sm} serverNow={now} />
+      </td>
       <td className="py-2 text-right">{american(p.best_decimal)}</td>
       <td className={`py-2 text-right ${edge ? 'text-fair' : ''}`}>{american(p.fair_decimal)}</td>
       <td className={`py-2 text-right ${edge ? 'text-amber' : ''}`}>{pct(p.ev)}</td>
-      <td className="py-2 pl-1 text-right">{edge ? <GradeBadge grade={p.grade} /> : <span className="sr-only">no edge</span>}</td>
-    </tr>
+      <td className="py-2 pl-1 text-right">{edge ? <span className="edge-only"><GradeBadge grade={p.grade} /></span> : <span className="sr-only">no edge</span>}</td>
+    </FreshRow>
   );
 }

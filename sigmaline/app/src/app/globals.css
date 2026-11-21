@@ -1,3 +1,10 @@
+/* IBM Plex (SIL Open Font License 1.1), self-hosted latin subset. */
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/plex-mono-400.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(/fonts/plex-mono-500.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url(/fonts/plex-mono-600.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/plex-mono-700.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans'; font-style: normal; font-weight: 400 600; font-display: swap; src: url(/fonts/plex-sans-var.woff2) format('woff2'); }
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -39,3 +46,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .skeleton { background: #1e1e1e; animation: sk 1.2s ease-in-out infinite alternate; }
 @keyframes sk { from { opacity: 0.45; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* Stale prices (item 7): dimmed, STALE tag, no grade / edge. FreshRow toggles .is-stale live. */
+.is-stale { opacity: 0.55; }
+.is-stale .edge-only { display: none !important; }
+.stale-only { display: none; }
+.is-stale .stale-only { display: inline-flex; }

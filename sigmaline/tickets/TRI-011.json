@@ -1,0 +1,16 @@
+{
+  "id": "TRI-011",
+  "title": "A second trial event while the first trial is still live downgrades the legit membership to trial_used",
+  "severity": "P2",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "uid qa_tri_10: trial mem_10a (7 days left), then trial mem_10b",
+    "Probe access"
+  ],
+  "expected": "The live first membership keeps access; the second is flagged.",
+  "actual": "Single row per user is overwritten with status trial_used and mem_10b; access removed from the user who still has a valid first trial.",
+  "evidence": "evidence/TRI-scenarios-4-5.js (S5b)",
+  "suspected_area": "one members row per user, membership_id overwritten"
+}

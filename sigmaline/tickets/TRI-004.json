@@ -1,0 +1,16 @@
+{
+  "id": "TRI-004",
+  "title": "trialing / active / past_due ignore the period end: an expired trial still has access",
+  "severity": "P1",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "uid qa_tri_16: membership.activated status trialing renewal_period_end = 5 days ago",
+    "Probe /slate, /edges, /game, /api/slate; open /account"
+  ],
+  "expected": "A trial whose end date has passed (and no payment) has no access; at most a short grace.",
+  "actual": "Access 200 everywhere; Account says \"Free trial · ends Nov 16\" (a past date). If the deactivated/expired webhook is lost or delayed, trial and active members keep access forever (only the Whop recheck, which requires WHOP_API_KEY, can remove it).",
+  "evidence": "evidence/TRI-scenarios-6.js (trialing w/ past end)",
+  "suspected_area": "membership.ts hasAccess: only the canceled branch checks expires_at"
+}

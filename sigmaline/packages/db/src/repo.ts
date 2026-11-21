@@ -294,6 +294,7 @@ export interface MemberRow {
   cancel_at_period_end?: boolean | null;
   trial_ends_at?: string | null;
   first_trial_at?: string | null;
+  last_event_at?: string | null;
 }
 
 export async function getMember(db: Db, id: string): Promise<MemberRow | null> {

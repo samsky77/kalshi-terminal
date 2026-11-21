@@ -1,0 +1,19 @@
+{
+  "id": "TRI-003",
+  "title": "Late or out-of-order events re-grant access: payment.failed after deactivation gives past_due access; stale activated after deactivated gives access",
+  "severity": "P0",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "uid qa_tri_25: membership.deactivated (expired), then payment.failed -> past_due, access 200",
+    "uid qa_tri_26: trial_used (repeat trial) then payment.failed -> past_due, access 200 (also bypasses the repeat-trial lock)",
+    "uid qa_tri_14: membership.deactivated first, then membership.activated status trialing renewal_period_end 1 day in the PAST -> status trialing, access 200",
+    "uid qa_tri_15: deactivated, then a late activated status active -> active, access 200",
+    "uid qa_tri_24: deactivated then payment.succeeded with no status -> active, access 200"
+  ],
+  "expected": "Events are ordered (by Whop event timestamp / membership id / period end). A payment.failed or an old activated arriving after deactivation must not restore access; past_due must not apply to a membership that is already expired or trial_used.",
+  "actual": "All of the above return 200 on /slate /edges /game /api/slate. There is no event-time comparison or state-machine guard; the last webhook to arrive wins. past_due has no end date so access from a late payment.failed never ends on its own (only the 10-min Whop recheck, which needs an API key).",
+  "evidence": "evidence/TRI-scenarios-6.js, TRI-scenarios-4-5.js",
+  "suspected_area": "webhooks/whop/route.ts upsert has no transition/ordering guard; statusFromWebhook maps payment.failed straight to past_due"
+}

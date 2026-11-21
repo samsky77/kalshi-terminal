@@ -1,0 +1,16 @@
+{
+  "id": "TRI-014",
+  "title": "Account page shows the same date in two formats/timezones",
+  "severity": "P3",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "membership.canceled with renewal_period_end 2026-12-21 (date only), uid qa_tri_d_dateOnly",
+    "Open /account"
+  ],
+  "expected": "One date, one timezone.",
+  "actual": "Status line says \"access until Dec 20\" (America/New_York), the Renews/ends row says 12/21/2026 (server timezone).",
+  "evidence": "evidence/TRI-scenarios-6.js",
+  "suspected_area": "membership.ts statusLabel vs account/page.tsx toLocaleDateString"
+}

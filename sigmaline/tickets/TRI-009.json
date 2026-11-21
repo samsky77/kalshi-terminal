@@ -1,0 +1,17 @@
+{
+  "id": "TRI-009",
+  "title": "Date parsing: numeric-string seconds and milliseconds are mishandled; garbage dates stored",
+  "severity": "P1",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "membership.canceled status canceled with renewal_period_end = \"1797830405\" (string of unix seconds, uid qa_tri_d_numstr) -> access lost immediately although 30 days remain",
+    "Same with ms number 1797830405645 (qa_tri_d_ms) -> Account shows renews 12/23/58940",
+    "renewal_period_end \"soon\" (qa_tri_d_garbage) stored verbatim, no access"
+  ],
+  "expected": "Unix seconds (number or numeric string) and ISO both give the right date; ms or invalid values are rejected or normalised.",
+  "actual": "Only a JS number is treated as seconds; strings are stored as-is; ms is multiplied by 1000 again. Plain number seconds and ISO work (qa_tri_d_sec, isoNoTZ).",
+  "evidence": "evidence/TRI-scenarios-6.js",
+  "suspected_area": "route.ts toIso"
+}

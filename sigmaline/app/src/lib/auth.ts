@@ -35,13 +35,14 @@ export async function memberStatus(uid: string, email: string | null, now = Date
   if (!fresh) {
     let active: boolean | null = null;
     try { active = await checkAccess(uid); } catch { active = null; }
+    // null: Whop unreachable or not configured, so keep the last known (webhook) status.
     if (active !== null) {
       // Whop's access check says yes/no; the webhook keeps the finer state (trialing / past_due /
-      // canceled-until). Keep that state while Whop still grants access; downgrade when it doesn't.
-      const keep = m?.status === 'trialing' || m?.status === 'past_due' || (m?.status === 'canceled' && hasAccess(m as MemberState, now));
+      // canceled-until / trial_used). Whop saying yes never upgrades a locked trial or an ended
+      // period; Whop saying no ends access.
       const status = active
-        ? (keep || m?.status === 'trial_used' ? m!.status : 'active')
-        : (m?.status === 'canceled' && hasAccess(m as MemberState, now) ? 'canceled' : m && m.status !== 'none' ? 'expired' : 'none');
+        ? (m && m.status !== 'none' && m.status !== 'expired' ? m.status : 'active')
+        : (m && m.status !== 'none' ? (m.status === 'trial_used' ? 'trial_used' : 'expired') : 'none');
       const row = { whop_user_id: uid, email: email ?? m?.email ?? null, status, checked_at: new Date(now).toISOString() };
       await db.upsert('members', row, 'whop_user_id');
       m = await getMember(db, uid);

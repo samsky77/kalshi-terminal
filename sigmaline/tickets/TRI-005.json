@@ -1,0 +1,16 @@
+{
+  "id": "TRI-005",
+  "title": "Unknown or unpaid status (\"paused\", \"drafted\") on an activated event is treated as active",
+  "severity": "P1",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "membership.activated with data.status \"paused\" (uid qa_tri_22) and \"drafted\" (uid qa_tri_23)",
+    "Probe access"
+  ],
+  "expected": "Unrecognised or unpaid statuses (drafted, paused) must not grant access; fail closed.",
+  "actual": "Both return {\"status\":\"active\"} and access 200. fromWhopStatus returns null for them, so statusFromWebhook falls through to the event-type regex and returns active.",
+  "evidence": "evidence/TRI-scenarios-6.js",
+  "suspected_area": "membership.ts statusFromWebhook fallthrough when fromData is null"
+}

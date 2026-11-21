@@ -1,0 +1,16 @@
+{
+  "id": "TRI-007",
+  "title": "Repeat-trial message never shown to a signed-in user with an existing session",
+  "severity": "P1",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "uid qa_tri_9: trial on mem_9a, expired, trial on mem_9b -> trial_used",
+    "With the session cookie open /slate (or any paid page)"
+  ],
+  "expected": "Landing shows \"You've already used your free trial\" with the no-trial checkout link (https://whop.com/checkout/qa-no-trial).",
+  "actual": "Redirect goes to /?membership=inactive: \"You're signed in, but we couldn't find an active membership\". The trial_used banner is only reachable through the OAuth callback at login. guard.ts requirePaid always redirects to inactive. The banner and link themselves work (?membership=trial_used renders the correct link).",
+  "evidence": "evidence/TRI-scenarios-4-5.js (S5)",
+  "suspected_area": "lib/guard.ts requirePaid should pick the reason from v.member.status"
+}

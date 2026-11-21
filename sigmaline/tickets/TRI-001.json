@@ -1,0 +1,18 @@
+{
+  "id": "TRI-001",
+  "title": "Repeat trial unlocks the app after any follow-up event on the second membership",
+  "severity": "P0",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "uid qa_tri_12: membership.activated mem_12a status trialing, then membership.deactivated mem_12a status expired",
+    "membership.activated mem_12b status trialing -> status trial_used, /slate 307 (correct)",
+    "Send membership.updated (or any later event) for mem_12b with status trialing and a renewal_period_end",
+    "GET /slate, /edges, /game/<id>, /api/slate?sport=nba with the cookie"
+  ],
+  "expected": "Second trial stays locked (trial_used) until the user pays.",
+  "actual": "Second event returns {\"ok\":true,\"status\":\"trialing\"}; all four endpoints return 200. isRepeatTrial compares prev.membership_id with the new one, but the first (blocked) event already stored mem_12b as membership_id, so the next event looks like the same membership and is accepted. A free trial can be repeated indefinitely (Whop normally sends several events per trial, e.g. went_valid + created).",
+  "evidence": "evidence/TRI-scenarios-6.js (first block)",
+  "suspected_area": "app/src/app/api/webhooks/whop/route.ts + membership.ts isRepeatTrial; the repeat decision is not persisted per membership id, and membership_id is overwritten on the trial_used row"
+}

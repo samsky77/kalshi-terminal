@@ -1,14 +1,14 @@
 import { Footer, Header, Main, Section } from '@/components/chrome';
 import { demoMode } from '@/lib/db';
-import { requirePaid } from '@/lib/guard';
-import { statusLabel } from '@/lib/membership';
-import { OFFER } from '@/lib/whop';
+import { requireSession } from '@/lib/guard';
+import { memberDate, statusLabel } from '@/lib/membership';
+import { checkoutUrl, noTrialCheckoutUrl, OFFER } from '@/lib/whop';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Account' };
 
 export default async function AccountPage() {
-  const v = await requirePaid('/account');
+  const v = await requireSession('/account');
   const m = v.member;
   return (
     <>
@@ -19,9 +19,14 @@ export default async function AccountPage() {
           <dl className="panel divide-y divide-line2 text-[13px]">
             <div className="flex justify-between gap-3 px-3 py-2"><dt className="label">Status</dt><dd className={`text-right ${v.active ? 'text-amber' : ''}`}>{v.admin && !m ? 'Admin' : statusLabel(m)}</dd></div>
             <div className="flex justify-between px-3 py-2"><dt className="label">Email</dt><dd>{v.session?.email ?? '—'}</dd></div>
-            <div className="flex justify-between px-3 py-2"><dt className="label">Renews / ends</dt><dd>{m?.expires_at ? new Date(m.expires_at).toLocaleDateString('en-US') : '—'}</dd></div>
+            <div className="flex justify-between px-3 py-2"><dt className="label">Renews / ends</dt><dd>{memberDate(m?.expires_at) ?? '—'}</dd></div>
             <div className="flex justify-between px-3 py-2"><dt className="label">Plan</dt><dd>Founding Member · ${OFFER.price}/mo</dd></div>
           </dl>
+          {!v.active && (
+            <a href={m?.status === 'trial_used' || m?.first_trial_at ? noTrialCheckoutUrl() : checkoutUrl()} className="tap mr-2 mt-3 inline-flex items-center bg-amber px-4 text-[13px] font-bold uppercase tracking-[0.12em] text-black">
+              {m?.status === 'trial_used' || m?.first_trial_at ? `Subscribe · $${OFFER.price}/mo` : OFFER.cta}
+            </a>
+          )}
           <a href="https://whop.com/@me/settings/memberships/" target="_blank" rel="noopener noreferrer" className="tap mt-3 inline-flex items-center border border-line px-4 text-[13px] uppercase tracking-[0.12em] text-ink">Manage billing on Whop</a>
         </Section>
         {v.admin && (

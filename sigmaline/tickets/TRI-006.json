@@ -1,0 +1,18 @@
+{
+  "id": "TRI-006",
+  "title": "Cancel-at-period-end toggles are ignored unless the payload also carries a status; Account never says \"won't renew\"",
+  "severity": "P1",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "uid qa_tri_2: activated trialing, then membership.updated {cancel_at_period_end:true} with no status -> {\"ignored\":\"membership.updated\"}",
+    "Open /account: \"Free trial · ends Nov 22\" with no \"won't renew\"",
+    "Also membership.cancel_at_period_end_changed (no status) -> ignored (qa_tri_4b)",
+    "With status:\"trialing\" in the same payload it works (\"· won't renew\") (qa_tri_4)"
+  ],
+  "expected": "Account says it will not renew after the user cancels during the trial.",
+  "actual": "Event ignored, cancel flag never stored; user thinks they are still going to be charged (or isn't told it will end). Depends on whether real Whop payloads carry status on these events (guess: the cancel_at_period_end_changed event name suggests it may not).",
+  "evidence": "evidence/TRI-scenarios-1-3.js, TRI-scenarios-4-5.js",
+  "suspected_area": "membership.ts statusFromWebhook returns null for update/cancel-toggle events; route.ts returns before upsert"
+}

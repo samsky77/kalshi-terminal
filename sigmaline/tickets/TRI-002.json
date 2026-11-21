@@ -1,0 +1,17 @@
+{
+  "id": "TRI-002",
+  "title": "Repeat-trial check is bypassed when the second trial event has no membership id",
+  "severity": "P0",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "uid qa_tri_11: trial on mem_11a, then deactivated (expired)",
+    "Send membership.activated with status trialing and NO data.id / membership_id (user.id + product.id only)",
+    "Probe /slate etc."
+  ],
+  "expected": "Second trial must not unlock; a user who already had a trial should be treated as a repeat whatever the payload shape.",
+  "actual": "Response status trialing, /slate /edges /game /api/slate all 200. isRepeatTrial requires next.membership_id to be truthy, so a missing id disables the whole rule (fail-open). Also payment.succeeded on the new row is the only thing that should unlock.",
+  "evidence": "evidence/TRI-scenarios-4-5.js (S5c)",
+  "suspected_area": "membership.ts isRepeatTrial `!!next.membership_id` guard"
+}

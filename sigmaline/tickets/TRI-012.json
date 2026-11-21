@@ -1,0 +1,16 @@
+{
+  "id": "TRI-012",
+  "title": "Stale 10-minute cache without a Whop API key expires every member (reasoned from code, not run: cannot wait 10 min)",
+  "severity": "P1",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "Read lib/auth.ts memberStatus and lib/whop.ts checkAccess",
+    "With no WHOP_API_KEY, checkAccess returns false (not null) so checked_at older than 10 min takes the active=false path"
+  ],
+  "expected": "Webhook-driven state should keep working (or the app should fall back to last known state) when the access API is unavailable.",
+  "actual": "Code path: trialing/active/past_due -> status \"expired\" ten minutes after the last webhook/check, so paid members would lose access; trial_used also loses its marker. With a real key the Whop answer decides, and a Whop outage (throws) falls back to last status (good). In prod, a missing/misconfigured WHOP_API_KEY would lock everyone out 10 min after their last event. Also memberStatus can flip a trial_used user back to active when Whop reports access. Unverified live.",
+  "evidence": "code reading only",
+  "suspected_area": "lib/whop.ts checkAccess returns false instead of null when key/product missing"
+}

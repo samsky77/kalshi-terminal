@@ -55,9 +55,10 @@ export async function userInfo(accessToken: string): Promise<WhopUser> {
 }
 
 /** Does this Whop user currently have access to the Sigmaline product? (API key auth.) */
-export async function checkAccess(userId: string): Promise<boolean> {
+/** null = can't tell (Whop not configured): callers keep the last known, webhook-fed status. */
+export async function checkAccess(userId: string): Promise<boolean | null> {
   const product = process.env.WHOP_PRODUCT_ID, key = process.env.WHOP_API_KEY;
-  if (!product || !key) return false;
+  if (!product || !key) return null;
   const res = await fetch(`${base()}/api/v1/users/${encodeURIComponent(userId)}/access/${encodeURIComponent(product)}`, { headers: { authorization: `Bearer ${key}` }, cache: 'no-store' });
   if (!res.ok) throw new Error(`whop access ${res.status}`);
   const body = (await res.json()) as { has_access: boolean; access_level: string };

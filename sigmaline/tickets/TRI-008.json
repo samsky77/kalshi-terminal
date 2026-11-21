@@ -1,0 +1,16 @@
+{
+  "id": "TRI-008",
+  "title": "Expired / canceled-past users get a generic landing message and cannot open Account",
+  "severity": "P2",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "uid qa_tri_2: trial, cancel, membership.deactivated (expired)",
+    "Open /slate -> /?membership=inactive; try /account"
+  ],
+  "expected": "Landing explains why (trial ended / membership canceled / payment failed) and the user can still reach Account/billing to resubscribe.",
+  "actual": "Same generic \"couldn't find an active membership\" text for every reason; /account is behind requirePaid so it redirects too, so the \"Expired\" / \"Canceled\" labels in statusLabel are unreachable for the person they describe.",
+  "evidence": "evidence/TRI-scenarios-1-3.js",
+  "suspected_area": "lib/guard.ts, app/account/page.tsx uses requirePaid"
+}

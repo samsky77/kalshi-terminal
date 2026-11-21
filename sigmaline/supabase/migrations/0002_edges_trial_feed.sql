@@ -148,7 +148,8 @@ alter table members add column if not exists membership_id text;
 alter table members add column if not exists cancel_at_period_end boolean not null default false;
 alter table members add column if not exists trial_ends_at timestamptz;
 alter table members add column if not exists first_trial_at timestamptz;   -- set once; a second trial is not honoured
-comment on column members.status is 'trialing | active | past_due | canceled | expired | none';
+alter table members add column if not exists last_event_at timestamptz;    -- newest Whop event applied (older ones are ignored)
+comment on column members.status is 'trialing | active | past_due | canceled | expired | trial_used | none';
 
 -- ── Snapshot retention (keeps the database inside the free tier) ───────────────
 -- Keeps every pre-game and closing snapshot (needed for picks, CLV and grading) and, for refresh

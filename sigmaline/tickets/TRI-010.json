@@ -1,0 +1,15 @@
+{
+  "id": "TRI-010",
+  "title": "Webhook without a product id bypasses the product filter",
+  "severity": "P2",
+  "persona": "Trial user, day 7 (QA-PAYWALL, signed webhooks + forged sl_session cookie)",
+  "url": "http://localhost:3200/api/webhooks/whop",
+  "device": "curl / node (no browser)",
+  "steps": [
+    "membership.activated with user id, status active, no product / product_id / access_pass (uid qa_tri_18)"
+  ],
+  "expected": "Event for an unknown product is ignored (or at least not trusted).",
+  "actual": "Accepted, status active, full access. Only events that name a different product are ignored.",
+  "evidence": "evidence/TRI-scenarios-6.js",
+  "suspected_area": "route.ts line: `productId && productId !== WHOP_PRODUCT_ID`"
+}

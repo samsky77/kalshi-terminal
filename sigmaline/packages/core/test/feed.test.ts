@@ -25,12 +25,12 @@ describe('feed filter (junk rows)', () => {
       row({ key: 'b', fairDecimal: NaN, ev: NaN }), // no fair
       row({ key: 'c' }), row({ key: 'c' }), // duplicate
       row({ key: 'd', ev: 0.4 }), // sanity cap → anomaly
-      row({ key: 'e', ev: -0.3 }), // negative beyond the cap too
+      row({ key: 'e', ev: -0.3 }), // a very negative edge is a bad price, not bad data: kept (DAT-002)
       row({ key: 'f', bestTs: iso(GRADE_CONFIG.staleMinutes + 1) }), // stale
     ], opt);
-    expect(f.counts).toMatchObject({ no_price: 1, no_fair: 1, duplicate: 1, sanity: 2, stale: 1, started: 0 });
-    expect(f.keep.map((r) => r.key)).toEqual(['c']);
-    expect(f.anomalies.map((r) => r.key)).toEqual(['d', 'e']);
+    expect(f.counts).toMatchObject({ no_price: 1, no_fair: 1, duplicate: 1, sanity: 1, stale: 1, started: 0 });
+    expect(f.keep.map((r) => r.key)).toEqual(['c', 'e']);
+    expect(f.anomalies.map((r) => r.key)).toEqual(['d']);
     expect(f.stale[0].grade).toBe('none'); // stale rows are never graded
   });
   it('hides every row once the event has started (no live betting)', () => {

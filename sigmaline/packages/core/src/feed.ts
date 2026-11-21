@@ -9,7 +9,7 @@
  *  - duplicate  the same selection appeared twice (two providers quoting one book/line)
  *  - suspended  outcomes the provider flags suspended / zero-limit, or with no usable price
  *               (counted at ingest by quotesFromEvent, see oddsformat.ts)
- *  - sanity     |edge| above GRADE_CONFIG.sanityCap: bad data, logged as an anomaly
+ *  - sanity     edge above +GRADE_CONFIG.sanityCap: bad data, logged as an anomaly
  *  - stale      best book's own last_update older than GRADE_CONFIG.staleMinutes
  *
  * Stale rows are kept on the price board (dimmed, STALE, ungraded) but never reach the edge feed;
@@ -56,7 +56,9 @@ export function filterFeed(
     seen.add(r.key);
     if (!r.bestBook || !(r.bestDecimal > 1)) { counts.no_price++; continue; }
     if (!(r.fairDecimal > 1) || !Number.isFinite(r.ev)) { counts.no_fair++; continue; }
-    if (Math.abs(r.ev) > GRADE_CONFIG.sanityCap) { counts.sanity++; anomalies.push(r); continue; }
+    // Only an implausibly HIGH edge is bad data (a stale or mis-mapped price). A very negative edge is
+    // an ordinary bad price, usually on a longshot; hiding it removed one side of the market (DAT-002).
+    if (r.ev > GRADE_CONFIG.sanityCap) { counts.sanity++; anomalies.push(r); continue; }
     if (isStale(r.bestTs ?? r.snapshotTs, opt.nowMs, opt.staleMinutes)) { counts.stale++; stale.push({ ...r, grade: 'none' }); continue; }
     keep.push(r);
   }

@@ -1,0 +1,18 @@
+{
+  "id": "DAT-004",
+  "title": "\"Tmrw\" label shown for every non-today game, including day-after-tomorrow; slate window built on the UTC date",
+  "severity": "P2",
+  "persona": "data-integrity reviewer",
+  "url": "http://localhost:3100/slate",
+  "device": "n/a (data/code)",
+  "steps": [
+    "app/src/app/slate/page.tsx:63-90: isToday false for anything not the ET date of now, so label \"Tmrw\"",
+    "packages/db/src/feed.ts:76: window end = UTC midnight of today +2 days +10h",
+    "Example (reasoned): now = 2026-11-22T02:00Z (Sat 9 PM ET). Window end = 2026-11-24T10:00Z. A game Mon 2026-11-23T18:00Z (1 PM ET) is in the window and labelled \"Tmrw\" though tomorrow ET is Sunday",
+    "Live check at 06:30Z: the NFL slate has one row at ET day offset +2 (labelled Tmrw) and 11 at +1"
+  ],
+  "expected": "Label per ET date (Today / Tomorrow / weekday); window defined in ET.",
+  "actual": "Games up to 2 ET days out are all \"Tmrw\"; window length depends on the UTC hour (about 1.2 to 2.2 ET days). Empty-state copy says \"today or tomorrow\". No DST bug found: US DST ended 2026-11-01 and the code uses the IANA zone, not a fixed offset.",
+  "evidence": "/api/slate?sport=nfl commence_time of the +2 row; code lines above.",
+  "suspected_area": "app/src/app/slate/page.tsx, packages/db/src/feed.ts windowEvents"
+}

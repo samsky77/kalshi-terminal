@@ -41,7 +41,9 @@ export function quotesFromEvent(ev: OddsApiEvent, priceFormat: 'decimal' | 'amer
       if (stats) stats.suspended += m0.outcomes.length - live.length;
       const m = { ...m0, outcomes: live };
       // Provider's own last_update (market, else bookmaker); fetch time only if the provider sends none.
-      const ts = m.last_update ?? bk.last_update ?? fetchedAt;
+      const raw = m.last_update ?? bk.last_update ?? fetchedAt;
+      // A book can't have updated a price after we fetched it (clock skew / replays): clamp (DAT-005).
+      const ts = Date.parse(raw) > Date.parse(fetchedAt) ? fetchedAt : raw;
       if (m.key === 'h2h' || m.key === 'h2h_3_way') {
         const prices: Partial<Record<Side, number>> = {};
         for (const o of m.outcomes) {

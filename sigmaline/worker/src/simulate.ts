@@ -192,6 +192,10 @@ export async function simulateEvent(ctx: Ctx, e: EventRow, kind?: SnapshotRow['k
  * prices stay on the board ungraded. Fresh graded rows are logged to edges_log (item 5).
  */
 export async function saveSim(ctx: Ctx, s: SimResult): Promise<number> {
+  // The tick and the publisher can simulate the same snapshot twice: keep one run and one set of
+  // filter counts / anomalies per (event, snapshot, model) (QA ticket DAT-003).
+  const prevRun = (await ctx.db.select<{ id: number; snapshot_ts: string; model_version: string }>('sim_runs', { eq: { event_id: s.event.id }, order: [{ col: 'created_at', asc: false }], limit: 1 }))[0];
+  if (prevRun && prevRun.model_version === s.model.id && prevRun.snapshot_ts && Date.parse(prevRun.snapshot_ts) === Date.parse(s.snapshot.pulledAt)) return Number(prevRun.id);
   const run = await ctx.db.insertReturning<{ id: number }>('sim_runs', {
     event_id: s.event.id, model_version: s.model.id, seed: s.seed, n_sims: s.samples.n,
     inputs: { expectation: s.expectation, source: s.expectationSource, anchor: s.anchor, rest: s.rest, params: s.params, snapshot: s.snapshot, propsUsed: s.propsUsed },
@@ -209,8 +213,11 @@ export async function saveSim(ctx: Ctx, s: SimResult): Promise<number> {
     grade: p.grade, snapshot_ts: s.snapshot.pulledAt, price_ts: p.bestTs, fair_source: p.fairSource, updated_at: ctx.now().toISOString(),
   }));
   if (rows.length) await ctx.db.upsert('market_prices', rows, 'event_id,selection_key');
-  if (f.anomalies.length) {
-    await ctx.db.insert('data_anomalies', f.anomalies.map((p) => ({
+  // Log an anomaly once per (selection, book, price) per event, not again every tick.
+  const seenAnom = f.anomalies.length ? new Set((await ctx.db.select<{ selection: string; book: string | null; price: number | null }>('data_anomalies', { eq: { event_id: s.event.id } })).map((a) => `${a.selection}|${a.book}|${Number(a.price)}`)) : new Set<string>();
+  const newAnoms = f.anomalies.filter((p) => !seenAnom.has(`${p.key}|${p.bestBook}|${fin(p.bestDecimal)}`));
+  if (newAnoms.length) {
+    await ctx.db.insert('data_anomalies', newAnoms.map((p) => ({
       detected_at: ctx.now().toISOString(), sport: s.event.sport_id, event_id: s.event.id, market: p.selection.market, selection: p.key,
       line: p.selection.line ?? null, book: p.bestBook, price: fin(p.bestDecimal), fair_price: fin(p.fairDecimal), edge_pct: fin(p.ev), books: p.books,
       price_ts: p.bestTs, reason: `|edge| ${(Math.abs(p.ev) * 100).toFixed(1)}% above the ${GRADE_CONFIG.sanityCap * 100}% sanity cap`,

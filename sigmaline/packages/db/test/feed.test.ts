@@ -45,3 +45,13 @@ describe('Edge Finder filters', () => {
     expect(parseEdgeFilters({ sport: 'kalshi', book: 'x"><script>', min: '-5', grade: 'Z', sort: 'drop' }, SPORTS)).toEqual({ sport: 'all', type: 'all', book: 'all', minEdge: 0, grade: 'all', sort: 'edge' });
   });
 });
+
+describe('DAT-004: slate window ends at the end of tomorrow, US Eastern', () => {
+  it('works across the UTC day boundary', async () => {
+    const { endOfTomorrowET } = await import('../src/feed');
+    // 2026-11-21 03:00 UTC = Nov 20, 10 PM ET -> window ends Nov 21 23:59:59 ET = Nov 22 04:59:59 UTC
+    expect(endOfTomorrowET(new Date('2026-11-21T03:00:00Z')).toISOString()).toBe('2026-11-22T04:59:59.000Z');
+    // 2026-11-21 18:00 UTC = Nov 21, 1 PM ET -> Nov 22 23:59:59 ET = Nov 23 04:59:59 UTC
+    expect(endOfTomorrowET(new Date('2026-11-21T18:00:00Z')).toISOString()).toBe('2026-11-23T04:59:59.000Z');
+  });
+});

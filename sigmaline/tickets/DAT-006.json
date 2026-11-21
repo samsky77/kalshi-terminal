@@ -1,0 +1,16 @@
+{
+  "id": "DAT-006",
+  "title": "Edge Finder shows grade A on a consensus-only row (stored grade not re-capped on read)",
+  "severity": "P2",
+  "persona": "data-integrity reviewer",
+  "url": "http://localhost:3100/edges",
+  "device": "n/a (data/code)",
+  "steps": [
+    "Open /edges: \"1 of 1 live edge\", CBB UIC Flames @ Saint Mary's Gaels, DraftKings -196, \"consensus-only\", fair -246, +7.3%, grade A",
+    "DB: market_prices cbb-4173bf9ec636d687 ml:home grade A, fair_source consensus, books 8"
+  ],
+  "expected": "Per the updated rule, consensus-only rows grade B at most.",
+  "actual": "The served feed returns stored grade A. Likely the demo DB predates the rule change, but read paths (buildEdges/buildSlate/isLiveEdge) trust the stored grade; edges_log id c477d99e-007c-448c-b21b-a8ba00b70bff is also A with fair_source consensus. Guess: re-seeding fixes the demo; verify.",
+  "evidence": "/edges HTML; demo-db.json rows above.",
+  "suspected_area": "packages/core/src/pricing.ts (write-time cap only); packages/db/src/feed.ts read path"
+}

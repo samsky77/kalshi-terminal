@@ -1,0 +1,16 @@
+{
+  "id": "IPH-005",
+  "title": "First-timer jargon: 'FAIR \u00b7 EDGE' column, 'consensus-only' and '10,000 sims' with no model",
+  "severity": "P3",
+  "persona": "new visitor on iPhone, landing to trial to first session",
+  "url": "http://localhost:3200/slate?sport=nba",
+  "device": "iPhone 13 profile (Chromium engine; WebKit not installed), 390x844 DSF1 (also 360x740)",
+  "steps": [
+    "Open slate, read a row",
+    "Open a game page"
+  ],
+  "expected": "Short in-context explanation of 'fair' and edge; claims match what ran",
+  "actual": "Slate header 'FAIR \u00b7 EDGE' and rows like '\u2212580 / +3.2% B' have no tooltip or link to the grade FAQ. Game pages say '10,000 RUNS' and 'SIMULATED FINAL MARGIN' while MODEL reads 'market consensus only (not enough results yet for ratings)', contrasting with landing 'Every game simulated 10,000 times'. On the prior build the Rockets ML page showed WIN % 85.3% but the histogram caption said wins in 74% of runs (could not re-check after DB reset). Start times show no timezone on slate (ET on game page).",
+  "evidence": "evidence/IPH-walk-slate.png, evidence/IPH-walk-game.png",
+  "suspected_area": "slate/game copy; histogram vs win % (guess: sim ignores consensus fair prob)"
+}

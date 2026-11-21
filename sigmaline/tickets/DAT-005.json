@@ -1,0 +1,17 @@
+{
+  "id": "DAT-005",
+  "title": "A provider timestamp in the future is never stale (ageMinutes clamps to 0); 6,661 of 19,194 snapshots have ts after pulled_at",
+  "severity": "P2",
+  "persona": "data-integrity reviewer",
+  "url": "sigmaline/app/.data/demo-db.json (odds_snapshots, edges_log)",
+  "device": "n/a (data/code)",
+  "steps": [
+    "odds_snapshots: ts > pulled_at for 6661 rows; in the 2026-11-18 replay ts is exactly +3.0 h vs pulled_at (1260 rows)",
+    "edges_log rows from first_shown_at 2026-11-18T00:08:22Z (6 rows): price_ts is 03:07-03:08Z, 3 h after the edge was \"first shown\" and ~2 h after game start (Atlanta Hawks +3.5 fanduel, start 01:11Z)",
+    "packages/core/src/feed.ts ageMinutes: Math.max(0, (now - t)/60000), so a future last_update is age 0, fresh"
+  ],
+  "expected": "price_ts (book last_update) can never be later than the fetch/log time; such a value should be untrusted, not fresh. A logged edge needs price_ts <= first_shown_at <= start_time.",
+  "actual": "Clock skew or a bad provider timestamp passes the stale check. Part of this is a demo-replay artifact, but it is what the Results page shows for the first 6 logged edges and no code guards it.",
+  "evidence": "edges_log id 53ea8d1e-d2bf-45a4-8b83-7db8f8aab85c (price_ts 2026-11-18T03:08:18Z, first_shown 00:08:22Z, start 01:11:22Z) and 5 more. The 5 edges logged 2026-11-21 are consistent.",
+  "suspected_area": "packages/core/src/feed.ts ageMinutes/isStale; worker/src/ingest.ts quotesFromEvent (ts unvalidated)"
+}

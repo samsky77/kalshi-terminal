@@ -1,0 +1,16 @@
+{
+  "id": "IPH-001",
+  "title": "Disabled trial button gives no hint why it does nothing; 21+ gate wording and two separate checkboxes",
+  "severity": "P3",
+  "persona": "new visitor on iPhone, landing to trial to first session",
+  "url": "http://localhost:3200/",
+  "device": "iPhone 13 profile (Chromium engine; WebKit not installed), 390x844 DSF1 (also 360x740)",
+  "steps": [
+    "Open / on iPhone",
+    "Tap 'Start 7-day free trial' (hero) without ticking the checkbox"
+  ],
+  "expected": "Tapping a greyed CTA explains what is missing (e.g. 'Confirm you are 21+ to continue'); gate says 21+; one confirmation satisfies the page",
+  "actual": "Button is <a aria-disabled=true> with no href; tap does nothing, no message. Checkbox label reads 'I am legally allowed to bet where I live.' (no age). Hero and pricing-card checkboxes are independent: ticking one leaves the other CTA disabled. Gate itself works: ticking enables a link to the checkout URL.",
+  "evidence": "evidence/IPH-gate-unchecked.png, evidence/IPH-gate-checked.png",
+  "suspected_area": "landing CTA / age-gate component"
+}

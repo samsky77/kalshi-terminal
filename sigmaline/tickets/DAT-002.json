@@ -1,0 +1,17 @@
+{
+  "id": "DAT-002",
+  "title": "All 112 data_anomalies rows are NEGATIVE edges; longshot ML sides are hidden as \"bad data\", leaving one-sided moneylines",
+  "severity": "P2",
+  "persona": "data-integrity reviewer",
+  "url": "sigmaline/app/.data/demo-db.json (data_anomalies, market_prices)",
+  "device": "n/a (data/code)",
+  "steps": [
+    "Load data_anomalies: 112 rows, edge_pct < 0 for all 112, none positive",
+    "Example id 94: cfb-6cbe20aab84d37ab (UCLA v Illinois) ml:away betmgm 7.0 vs fair 9.36, edge -25.2%, books=5. Snapshot has mybookieag 9.25 (non-bettable) pulling consensus",
+    "market_prices: 24 of 298 events have only ONE moneyline side stored; all 24 have an anomaly for the other side"
+  ],
+  "expected": "The sanity cap catches implausible (stale or mis-mapped) edges; a book simply offering a short price on an underdog is not corrupt data.",
+  "actual": "Negative |edge| > 25% on high-vig longshots is logged as an anomaly and the whole side is removed from the board. 39 anomalies have books=1 (fair price from a single book). No positive >25% anomaly exists in the data, so the check is untested on its intended case.",
+  "evidence": "data_anomalies ids 94,106 (UCLA), nba-3c4999cfd3 ml:home betmgm 26 vs 72.98 (-64.4%, books 2), cbb-b2d3719f3e ml:away betmgm 34 vs 81.12 (books 1).",
+  "suspected_area": "packages/core/src/feed.ts filterFeed sanity branch uses Math.abs(ev); consider flagging only ev > cap, or requiring the minimum books"
+}

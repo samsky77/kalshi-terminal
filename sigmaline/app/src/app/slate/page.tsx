@@ -58,17 +58,21 @@ export default async function SlatePage({ searchParams }: { searchParams: Promis
 
 async function Lines({ sport, edgesOnly, now, sm }: { sport: SportId; edgesOnly: boolean; now: number; sm: number }) {
   const [{ rows, asOf }, quota] = await Promise.all([slate(sport), quotaState()]);
-  const shown = edgesOnly ? rows.filter((r) => r.top) : rows;
+  // Games with no price at all aren't shown as rows (DAT-001); they're counted under the list.
+  const priced = rows.filter((r) => r.top || r.main);
+  const unpriced = rows.length - priced.length;
+  const shown = edgesOnly ? priced.filter((r) => r.top) : priced;
   const exhausted = Object.values(quota).some((q) => q.mode === 'exhausted');
   const today = new Date(now).toLocaleDateString('en-US', { timeZone: 'America/New_York' });
   return (
     <div className="mx-auto max-w-3xl px-4">
-      <p className="label pb-1">{rows.length} upcoming {rows.length === 1 ? 'game' : 'games'} · 10,000 sims each</p>
+      <p className="label pb-1">{priced.length} upcoming {priced.length === 1 ? 'game' : 'games'} · times ET</p>
+      <p className="pb-2 text-[12px] text-muted">Fair = the price that would be break-even by our numbers. Edge = how much better the best book&apos;s price is (fair probability × odds − 1).</p>
       {(exhausted || isPriceStale(asOf, now)) && asOf && (
         <p className="pb-2 text-[12px] text-amber" role="status">Latest prices are from {dayTime(asOf)} ET, older than {sm} min, so no grades are shown until the next refresh.</p>
       )}
       <div className="grid grid-cols-[52px_1fr_auto] gap-2 border-b border-line pb-1" aria-hidden>
-        <span className="label">Start</span>
+        <span className="label">ET</span>
         <span className="label">Best line · book</span>
         <span className="label text-right">Fair · Edge</span>
       </div>
@@ -87,7 +91,7 @@ async function Lines({ sport, edgesOnly, now, sm }: { sport: SportId; edgesOnly:
               <Link href={`/game/${encodeURIComponent(r.event.id)}`} prefetch={false} className="grid min-h-[60px] grid-cols-[52px_1fr_auto] items-center gap-2 py-2 hover:bg-panel">
                 <span className="text-[12px] leading-tight text-muted">
                   {time(r.event.commence_time)}
-                  {!isToday && <span className="block text-[11px] uppercase">Tmrw</span>}
+                  {!isToday && <span className="block text-[11px] uppercase">{dayLabel(r.event.commence_time, now)}</span>}
                 </span>
                 <span className="min-w-0">
                   <span className={`block truncate text-[13px] ${edge ? 'text-ink' : 'text-muted'}`}>{r.event.label}</span>
@@ -111,8 +115,15 @@ async function Lines({ sport, edgesOnly, now, sm }: { sport: SportId; edgesOnly:
           );
         })}
       </ul>
+      {unpriced > 0 && <p className="py-3 text-[12px] text-muted">{unpriced} more {unpriced === 1 ? 'game has' : 'games have'} no prices from the books yet and will appear once they do.</p>}
     </div>
   );
+}
+
+/** "Tmrw" for tomorrow (US Eastern), else the weekday. */
+function dayLabel(iso: string, now: number): string {
+  const ymd = (ms: number) => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  return ymd(Date.parse(iso)) === ymd(now + 86400000) ? 'Tmrw' : new Date(iso).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' });
 }
 
 /** Props tab: every prop market the provider returned for this sport, main line per player and stat. */

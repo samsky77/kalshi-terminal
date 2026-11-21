@@ -1,0 +1,15 @@
+{
+  "id": "IPH-003",
+  "title": "Alerts page shows placeholder text for the Discord invite",
+  "severity": "P3",
+  "persona": "new visitor on iPhone, landing to trial to first session",
+  "url": "http://localhost:3200/alerts",
+  "device": "iPhone 13 profile (Chromium engine; WebKit not installed), 390x844 DSF1 (also 360x740)",
+  "steps": [
+    "Sign in as trialing member, open /alerts, scroll to DISCORD"
+  ],
+  "expected": "Invite link or the section hidden until configured",
+  "actual": "Member sees 'The members Discord invite link will appear here.' (placeholder copy)",
+  "evidence": "evidence/IPH-walk-alerts.png",
+  "suspected_area": "alerts page / missing DISCORD_INVITE config handling"
+}

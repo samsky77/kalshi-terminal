@@ -26,12 +26,12 @@ export default async function AlertsPage({ searchParams }: { searchParams: Promi
           </p>
         </div>
         <Section title="Push on this device"><PushSetup vapidKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''} /></Section>
-        <Section title="Discord">
-          {discord
-            ? <a href={discord} className="tap inline-flex items-center border border-line px-4 text-[13px] uppercase tracking-[0.12em] text-ink" rel="noopener noreferrer" target="_blank">Join the members channel</a>
-            : <p className="text-[13px] text-muted">The members Discord invite link will appear here.</p>}
-          <p className="mt-2 text-[12px] text-muted">Every alert is also posted to the members-only Discord channel.</p>
-        </Section>
+        {discord && (
+          <Section title="Discord">
+            <a href={discord} className="tap inline-flex items-center border border-line px-4 text-[13px] uppercase tracking-[0.12em] text-ink" rel="noopener noreferrer" target="_blank">Join the members channel</a>
+            <p className="mt-2 text-[12px] text-muted">Every alert is also posted to the members-only Discord channel.</p>
+          </Section>
+        )}
         <Section title="Quiet hours">
           {sp.saved && <p role="status" className="mb-2 text-[12px] text-amber">Saved.</p>}
           <form action="/api/me/alerts" method="post" className="grid max-w-md grid-cols-2 gap-3 text-[13px]">

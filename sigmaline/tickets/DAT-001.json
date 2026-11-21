@@ -1,0 +1,17 @@
+{
+  "id": "DAT-001",
+  "title": "Slate lists games with no price rows (\"No prices yet\"); 26 of 67 CBB games, 2 of 4 tennis, 1 NFL",
+  "severity": "P2",
+  "persona": "data-integrity reviewer",
+  "url": "http://localhost:3100/slate?sport=cbb",
+  "device": "n/a (data/code)",
+  "steps": [
+    "GET /api/slate?sport=cbb and count rows where main == null",
+    "Example cbb-cc3ac570d384a1a9 Drexel Dragons @ Maine Black Bears (2026-11-21T22:00Z): snapshots exist only for betonlineag and lowvig (spread/total), no ml; no bettable book, so filterFeed drops everything as no_price",
+    "Compare with demo-db.json market_prices: only 1 of the 26 events has any row"
+  ],
+  "expected": "Rule: rows with no price never appear in the feed.",
+  "actual": "The event row still appears on the slate with \"No prices yet\" (and counts in \"N upcoming games\"). feed_filter_log id 72: no_price=345 of 1364 rows_in (25%).",
+  "evidence": "/api/slate?sport=cbb: 26 rows main=null; tennis 2, nfl 1. Snapshot books for the example event: betonlineag, lowvig only; market_prices best_book is only ever draftkings/fanduel/betmgm/betrivers.",
+  "suspected_area": "packages/db/src/feed.ts buildSlate (lists every scheduled event regardless of priced rows); bettable-book filter in priceMarkets"
+}

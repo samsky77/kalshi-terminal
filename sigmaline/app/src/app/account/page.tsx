@@ -19,7 +19,10 @@ export default async function AccountPage() {
           <dl className="panel divide-y divide-line2 text-[13px]">
             <div className="flex justify-between gap-3 px-3 py-2"><dt className="label">Status</dt><dd className={`text-right ${v.active ? 'text-amber' : ''}`}>{v.admin && !m ? 'Admin' : statusLabel(m)}</dd></div>
             <div className="flex justify-between px-3 py-2"><dt className="label">Email</dt><dd>{v.session?.email ?? '—'}</dd></div>
-            <div className="flex justify-between px-3 py-2"><dt className="label">Renews / ends</dt><dd>{memberDate(m?.expires_at) ?? '—'}</dd></div>
+            <div className="flex justify-between px-3 py-2">
+              <dt className="label">{m?.status === 'trialing' ? (m.cancel_at_period_end ? 'Trial ends' : 'First charge') : m?.cancel_at_period_end || m?.status === 'canceled' ? 'Access ends' : 'Renews'}</dt>
+              <dd>{memberDate(m?.trial_ends_at && m?.status === 'trialing' ? m.trial_ends_at : m?.expires_at) ?? '—'}{m?.status === 'trialing' && !m.cancel_at_period_end ? ` · $${OFFER.price}` : ''}</dd>
+            </div>
             <div className="flex justify-between px-3 py-2"><dt className="label">Plan</dt><dd>Founding Member · ${OFFER.price}/mo</dd></div>
           </dl>
           {!v.active && (

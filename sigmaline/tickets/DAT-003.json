@@ -1,0 +1,17 @@
+{
+  "id": "DAT-003",
+  "title": "Same event simulated twice per tick: rows_in double counted, data_anomalies written twice, extra sim_runs",
+  "severity": "P2",
+  "persona": "data-integrity reviewer",
+  "url": "sigmaline/app/.data/demo-db.json (sim_runs, data_anomalies, feed_filter_log)",
+  "device": "n/a (data/code)",
+  "steps": [
+    "sim_runs created_at >= 2026-11-21: 203 rows for 177 events; 26 events have 2 rows with identical snapshot_ts (e.g. cfb-6cbe20aab84d37ab: created 05:08:55.366 and 05:08:57.795, pulledAt 05:08:55.209)",
+    "data_anomalies: 112 rows but only 24 unique (event_id, selection); 21 keys duplicated, incl. same-tick pairs (ids 94 and 106)",
+    "feed_filter_log id 72: sanity=19 equals the 19 anomaly rows written in that tick, which include same-tick duplicates"
+  ],
+  "expected": "One simulation and one set of filter counts per event per run; each bad row logged once (or deduped across ticks).",
+  "actual": "tick() simulates touched events, then publishDue() calls simulateEvent+saveSim again for the same snapshot. rows_in/rows_kept/counts are inflated and anomalies duplicated. Anomalies also repeat every tick with no dedupe key. (rows_in = rows_kept + drops does add up in all 72 log rows.)",
+  "evidence": "worker/src/tick.ts:144-145 and worker/src/publish.ts:136-140 both call saveSim.",
+  "suspected_area": "worker/src/publish.ts publishDue; worker/src/simulate.ts saveSim"
+}

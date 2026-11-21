@@ -52,7 +52,9 @@ export function normPrice(r: any, home: string, away: string): FeedPrice {
   return {
     event_id: r.event_id, selection_key: r.selection_key, market: r.market, selection: sel, label: selectionLabel(sel, home, away), line: num(r.line),
     fair_decimal: num(r.fair_decimal), fair_probs: r.fair_probs, consensus_p: num(r.consensus_p), best_decimal: num(r.best_decimal), best_book: r.best_book ?? null,
-    books: Number(r.books), ev: num(r.ev), model_ev: num(r.model_ev), consensus_ev: num(r.consensus_ev), grade: r.grade,
+    books: Number(r.books), ev: num(r.ev), model_ev: num(r.model_ev), consensus_ev: num(r.consensus_ev),
+    // A consensus-only price has no model to agree with, so it can't be an A (SHP-001 / DAT-006).
+    grade: r.grade === 'A' && r.fair_source === 'consensus' ? 'none' : r.grade,
     price_ts: r.price_ts ?? r.snapshot_ts ?? null, fair_source: r.fair_source === 'consensus' ? 'consensus' : 'blend',
   };
 }
@@ -73,8 +75,21 @@ export function isLiveEdge(p: FeedPrice, commence: string, nowMs: number, staleM
   return p.grade !== 'none' && p.ev !== null && p.best_decimal !== null && Date.parse(commence) > nowMs && !isStale(p.price_ts, nowMs, staleMin);
 }
 
+/** 23:59:59 tomorrow in America/New_York, as an absolute time. */
+export function endOfTomorrowET(now: Date): Date {
+  const ymd = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  // Walk forward in hours until the ET date is two days ahead; the hour before is tomorrow's last.
+  const today = ymd(now);
+  let t = new Date(now.getTime());
+  let days = 0, last = today;
+  while (days < 2) { t = new Date(t.getTime() + 3600000); const d = ymd(t); if (d !== last) { days++; last = d; } }
+  // t is within the first hour of the day after tomorrow (ET): step back to that day's ET midnight.
+  while (ymd(new Date(t.getTime() - 60000)) === last) t = new Date(t.getTime() - 60000);
+  return new Date(t.getTime() - 1000);
+}
+
 async function windowEvents(db: Db, sport: SportId | null, now: Date): Promise<EventRow[]> {
-  const end = new Date(now); end.setUTCHours(24 * 2 + 10, 0, 0, 0); // through tomorrow night (US time)
+  const end = endOfTomorrowET(now); // through tomorrow night, US Eastern (DAT-004)
   return (await getEvents(db, { ...(sport ? { sport } : {}), from: now.toISOString(), to: end.toISOString() }))
     .filter((e) => e.source === 'live' && e.status === 'scheduled');
 }

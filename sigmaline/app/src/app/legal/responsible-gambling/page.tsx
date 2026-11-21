@@ -8,11 +8,11 @@ export default function RG() {
       <p>Sigmaline is for adults 21+ and is information only. Betting should be entertainment, never a way to make money you need.</p>
       <h2>Get help now</h2>
       <ul>
-        <li><b>1-800-GAMBLER</b> (1-800-426-2537): National Problem Gambling Helpline, 24/7, call or text. <a className="text-amber underline" href="https://www.1800gambler.net">1800gambler.net</a></li>
-        <li><b>National Council on Problem Gambling:</b> <a className="text-amber underline" href="https://www.ncpgambling.org/help-treatment/">ncpgambling.org</a>, with chat and local resources.</li>
-        <li><b>Gamblers Anonymous:</b> <a className="text-amber underline" href="https://www.gamblersanonymous.org">gamblersanonymous.org</a></li>
-        <li><b>Gam-Anon (for family and friends):</b> <a className="text-amber underline" href="https://www.gam-anon.org">gam-anon.org</a></li>
-        <li><b>Outside the US:</b> <a className="text-amber underline" href="https://www.begambleaware.org">BeGambleAware (UK)</a>, <a className="text-amber underline" href="https://www.gamblingtherapy.org">Gambling Therapy (worldwide)</a></li>
+        <li><b>1-800-GAMBLER</b> (1-800-426-2537): National Problem Gambling Helpline, 24/7, call or text. <a className="tap inline-flex items-center text-amber underline" href="https://www.1800gambler.net">1800gambler.net</a></li>
+        <li><b>National Council on Problem Gambling:</b> <a className="tap inline-flex items-center text-amber underline" href="https://www.ncpgambling.org/help-treatment/">ncpgambling.org</a>, with chat and local resources.</li>
+        <li><b>Gamblers Anonymous:</b> <a className="tap inline-flex items-center text-amber underline" href="https://www.gamblersanonymous.org">gamblersanonymous.org</a></li>
+        <li><b>Gam-Anon (for family and friends):</b> <a className="tap inline-flex items-center text-amber underline" href="https://www.gam-anon.org">gam-anon.org</a></li>
+        <li><b>Outside the US:</b> <a className="tap inline-flex items-center text-amber underline" href="https://www.begambleaware.org">BeGambleAware (UK)</a>, <a className="tap inline-flex items-center text-amber underline" href="https://www.gamblingtherapy.org">Gambling Therapy (worldwide)</a></li>
       </ul>
       <h2>Warning signs</h2>
       <ul>

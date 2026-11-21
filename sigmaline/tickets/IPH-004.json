@@ -1,0 +1,16 @@
+{
+  "id": "IPH-004",
+  "title": "Responsible-gambling help-line links are 19px tall tap targets",
+  "severity": "P3",
+  "persona": "new visitor on iPhone, landing to trial to first session",
+  "url": "http://localhost:3200/legal/responsible-gambling",
+  "device": "iPhone 13 profile (Chromium engine; WebKit not installed), 390x844 DSF1 (also 360x740)",
+  "steps": [
+    "Open page at 390px",
+    "Measure links"
+  ],
+  "expected": "Tap targets >= 44px (these are the help resources)",
+  "actual": "1800gambler.net 116x19, ncpgambling.org 113x19, gamblersanonymous.org 166x19, BeGambleAware 147x19 (gam-anon and Gambling Therapy 43px). Same on PROD.",
+  "evidence": "playwright measurement in session log",
+  "suspected_area": "legal page link styling"
+}

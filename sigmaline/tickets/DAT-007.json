@@ -1,0 +1,15 @@
+{
+  "id": "DAT-007",
+  "title": "Two different CFB games render with the identical label \"Tigers @ Bulldogs\"",
+  "severity": "P3",
+  "persona": "data-integrity reviewer",
+  "url": "http://localhost:3100/slate?sport=cfb",
+  "device": "n/a (data/code)",
+  "steps": [
+    "/api/slate?sport=cfb: Auburn Tigers @ Mississippi State Bulldogs (2026-11-21T21:00Z) and Missouri Tigers @ Georgia Bulldogs (2026-11-22T00:30Z) both labelled \"Tigers @ Bulldogs\""
+  ],
+  "expected": "Distinguishable rows.",
+  "actual": "Identical labels (shortTeam keeps only the last word); only the time differs.",
+  "evidence": "feedEvent() in packages/db/src/feed.ts",
+  "suspected_area": "packages/db/src/feed.ts shortTeam/feedEvent"
+}

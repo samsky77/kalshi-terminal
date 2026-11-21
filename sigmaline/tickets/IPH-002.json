@@ -1,0 +1,16 @@
+{
+  "id": "IPH-002",
+  "title": "Account trial block does not say when the first $25 charge happens",
+  "severity": "P3",
+  "persona": "new visitor on iPhone, landing to trial to first session",
+  "url": "http://localhost:3200/account",
+  "device": "iPhone 13 profile (Chromium engine; WebKit not installed), 390x844 DSF1 (also 360x740)",
+  "steps": [
+    "Send membership.activated (trialing, renewal_period_end now+7d) for qa_iph_1",
+    "Set sl_session, open /account"
+  ],
+  "expected": "Trial users see 'Free trial ends Nov 28; first charge of $25 on Nov 28 unless you cancel on Whop'",
+  "actual": "Status 'Free trial \u00b7 ends Nov 28, 2026', 'RENEWS / ENDS Nov 28, 2026', 'Founding Member \u00b7 $25/mo'. Trial end is shown (good) but the field label 'Renews / ends' is ambiguous and the charge date/amount are not stated together. (On the previous build the date showed as 11/28/2026 in the second field; now fixed.)",
+  "evidence": "evidence/IPH-walk-account.png",
+  "suspected_area": "account page copy"
+}

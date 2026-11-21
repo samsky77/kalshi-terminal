@@ -18,6 +18,7 @@ export function JoinButton({ href, label, sub }: { href: string; label: string; 
       >
         {label}
       </a>
+      {!ok && <p className="mt-1 text-[12px] text-muted" aria-live="polite">Tick the box above to continue (21+ only).</p>}
       {sub && <p className="mt-1 text-[12px] text-muted">{sub}</p>}
     </div>
   );

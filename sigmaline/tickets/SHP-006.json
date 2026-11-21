@@ -1,0 +1,16 @@
+{
+  "id": "SHP-006",
+  "title": "Event cbb-2f5d53ce7ceb1e17 is still 'scheduled' 3 days after tip-off and has market_prices with no odds snapshots behind them",
+  "severity": "P3",
+  "url": "http://localhost:3100/game/cbb-2f5d53ce7ceb1e17",
+  "device": "demo-db.json",
+  "steps": [
+    "events: cbb-2f5d53ce7ceb1e17 UNC Greensboro @ Cornell, commence 2026-11-18T16:00:22Z, status 'scheduled', no score.",
+    "market_prices has 2 rows for it (ml home 1.32 FanDuel ev −0.033274, ml away 3.45 ev −0.076671, books 4), but odds_snapshots has zero rows for this event, so the prices can't be reproduced."
+  ],
+  "expected": "Every market_prices row traces to snapshots; an event 3 days past start is final or void.",
+  "actual": "Orphan prices on a never-settled event. The game page does correctly say the game has started and shows no grade. All other 1,746 market_prices rows reproduce exactly from snapshots.",
+  "evidence": "SHP-scripts/cons.out (the only 2 consensus mismatches are this event)",
+  "suspected_area": "worker score ingest / snapshot retention (guess)",
+  "persona": "sharp bettor who checks the math"
+}

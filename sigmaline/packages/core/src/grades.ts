@@ -16,6 +16,12 @@ export const GRADE_CONFIG = {
   B: { minEdge: 0.02, maxEdge: 0.05 },
   /** A graded edge needs this many books pricing both sides of the market. */
   minBooks: { game: 3, prop: 2 },
+  /**
+   * Alternate lines (any spread/total/prop line other than the market's deepest one) need at least
+   * this many books AND this share of the deepest line's books, or they are shown ungraded: thin
+   * alternate rungs are where a few high-margin books fake large edges.
+   */
+  altLine: { minBooks: 5, minShareOfMain: 0.5 },
   /** Above these the price is treated as stale or mis-mapped, not as value: shown ungraded. */
   maxCredibleEdge: { game: 0.10, prop: 0.25 },
   /** |edge| above this is bad data: hidden from the feed and written to `data_anomalies`. */
@@ -36,7 +42,8 @@ export function gradeFaqAnswer(c: GradeConfig = GRADE_CONFIG): string {
     `A: an edge (expected value) of at least ${p(c.A.minEdge)}, and our model and the market consensus both agree the price is good.`,
     `B: an edge of ${p(c.B.minEdge)} up to ${p(c.B.maxEdge)}.`,
     `Anything under ${p(c.B.minEdge)}, or ${p(c.A.minEdge)} and up where the model and the consensus don't both agree, is shown in grey as “No edge” and never published.`,
-    `A grade also needs at least ${c.minBooks.game} books pricing the market (${c.minBooks.prop} for player props).`,
+    `A grade also needs at least ${c.minBooks.game} books pricing the market (${c.minBooks.prop} for player props), and an alternate line (not the main spread, total or prop line) needs at least ${c.altLine.minBooks} books and half as many books as the main line.`,
+    `When we have no independent model for a market (the fair price is the market consensus alone), there is nothing to agree with the consensus, so it can be a B but never an A.`,
     `Game-line edges above ${p(c.maxCredibleEdge.game)} and prop edges above ${p(c.maxCredibleEdge.prop)} are almost always a stale or wrong price, so they are not graded.`,
     `Prices more than ${c.staleMinutes} minutes old are marked STALE and get no grade.`,
   ].join(' ');

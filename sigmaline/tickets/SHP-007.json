@@ -1,0 +1,16 @@
+{
+  "id": "SHP-007",
+  "title": "Short game labels cut multi-word nicknames: 'Spartans @ Red', 'Wave @ Zips'",
+  "severity": "P3",
+  "url": "http://localhost:3100/slate?sport=cbb",
+  "device": "iPhone 13",
+  "steps": [
+    "Open the CBB slate.",
+    "See 'Spartans @ Red' (UNC Greensboro Spartans @ Cornell Big Red) and 'Wave @ Zips'."
+  ],
+  "expected": "'Spartans @ Big Red', 'Green Wave @ Zips' (or school names).",
+  "actual": "The last word of the team name is used as the nickname.",
+  "evidence": "slate text capture",
+  "suspected_area": "short-label helper for event labels",
+  "persona": "sharp bettor who checks the math"
+}

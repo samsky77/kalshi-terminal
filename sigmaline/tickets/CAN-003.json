@@ -1,0 +1,18 @@
+{
+  "id": "CAN-003",
+  "title": "Canceled member sees no resubscribe or 'ends on' path; account says 'Canceled' with no date and a free-trial CTA is shown to ex-members on landing",
+  "severity": "P3",
+  "persona": "Member whose membership is canceled (period end in future / past)",
+  "url": "http://localhost:3200/account and /?membership=expired",
+  "device": "curl / node fetch (no browser)",
+  "steps": [
+    "Create qa_can_21 (canceled, period end +5d) and qa_can_41 (canceled, period end -2d) via webhook.",
+    "Open /account as qa_can_21: shows 'Canceled \u00b7 access until Nov 26, 2026' and only 'Manage billing on Whop'; no way back/resubscribe nudge.",
+    "Open /slate as qa_can_41: redirected to /?membership=expired, banner 'Your membership has ended. See your account or subscribe again.' (no end date). Landing hero below still says 'START 7-DAY FREE TRIAL / 7 days free' to someone who is a returning member; /account for qa_can_41 shows status just 'Canceled' and 'Renews / ends' = the past date.",
+    "The in-banner links 'See your account' and 'subscribe again' are 17px tall."
+  ],
+  "expected": "Banner/account say what happened (canceled on X, access ended on Y) and give a clear one-tap way back; tap targets >= 44px; ex-members not pitched a free trial they cannot get.",
+  "actual": "Messages are correct about the state but thin, the 'Canceled' state has no date once ended, and inline links are 17px high.",
+  "evidence": "evidence/CAN-expired-landing.png, evidence/CAN-canceled-future-account.png, evidence/CAN-expired-account.png",
+  "suspected_area": "app/src/app/page.tsx banner; app/src/app/account/page.tsx; lib/membership.ts statusLabel"
+}

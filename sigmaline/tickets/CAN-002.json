@@ -1,0 +1,17 @@
+{
+  "id": "CAN-002",
+  "title": "Immediate access revocation (went_invalid with status canceled / valid:false) still leaves access until the old period end",
+  "severity": "P1",
+  "persona": "Member whose membership was canceled or expired (cookie + signed Whop webhooks, QA-PAYWALL)",
+  "url": "http://localhost:3200/api/slate?sport=nba",
+  "device": "curl / node fetch (no browser)",
+  "steps": [
+    "Webhook membership.went_valid {id:mem_c26,status:active,renewal_period_end:+5d} (user qa_can_26) -> active, API 200.",
+    "Webhook membership.went_invalid {id:mem_c26,status:canceled,valid:false,renewal_period_end:+5d} -> response status canceled.",
+    "GET /api/slate?sport=nba with cookie -> 200; /account says 'Canceled \u00b7 access until Nov 26, 2026'."
+  ],
+  "expected": "Whop's 'went_invalid' means the membership is no longer valid (e.g. refund / chargeback / immediate cancel). Guess: access should end then, not days later. At minimum the product rule 'canceled keeps access until period end' only applies to cancel-at-period-end.",
+  "actual": "Access continues until the stored period end (5 days here). With a refund/chargeback event the member keeps paid data for free.",
+  "evidence": "Observed twice (qa_can_6 on old build, qa_can_26 on rebuilt build): '200 {status:canceled}' then API 200.",
+  "suspected_area": "app/src/lib/membership.ts statusFromWebhook: went_invalid with data.status==='canceled' maps to canceled instead of expired; ignores data.valid===false. (Guess: product decision; flagging because refunds are involved.)"
+}

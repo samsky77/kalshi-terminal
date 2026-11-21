@@ -1,0 +1,24 @@
+sessionSecret() prod fallback — app/src/lib/session.ts:27-32
+
+  export function sessionSecret(): string {
+    const s = process.env.SESSION_SECRET;
+    if (s && s.length >= 32) return s;
+    if (process.env.NODE_ENV === 'production' && process.env.SUPABASE_URL) throw new Error('SESSION_SECRET must be set (32+ chars) in production');
+    return 'dev-only-insecure-session-secret-change-me-0000';
+  }
+
+Isolated reproduction of the exact conditional (node):
+  prod + DATABASE_URL only  (no SESSION_SECRET): dev-only-insecure-session-secret-change-me-0000
+  prod + SUPABASE_URL       (no SESSION_SECRET): THROWS -> must set
+
+Production runs on DATABASE_URL (PROD /api/health shows "db":"pg", Supabase not used; dbFromEnv()
+prefers Supabase only when SUPABASE_URL+SERVICE_ROLE are both set). So in a Postgres/self-hosted
+prod deploy the guard never fires and the signer uses the world-known constant committed in the repo.
+
+Impact: anyone can forge sl_session = base64url(JSON({uid,email,exp})) + "." +
+base64url(HMAC-SHA256('dev-only-insecure-session-secret-change-me-0000', body)). With email set to
+ADMIN_EMAIL this yields admin=true and active=true (app/src/lib/auth.ts viewerFromToken) -> full
+paywall + admin bypass with no Whop membership.
+
+QA-PAYWALL has SESSION_SECRET set, so a dev-secret cookie is correctly REJECTED there (devsecret_admin
+-> 401 / redirect to /login in the auth matrix); the defect is in the production guard, not QA runtime.

@@ -226,7 +226,14 @@ const fin = (x: number) => (Number.isFinite(x) ? Math.round(x * 1e6) / 1e6 : nul
 export function selectionConsensus(quotes: MarketQuote[], market: string, line: number | undefined, side: string, threeWay: boolean, player?: string, stat?: string): { p: number; books: number; best: number; bestBook: string | null } | null {
   const lineOf = (q: MarketQuote) => q.line;
   const target = market === 'spread' && line !== undefined ? (side === 'home' ? line : -line) : line;
-  const qs = quotes.filter((q) => q.market === market && (market === 'ml' || lineOf(q) === target) && (market !== 'prop' || (q.player === player && q.stat === stat)));
+  // One quote per book: the latest (two providers, or two pulls in one snapshot, must not double-count).
+  const latest = new Map<string, MarketQuote>();
+  for (const q of quotes) {
+    if (q.market !== market || (market !== 'ml' && lineOf(q) !== target) || (market === 'prop' && (q.player !== player || q.stat !== stat))) continue;
+    const prev = latest.get(q.book);
+    if (!prev || prev.ts < q.ts) latest.set(q.book, q);
+  }
+  const qs = [...latest.values()];
   const sides = market === 'ml' ? (threeWay ? ['home', 'away', 'draw'] : ['home', 'away']) : market === 'spread' ? ['home', 'away'] : ['over', 'under'];
   const full = qs.filter((q) => sides.every((s) => (q.prices as any)[s] > 1));
   if (!full.length) return null;

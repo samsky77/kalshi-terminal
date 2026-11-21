@@ -81,3 +81,27 @@ describe('props', () => {
     expect(quotes[0].prices).toEqual({});
   });
 });
+
+describe('QA regressions SHP-001 / SHP-002', () => {
+  const samples: SimSamples = { n: 2, home: Int16Array.from([100, 90]), away: Int16Array.from([95, 99]), winner: Int8Array.from([1, -1]) };
+  const q = (book: string, line: number, home: number, away: number): MarketQuote => ({ book, market: 'spread', line, prices: { home, away }, ts: iso(1) });
+  const bettable = new Set(['a', 'b', 'c', 'd', 'e', 'f']);
+  it('SHP-001: a consensus-only market can be B but never A (nothing independent agrees)', () => {
+    // main line 3 books, one book far out of line: ~+7% vs consensus
+    const out = priceMarkets(samples, [q('a', -3.5, 2.2, 1.7), q('b', -3.5, 1.91, 1.91), q('c', -3.5, 1.9, 1.92)], { sport: 'nba', threeWay: false, bettable, w: {}, marketOnly: true });
+    const home = out.find((p) => p.selection.side === 'home')!;
+    expect(home.ev).toBeGreaterThan(0.05);
+    expect(Number.isNaN(home.modelEv)).toBe(true);
+    expect(home.grade).toBe('none'); // ≥ 5% needs agreement for A, and B is 2–5% only (FAQ)
+  });
+  it('SHP-002: a main line with 3 books is graded; a thin alternate line is not', () => {
+    const main = [q('a', -3.5, 2.06, 1.8), q('b', -3.5, 1.91, 1.91), q('c', -3.5, 1.9, 1.92)];
+    const alt = [q('a', -10.5, 3.6, 1.3), q('b', -10.5, 3.2, 1.35)];
+    const out = priceMarkets(samples, [...main, ...alt], { sport: 'nba', threeWay: false, bettable, w: {}, marketOnly: true });
+    const mainHome = out.find((p) => p.selection.line === -3.5 && p.selection.side === 'home')!;
+    expect(mainHome.ev).toBeGreaterThanOrEqual(0.02);
+    expect(mainHome.ev).toBeLessThan(0.05);
+    expect(mainHome.grade).toBe('B');
+    for (const p of out.filter((x) => x.selection.line === -10.5 || x.selection.line === 10.5)) expect(p.grade).toBe('none');
+  });
+});

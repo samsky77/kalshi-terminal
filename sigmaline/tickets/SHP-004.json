@@ -1,0 +1,17 @@
+{
+  "id": "SHP-004",
+  "title": "Edge-log CLV equals the edge on every settled row: 'closing' snapshots are copies of the opening prices, stamped after tip-off",
+  "severity": "P2",
+  "url": "http://localhost:3100/results",
+  "device": "iPhone 13 (Playwright) + demo-db.json",
+  "steps": [
+    "Open /results, section 'Every edge we've shown': Avg CLV +3.8%, '100% beat the close'.",
+    "In edges_log, all 6 settled rows have closing_price == price_taken and clv == edge_pct (e.g. Hawks +3.5: 2.04 / 2.04, clv 0.037879 = edge 0.037879; Jazz ML 7 / 7, 0.029473; St Mary's 1.51 / 1.51, 0.073478).",
+    "odds_snapshots for nba-fa3e335565eb02c2: the 'closing' pull (pulled_at 01:00:22) has the same prices AND the same book timestamps (ts 03:07–03:08) as the 'pregame' pull at 00:08:22; tip-off was 01:11:22. A book timestamp 2 hours after the pull time and after the game started cannot be real."
+  ],
+  "expected": "Closing lines come from a later snapshot than the opening one, with book timestamps at or before the pull time, so CLV measures something.",
+  "actual": "CLV is identical to the opening edge by construction, so the headline 'Avg CLV +3.8%, 100% beat the close' (and picks avgClv 0.0400996) carries no information. The formula itself is right: I recomputed p_close × price_taken − 1 for all 6 rows and 5 pick_results and every value matches to 1e-6.",
+  "evidence": "Numbers above; /results text captured in scratch run",
+  "suspected_area": "Guess: demo seeding (worker/src/demo.ts) copies the pregame pull as the closing pull and shifts book ts; if production capture does the same it is a real CLV bug",
+  "persona": "sharp bettor who checks the math"
+}

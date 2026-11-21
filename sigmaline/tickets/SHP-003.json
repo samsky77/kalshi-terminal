@@ -1,0 +1,17 @@
+{
+  "id": "SHP-003",
+  "title": "closing_lines.books counts the same book 2–3 times (10/12/15/24 books for markets with 5/6/5/8 books)",
+  "severity": "P2",
+  "url": "demo-db.json closing_lines; Results page CLV",
+  "device": "demo-db.json + code",
+  "steps": [
+    "For each closing_lines row, count distinct books in that event's closing pull for that market.",
+    "cbb-e365a0405bfb7bd9 ml: stored books 10, distinct 5 (each book has 2 snapshots in the same pull 00:50:22). nba-1fffb5c0428b5459 ml: 12 vs 6. cbb-f9b7d4777063403c ml: 15 vs 5 (3 each). cbb-09a04c0a5057e48b ml: 24 vs 8 (3 each). nba-fa3e335565eb02c2 spread −3.5: 5 vs 5 (correct).",
+    "Read worker/src/simulate.ts selectionConsensus: it builds consensus from every quote in the pull with no 'latest quote per book' step (priceMarkets has one)."
+  ],
+  "expected": "books = number of distinct books; each book counted once in the closing consensus median.",
+  "actual": "Books are multiplied by the number of duplicate snapshots in the closing pull. Here the duplicates have identical prices, so closing_p is unaffected, but if a book is quoted twice with different prices it gets double weight in the closing median, which changes closing_p and so CLV. Also the closing pull itself stores duplicate rows per book.",
+  "evidence": "Recompute in tickets/evidence/SHP-scripts (inline python in report); numbers above",
+  "suspected_area": "worker/src/simulate.ts selectionConsensus (no per-book dedupe); worker/src/grade.ts captureClosing; closing snapshot ingest writing duplicates",
+  "persona": "sharp bettor who checks the math"
+}

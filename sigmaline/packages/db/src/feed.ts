@@ -63,7 +63,8 @@ export function shortTeam(team: string): string {
 }
 
 export function feedEvent(e: EventRow): FeedEvent {
-  const full = e.sport_id === 'soccer' || e.sport_id === 'tennis';
+  // College nicknames don't abbreviate to their last word ("Red Storm" -> "Storm"), so colleges use full names.
+  const full = e.sport_id === 'soccer' || e.sport_id === 'tennis' || e.sport_id === 'cbb' || e.sport_id === 'cfb';
   return { id: e.id, sport: e.sport_id, league: e.league_id, home: e.home, away: e.away, commence_time: e.commence_time, label: full ? `${e.away} @ ${e.home}` : `${shortTeam(e.away)} @ ${shortTeam(e.home)}` };
 }
 

@@ -1,0 +1,17 @@
+{
+  "id": "SHP-002",
+  "title": "Spread/total edges with 3–4 books are shown as 'No edge' though the FAQ says 3 books is enough (an extra 5-book rule that the FAQ never mentions)",
+  "severity": "P1",
+  "url": "http://localhost:3100/ (FAQ 'What does a grade mean?') and /game/<id>",
+  "device": "demo-db.json + code",
+  "steps": [
+    "Read the FAQ: 'A grade also needs at least 3 books pricing the market (2 for player props).'",
+    "In market_prices find spread/total rows with edge 2–10% and 3 books: cbb-562884fe7ec927e7 spread:home:-13.5 (Arkansas −13.5) best 2.20 BetMGM, fair 2.066948, edge 0.064371, consensus EV +0.0644, model EV +0.0591, books 3 (this IS the deepest spread line of the game, 3 books) → grade 'none'. cbb-cbfc32bcbd03b04d spread:away:25.5 best 2.14 FanDuel, fair 2.035683, edge 0.051244, books 3 → 'none'. cfb-8b451cb2cecbf843 spread:home:5.5 best 2.30 FanDuel, fair 2.22372, edge 0.034303, books 3 → 'none'.",
+    "Read packages/core/src/pricing.ts deep-market guard: spread/total lines with books < max(5, ceil(0.5 × deepest)) are set to grade 'none'."
+  ],
+  "expected": "By the FAQ (which is meant to be rendered from the same GRADE_CONFIG the grader uses), row 1 is A (6.4%, consensus EV +0.0644 and model EV +0.0591 both positive, 3 books), row 2 is A (5.1%, model EV from model_probs 0.4887×2.14−1 = +0.0458, consensus +0.0512, 3 books), row 3 is B (3.4%, 3 books). Either grade them, or put the 5-book rule for spreads/totals into GRADE_CONFIG so the FAQ states it.",
+  "actual": "All three show 'No edge'. The real minimum for spreads and totals is 5 books, even on the main line, and it lives in a hard-coded constant in pricing.ts, not in GRADE_CONFIG, so the FAQ cannot show it. (The rows are on Nov 18 games, now final; same rule applies to live games.)",
+  "evidence": "tickets/evidence/SHP-002.txt (output of SHP-scripts/chk2.py: 'mismatch 3' lists the three rows)",
+  "suspected_area": "packages/core/src/pricing.ts deep-market guard (Math.max(5, ...)); packages/core/src/grades.ts GRADE_CONFIG/gradeFaqAnswer",
+  "persona": "sharp bettor who checks the math"
+}

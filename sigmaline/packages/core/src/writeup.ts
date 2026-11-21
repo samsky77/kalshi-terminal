@@ -83,7 +83,7 @@ function edgeSentence(f: WriteupFacts): string {
   }
   if (sel.market === 'ml') {
     const who = sel.side === 'draw' ? 'the draw' : f.team;
-    return `The price on ${who} (${price}) implies ${pct(1 / f.bestDecimal)}; we make it ${pct(f.fairP)}. That ${Math.round(gap * 1000) / 10}-point gap is the edge.`;
+    return `The price on ${who} (${price}) implies ${pct(1 / f.bestDecimal)}; we make it ${pct(f.fairP)}. That ${Math.round(gap * 1000) / 10}-point gap in win probability works out to about +${(f.ev * 100).toFixed(1)}% per bet (the edge).`;
   }
   if (sel.market === 'prop') {
     const side = sel.side === 'over' ? 'over' : 'under';

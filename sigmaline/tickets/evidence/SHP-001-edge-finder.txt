@@ -1,0 +1,66 @@
+Skip to content
+DEMO DATA — RECORDED ODDS AND MODEL-SAMPLED RESULTS. NOT A LIVE RECORD.
+SIGMALINE
+SAT, NOV 21, 2026
+SLATE
+EDGES
+RESULTS
+ALERTS
+ACCOUNT
+Edge Finder
+
+Every live edge across all sports, game lines and player props. Edge = fair probability × decimal odds − 1. Only prices updated in the last 100000 minutes count. Grades: A ≥ 5% with model and consensus agreeing, B 2%–5%.
+
+SPORT
+All
+NBA
+NHL
+NFL
+CBB
+CFB
+SOC
+TEN
+MARKET
+All
+Game lines
+Props
+BOOK
+All
+DraftKings
+MIN EDGE
+Any
+2%+
+3%+
+5%+
+8%+
+GRADE
+A + B
+A only
+B only
+SORT
+Biggest edge
+Starting soonest
+Recently updated
+APPLY FILTERS
+RESET
+
+1 OF 1 LIVE EDGE
+
+CBB · GAME LINE · 2:00 AM
+Flames @ Gaels
+Saint Mary's Gaels ML
+−196 DraftKings · 8 books
+updated 1 h 15 min ago
+CONSENSUS-ONLY
+fair −246
++7.3%
+A
+
+21+ · For information and entertainment only. Not a guarantee of results. Gambling problem? Call 1-800-GAMBLER.
+
+Terms
+Privacy
+Responsible gambling
+Track record
+
+Sigmaline never places, holds or brokers bets and never connects to sportsbook accounts.

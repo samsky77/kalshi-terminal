@@ -1,0 +1,12 @@
+{ "id": "SEC-003",
+  "title": "PROD /api/health exposes full internal job detail (data-provider names, per-sport event & snapshot counts, alerts/finals/graded/closing/published breakdown) to anonymous callers; current codebase already restricts this",
+  "severity": "P2", "persona": "attacker (unauthenticated, passive)", "url": "https://sigmaline.netlify.app/api/health",
+  "device": "n/a (server response)",
+  "steps": [
+    "GET https://sigmaline.netlify.app/api/health with no auth (passive read of a public endpoint).",
+    "Response includes lastJob.detail with keys [pulls, alerts, finals, graded, closing, published, simulated]; pulls lists provider='propline', events and snapshot counts per sport (e.g. cfb events=181 snapshots=72585)."
+  ],
+  "expected": "Per the health route's own contract ('Only the last job's name, status and times: no pull plan, providers or counts'), the endpoint must not reveal the detail jsonb.",
+  "actual": "PROD (old code) returns the entire job.detail object, disclosing which paid data providers are used and the operational scale. The new code in app/src/app/api/health/route.ts already narrows lastJob to {job,status,started_at,finished_at} (QA-PAYWALL /api/health returns no detail), so shipping the current build fixes it; filing so the fix is confirmed deployed to PROD.",
+  "evidence": "evidence/SEC-003-prod-health.json (leaked detail) ; evidence/SEC-003-qa-health.json (fixed shape)",
+  "suspected_area": "Deployed PROD build predates the health-route restriction; verify the fix ships and consider CSP (see SEC-004)." }

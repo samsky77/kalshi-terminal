@@ -1,0 +1,12 @@
+Open redirect via safeNext — app/src/lib/whop.ts:115-117
+  export function safeNext(n: string | null): string {
+    return n && n.startsWith('/') && !n.startsWith('//') ? n : '/slate';
+  }
+Only "//" is blocked; a backslash passes and WHATWG URL normalises it to "/":
+  safeNext("/\\evil.com")        => "/\\evil.com"   (accepted)
+  new URL("/\\evil.com", base)   => http://evil.com/   (external host)
+next is carried through the signed sl_oauth cookie (login route) into /api/auth/callback, which on a
+successful Whop login does NextResponse.redirect(new URL(dest, req.url)) with dest = next -> victim is
+redirected off-site after login. (Not reproducible on QA: WHOP_CLIENT_ID unset, /api/auth/login ->
+/login?error=not_configured. Reachable on a Whop-configured prod deployment.)
+Other probes: "//evil.com" blocked, "https://evil.com" blocked, "/%2f%2fevil.com" stays same-origin.

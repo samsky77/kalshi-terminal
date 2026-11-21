@@ -24,7 +24,7 @@ export function publishable(sport: string, p: PricedSelection, env: Record<strin
 /** Game-line edges above this are almost always a stale or mis-mapped quote, not value. */
 export const MAX_GAME_LINE_PICK_EV = GRADE_CONFIG.maxCredibleEdge.game;
 /** A spread/total pick needs at least this share of the deepest line's book count (and 5 books). */
-export const MIN_LINE_DEPTH_SHARE = 0.5;
+export const MIN_LINE_DEPTH_SHARE = GRADE_CONFIG.altLine.minShareOfMain;
 
 /**
  * Deep-market guard for spreads and totals. Alternate lines far from the main number are quoted by a
@@ -37,7 +37,8 @@ export function lineDepthReason(p: PricedSelection, deepest: Map<string, number>
   const m = p.selection.market;
   if (m !== 'spread' && m !== 'total') return null;
   const top = deepest.get(m) ?? 0;
-  const need = Math.max(5, Math.ceil(top * MIN_LINE_DEPTH_SHARE));
+  if (p.books >= top) return null; // the main line itself
+  const need = Math.max(GRADE_CONFIG.altLine.minBooks, Math.ceil(top * MIN_LINE_DEPTH_SHARE));
   return p.books < need ? `thin alternate line (${p.books} books, main line has ${top})` : null;
 }
 

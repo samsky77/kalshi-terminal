@@ -1,0 +1,18 @@
+{
+  "id": "SHP-001",
+  "title": "A grade given to consensus-only rows: the 'model and consensus both agree' rule is always true because model EV is set to consensus EV",
+  "severity": "P1",
+  "url": "http://localhost:3100/edges",
+  "device": "iPhone 13 (Playwright), plus demo-db.json",
+  "steps": [
+    "Open /edges: the only live edge is 'Saint Mary's Gaels ML, −196 DraftKings · 8 books, CONSENSUS-ONLY, fair −246, +7.3%, A'.",
+    "Open /game/cbb-4173bf9ec636d687: MODEL reads 'market consensus only (not enough results yet for ratings)'.",
+    "In demo-db.json market_prices for cbb-4173bf9ec636d687 ml:home: ev 0.073478, model_ev 0.073478, consensus_ev 0.073478, fair_source 'consensus'. model_probs.win = 0.7357, so a real model EV would be 0.7357×1.51−1 = +0.1109, not 0.073478.",
+    "Read packages/core/src/pricing.ts: `const modelEv = marketOnly ? consensusEv : ...` and then gradePick(ev, modelEv, consensusEv)."
+  ],
+  "expected": "The FAQ and the Edge Finder header both say A needs edge ≥ 5% AND our model and the market consensus both agreeing. A row with no independent model cannot meet the agreement test, so it should be graded at most B (or the FAQ should say that consensus-only rows can get A on line shopping alone).",
+  "actual": "Every consensus-only row with edge ≥ 5% gets A, because the agreement check compares consensus EV to itself. Both A grades in the demo are like this: cbb-4173bf9ec636d687 (open, logged pick #9, 2u stake) and cbb-09a04c0a5057e48b (Saint Mary's Gaels ML 1.51, edge 0.073478, settled as a 2u win, +1.02u in the live record). The stored `model_ev` column also holds the consensus EV, so it is mislabelled.",
+  "evidence": "tickets/evidence/SHP-001.png, tickets/evidence/SHP-001-edge-finder.txt; recompute script tickets/evidence/SHP-scripts/chk2.py",
+  "suspected_area": "packages/core/src/pricing.ts priceMarkets (modelEv for marketOnly), packages/core/src/ev.ts gradePick",
+  "persona": "sharp bettor who checks the math"
+}

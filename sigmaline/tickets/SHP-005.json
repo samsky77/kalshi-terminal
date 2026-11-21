@@ -1,0 +1,16 @@
+{
+  "id": "SHP-005",
+  "title": "Write-up calls the probability gap 'the edge', which is a different number from the edge % shown on the same pick",
+  "severity": "P2",
+  "url": "http://localhost:3100/api/results (picks writeup) and /game/cbb-4173bf9ec636d687",
+  "device": "curl",
+  "steps": [
+    "Saint Mary's Gaels ML pick: writeup.edge = 'The price ... (−196) implies 66%; we make it 71%. That 4.9-point gap is the edge.' The same pick shows edge +7.3% (0.7109×1.51−1 = 0.0735).",
+    "UNLV Rebels ML: '…implies 68%; we make it 69%. That 1.5-point gap is the edge.' Displayed edge +2.2% (0.6904×1.48−1 = 0.0218)."
+  ],
+  "expected": "One meaning of 'edge' on the page: either say 'a 4.9-point probability gap, worth +7.3% expected value', or don't call the gap the edge.",
+  "actual": "The text calls 4.9 points 'the edge' next to a +7.3% edge badge; a bettor checking the math sees two different edges. (The underlying numbers are right: implied 1/1.51 = 66.2%, fair 71.1%, gap 4.86 pts.)",
+  "evidence": "/api/results rows[0].writeup.edge and rows[1].writeup.edge",
+  "suspected_area": "packages/core/src/writeup.ts",
+  "persona": "sharp bettor who checks the math"
+}

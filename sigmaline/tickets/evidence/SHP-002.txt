@@ -1,0 +1,15 @@
+nba nba-fa3e335565eb02c2 spread:away:3.5:: B ev 0.037879 m 0.037879 c 0.037879 books 5 fanduel 2.04 fair 1.965547 price_ts 2026-11-18T03:08:18.676Z commence 2026-11-18T01:11:22.676Z final
+nba nba-1fffb5c0428b5459 ml:home::: B ev 0.032048 m 0.032048 c 0.032048 books 6 draftkings 1.21 fair 1.172426 price_ts 2026-11-18T03:07:59.676Z commence 2026-11-18T01:42:22.676Z final
+nba nba-1fffb5c0428b5459 ml:away::: B ev 0.029473 m 0.029473 c 0.029473 books 6 betmgm 7 fair 6.799596 price_ts 2026-11-18T03:07:05.676Z commence 2026-11-18T01:42:22.676Z final
+cbb cbb-e365a0405bfb7bd9 ml:away::: B ev 0.035327 m 0.035327 c 0.035327 books 5 betrivers 1.25 fair 1.207348 price_ts 2026-11-18T03:08:18.676Z commence 2026-11-18T01:00:22.676Z final
+cbb cbb-f9b7d4777063403c ml:home::: B ev 0.021766 m 0.021766 c 0.021766 books 5 betmgm 1.48 fair 1.448473 price_ts 2026-11-18T03:08:18.676Z commence 2026-11-18T02:00:22.676Z final
+cbb cbb-09a04c0a5057e48b ml:home::: A ev 0.073478 m 0.073478 c 0.073478 books 8 draftkings 1.51 fair 1.406643 price_ts 2026-11-18T03:07:43.676Z commence 2026-11-18T03:00:22.676Z final
+nba nba-e8993c81cb3a7306 spread:away:3.5:: B ev 0.037879 m 0.037879 c 0.037879 books 5 fanduel 2.04 fair 1.965547 price_ts 2026-11-21T05:08:55.223Z commence 2026-11-21T05:11:22.676Z scheduled
+nba nba-af11e1ec682678dd ml:home::: B ev 0.032048 m 0.032048 c 0.032048 books 6 draftkings 1.21 fair 1.172426 price_ts 2026-11-21T05:08:55.223Z commence 2026-11-21T05:42:22.676Z scheduled
+nba nba-af11e1ec682678dd ml:away::: B ev 0.029473 m 0.029473 c 0.029473 books 6 betmgm 7 fair 6.799596 price_ts 2026-11-21T05:08:55.223Z commence 2026-11-21T05:42:22.676Z scheduled
+cbb cbb-91a7fadb43701468 ml:home::: B ev 0.021766 m 0.021766 c 0.021766 books 5 betmgm 1.48 fair 1.448473 price_ts 2026-11-21T05:08:55.236Z commence 2026-11-21T06:00:22.676Z scheduled
+cbb cbb-4173bf9ec636d687 ml:home::: A ev 0.073478 m 0.073478 c 0.073478 books 8 draftkings 1.51 fair 1.406643 price_ts 2026-11-21T05:08:55.236Z commence 2026-11-21T07:00:22.676Z scheduled
+mismatch 3
+('cbb-562884fe7ec927e7', 'spread:home:-13.5::', 'none', 'A', 0.064371, 3)
+('cbb-cbfc32bcbd03b04d', 'spread:away:25.5::', 'none', 'A', 0.051244, 3)
+('cfb-8b451cb2cecbf843', 'spread:home:5.5::', 'none', 'B', 0.034303, 3)

@@ -1,0 +1,12 @@
+{ "id": "SEC-004",
+  "title": "No Content-Security-Policy header on any response (QA-PAYWALL and PROD); other security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS on PROD) are present",
+  "severity": "P3", "persona": "attacker (XSS/clickjacking hardening)", "url": "http://localhost:3200/ and https://sigmaline.netlify.app/",
+  "device": "n/a (response headers)",
+  "steps": [
+    "curl -D - the root of QA-PAYWALL and PROD and inspect headers.",
+    "QA: X-Content-Type-Options nosniff, X-Frame-Options DENY, Referrer-Policy present; no Content-Security-Policy. PROD: adds Strict-Transport-Security; still no Content-Security-Policy (next.config headers() sets no CSP)."
+  ],
+  "expected": "A paid app that renders user/provider-derived strings should ship a Content-Security-Policy (at minimum default-src 'self' with explicit script/style/connect sources) as defence-in-depth against XSS and data exfiltration.",
+  "actual": "No CSP is emitted anywhere. Session cookies are HttpOnly and SameSite=Lax (cookieOptions), Secure in production, so cookie theft is mitigated, but there is no script/connect restriction. Hardening gap, not an active bypass.",
+  "evidence": "QA headers: X-Content-Type-Options/X-Frame-Options/Referrer-Policy present, CSP absent. PROD: HSTS present, CSP absent (curl grep -c content-security-policy => 0).",
+  "suspected_area": "app/next.config.* headers() — add a Content-Security-Policy source block." }

@@ -1,0 +1,19 @@
+{
+  "id": "CAN-001",
+  "title": "One-free-trial rule bypassed: a 'canceled' event with a future period end on the locked second trial restores full access",
+  "severity": "P0",
+  "persona": "Member whose membership was canceled or expired (cookie + signed Whop webhooks, QA-PAYWALL)",
+  "url": "http://localhost:3200/api/slate?sport=nba (and /slate, /edges, /game/<id>)",
+  "device": "curl / node fetch (no browser)",
+  "steps": [
+    "Signed webhook POST /api/webhooks/whop (Standard Webhooks, secret qa_webhook_secret_for_local_tests, data.product.id=prod_qa, user.id=qa_can_44), ~1.1 s apart so event times increase: 1) membership.went_valid {id:mem_c44a,status:trialing,renewal_period_end:+5d} -> trialing.",
+    "2) membership.went_invalid {id:mem_c44a,status:expired} -> expired.",
+    "3) membership.went_valid {id:mem_c44b,status:trialing,renewal_period_end:+5d} -> response status trial_used, GET /api/slate with the signed cookie = 401 (correct).",
+    "4) membership.cancel_at_period_end_changed {id:mem_c44b,status:canceled,cancel_at_period_end:true,renewal_period_end:+5d} -> response status canceled.",
+    "5) GET /api/slate?sport=nba with cookie for qa_can_44 -> 200 with full slate; /slate, /edges, /game/<id> also open."
+  ],
+  "expected": "A user who already used their free trial (status trial_used) never regains access without a real payment (the code comment in applyEvent says 'nothing but a real payment (active) revives an expired / trial_used account'). Start-second-trial-then-cancel must stay locked.",
+  "actual": "Step 4 turns trial_used into canceled with expires_at = the 2nd trial's end, and hasAccess(canceled) is true until then. So every user can chain unlimited free trials: start a new trial on a new Whop membership, cancel it, keep access to the end of the trial, repeat. Same happened for a plain expired user: an expired account (qa_can_23) received a 'canceled' event with future period end and got access (200), with no payment event.",
+  "evidence": "Session log in this run: responses '200 {ok,status:trial_used} api 401' then '200 {ok,status:canceled} api 200'. Also qa_can_25 (trial_used) and qa_can_23 (expired) reproduced the revive via the same event. Local script: scratchpad/can/sc4.js",
+  "suspected_area": "app/src/lib/membership.ts applyEvent: the trial-lock/revive guards only run for status==='trialing'; a 'canceled' (or any non-payment) status from data.status is applied to a trial_used/expired row as-is. Guess: canceled must not move out of trial_used/expired unless prior status was trialing/active/past_due or first_trial_at is not set for this membership."
+}

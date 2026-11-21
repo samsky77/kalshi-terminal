@@ -37,6 +37,9 @@ describe('grades match the FAQ', () => {
     ]);
     expect(gradeFaqAnswer()).toContain(`at least ${c.minBooks.game} books`);
     expect(gradeFaqAnswer()).toContain(`${c.staleMinutes} minutes`);
+    expect(gradeFaqAnswer()).toContain(`at least ${c.altLine.minBooks} books and half as many books as the main line`);
+    expect(c.altLine.minShareOfMain).toBe(0.5); // the FAQ says "half"
+    expect(gradeFaqAnswer()).toMatch(/can be a B but never an A/);
   });
   it('the published FAQ boundaries are 5% / 2% / 5% (source of truth)', () => {
     expect(GRADE_CONFIG.A.minEdge).toBe(0.05);

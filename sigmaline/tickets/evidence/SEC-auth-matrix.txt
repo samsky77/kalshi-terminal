@@ -1,0 +1,16 @@
+Auth bypass matrix vs QA-PAYWALL (cookie -> /api/slate, /slate, /admin, POST /api/admin/settings)
+none             slate=401  /slate->/login       /admin->/   settings=405(GET)/403(POST)
+garbage          slate=401  /slate->/login       /admin->/
+unsigned_admin   slate=401  /slate->/login       /admin->/   (alg/none & headerless JWT shapes rejected)
+devsecret_admin  slate=401  /slate->/login       /admin->/   (dev fallback secret REJECTED on QA)
+expired_admin    slate=401  /slate->/login       /admin->/
+tampered_admin   slate=401  /slate->/login       /admin->/   (body swapped, sig kept -> rejected)
+nonmember        slate=401  /slate->/?membership=inactive
+admin_upper      slate=200  /slate=200           /admin=200  (ADMIN@QA.LOCAL == admin@qa.local, by design)
+admin_space      slate=401  /slate->inactive                 (' admin@qa.local' NOT admin -> no trim bypass)
+non-admin POST /api/admin/settings => 403 ; no-session POST => 403
+Webhook: wrong-secret/missing-sig/missing-id/missing-ts/old-ts/v0-prefix/empty-sig/body-changed => 401;
+oversized(>256KB) => 413; valid trial => 200; replay same webhook-id => {duplicate:true}; dedup OK.
+SQL layer (packages/db backends.ts) is fully parameterised ($n) with ident() allowlist -> webhook
+JSON into members upsert cannot reach SQL. Migrations tamper test: picks/pick_results/edges_log
+UPDATE/DELETE/TRUNCATE all blocked by triggers; first_shown_at server-stamped, cannot be backdated.

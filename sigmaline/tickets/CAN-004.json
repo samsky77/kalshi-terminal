@@ -1,0 +1,16 @@
+{
+  "id": "CAN-004",
+  "title": "Trial-used account shows 'Renews / ends <date>' from the locked second trial",
+  "severity": "P3",
+  "persona": "Member whose membership was canceled or expired (cookie + signed Whop webhooks, QA-PAYWALL)",
+  "url": "http://localhost:3200/account",
+  "device": "curl / node fetch (no browser)",
+  "steps": [
+    "Webhook: trialing on mem A, expired, trialing on mem B for user qa_can_32 -> trial_used.",
+    "Open /account with the session cookie."
+  ],
+  "expected": "No renewal/end date for an account with no access (status 'Free trial already used \u00b7 subscribe to continue').",
+  "actual": "'Renews / ends' row shows Nov 26, 2026, the end date of the blocked trial, which reads as if something renews.",
+  "evidence": "evidence/CAN-trialused-account.png",
+  "suspected_area": "account/page.tsx shows m.expires_at for every status; applyEvent keeps expires_at of the locked trial"
+}

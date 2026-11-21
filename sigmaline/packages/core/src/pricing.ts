@@ -115,7 +115,8 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
       const fair = marketOnly ? (Number.isFinite(cP) ? consFair : { win: NaN, push: NaN, loss: NaN }) : blendFair(model, cP, w);
       const ev = Number.isFinite(bestDecimal) ? expectedValue(fair, bestDecimal) : NaN;
       const consensusEv = Number.isFinite(bestDecimal) && Number.isFinite(cP) ? expectedValue(consFair, bestDecimal) : NaN;
-      const modelEv = marketOnly ? consensusEv : Number.isFinite(bestDecimal) ? expectedValue(model, bestDecimal) : NaN;
+      // No independent model: there is no model EV, so 'model and consensus agree' (grade A) can't hold.
+      const modelEv = marketOnly ? NaN : Number.isFinite(bestDecimal) ? expectedValue(model, bestDecimal) : NaN;
       out.push({
         selection: sel, key: selectionKey(sel), books: full.length, bestBook, bestDecimal,
         consensusP: cP, model, fair, fairDecimal: fairDecimal(fair), ev, modelEv, consensusEv,
@@ -135,8 +136,10 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
   for (const p of out) deepest.set(depthKey(p), Math.max(deepest.get(depthKey(p)) ?? 0, p.books));
   for (const p of out) {
     const m = p.selection.market;
-    if ((m === 'spread' || m === 'total') && p.books < Math.max(5, Math.ceil((deepest.get(m) ?? 0) * 0.5))) p.grade = 'none';
-    if (m === 'prop' && p.books < Math.max(GRADE_CONFIG.minBooks.prop, Math.ceil((deepest.get(depthKey(p)) ?? 0) * 0.5))) p.grade = 'none';
+    const top = deepest.get(depthKey(p)) ?? 0;
+    const isMain = p.books >= top; // the deepest line (most books) is the main line
+    const alt = GRADE_CONFIG.altLine;
+    if ((m === 'spread' || m === 'total' || m === 'prop') && !isMain && p.books < Math.max(alt.minBooks, Math.ceil(top * alt.minShareOfMain))) p.grade = 'none';
     if (m !== 'prop' && p.ev > GAME_LINE_MAX_CREDIBLE_EV) p.grade = 'none';
   }
   return out.sort((a, b) => (b.ev || -9) - (a.ev || -9));

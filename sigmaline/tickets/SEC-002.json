@@ -1,0 +1,14 @@
+{ "id": "SEC-002",
+  "title": "Open redirect in safeNext(): a backslash path ('/\\evil.com') passes the '//' check and new URL() resolves it to an external host; flows through sl_oauth into /api/auth/callback's post-login redirect",
+  "severity": "P2", "persona": "attacker (phishing a signed-in user)", "url": "app/src/lib/whop.ts safeNext(); /api/auth/login?age=1&next=/%5Cevil.com -> /api/auth/callback",
+  "device": "n/a (code defect)",
+  "steps": [
+    "safeNext(n) (app/src/lib/whop.ts:115) accepts n when n.startsWith('/') && !n.startsWith('//').",
+    "Pass next='/\\evil.com' (a single leading slash then a backslash): it is accepted unchanged.",
+    "The login route stores next in the signed sl_oauth cookie; /api/auth/callback then does NextResponse.redirect(new URL(dest, req.url)) with dest=next on a successful Whop login.",
+    "new URL('/\\evil.com', 'http://host') === 'http://evil.com/' because WHATWG URL normalises '\\' to '/', making it protocol-relative -> external redirect."
+  ],
+  "expected": "safeNext should only ever return a same-origin path; backslashes / control chars that URL parsers fold into '//' must be rejected (or the path re-validated after new URL() against the app origin).",
+  "actual": "'/\\evil.com' is treated as a safe local path and redirects off-site to evil.com after a completed OAuth login. Verified: new URL('/\\evil.com', base) -> http://evil.com/. Not reproducible end-to-end on QA because WHOP_CLIENT_ID is unset (/api/auth/login -> /login?error=not_configured); reachable on a Whop-configured production deployment.",
+  "evidence": "evidence/SEC-002-open-redirect.txt",
+  "suspected_area": "app/src/lib/whop.ts safeNext — insufficient allowlist; also /api/auth/callback re-redirects to next without re-checking origin." }

@@ -1,0 +1,14 @@
+{ "id": "SEC-001",
+  "title": "Production session signer silently falls back to the world-known 'dev-only-insecure' secret when SESSION_SECRET is unset (guard only fires if SUPABASE_URL is set, but prod uses DATABASE_URL) — forgeable sl_session => full auth/paywall/admin bypass",
+  "severity": "P0", "persona": "attacker (unauthenticated)", "url": "app/src/lib/session.ts (sessionSecret); exploitable at any gated route e.g. http://localhost:3200/api/slate",
+  "device": "n/a (code/config defect)",
+  "steps": [
+    "Read sessionSecret() in app/src/lib/session.ts: returns SESSION_SECRET if >=32 chars; else throws ONLY when NODE_ENV==='production' && process.env.SUPABASE_URL; else returns the hardcoded 'dev-only-insecure-session-secret-change-me-0000'.",
+    "Confirm prod runs on DATABASE_URL not SUPABASE_URL: dbFromEnv() (packages/db/src/index.ts) uses Supabase only when SUPABASE_URL+SUPABASE_SERVICE_ROLE_KEY are both set; PROD /api/health returns {\"db\":\"pg\"} (see evidence SEC-003-prod-health.json).",
+    "Reproduce the exact conditional in isolation: node eval with {NODE_ENV:'production', DATABASE_URL:'postgres://x'} and no SESSION_SECRET => returns 'dev-only-insecure-session-secret-change-me-0000'; with SUPABASE_URL added it throws. (evidence SEC-001-session-fallback.txt)",
+    "Attack: forge sl_session = base64url(JSON({uid:'x', email:<ADMIN_EMAIL>, exp:<future>})) + '.' + base64url(HMAC-SHA256(dev-secret, body)). verifySession accepts it; viewerFromToken sets admin=true (email===ADMIN_EMAIL) and active=true -> paywall + /admin bypass with no Whop membership."
+  ],
+  "expected": "A production deployment must never sign/verify sessions with a committed, publicly-known fallback secret; absent a strong SESSION_SECRET in production the app should refuse to start, regardless of whether SUPABASE_URL or DATABASE_URL is the backend.",
+  "actual": "When SESSION_SECRET is missing/short and SUPABASE_URL is unset (the production Postgres/self-host configuration), sessionSecret() returns the hardcoded dev secret and all session cookies are signed/verified with a key that is public in the repo, allowing arbitrary session (incl. admin) forgery. On QA-PAYWALL SESSION_SECRET is set so a dev-secret cookie is correctly rejected (devsecret_admin -> 401 in the auth matrix); the defect is the production guard, which checks the wrong env var.",
+  "evidence": "evidence/SEC-001-session-fallback.txt ; evidence/SEC-auth-matrix.txt ; evidence/SEC-003-prod-health.json (db=pg)",
+  "suspected_area": "app/src/lib/session.ts sessionSecret() — the production guard keys off process.env.SUPABASE_URL; it should require SESSION_SECRET whenever NODE_ENV==='production' (or whenever a non-demo DB / DATABASE_URL is configured), not only under Supabase." }

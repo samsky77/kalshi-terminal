@@ -1,0 +1,15 @@
+{
+  "id": "EFP-003",
+  "title": "Min edge filter accepts values the select can't show (0.5, 1, 4, 10, 25)",
+  "severity": "P3",
+  "persona": "Edge Finder power user",
+  "url": "http://localhost:3100/edges",
+  "device": "iPhone 13 (Playwright)",
+  "steps": [
+    "Open /edges?min=4 (or min=0.5, min=1e1, min=25)"
+  ],
+  "expected": "Select shows the active min edge, or the value is snapped to an option.",
+  "actual": "parseEdgeFilters accepts any 0 < min <= 25, the select has only Any/2/3/5/8. The filter is applied (e.g. min=25 gives '0 of 1') while the select shows 'Any'. Values >25 or <=0 or junk are silently treated as no filter (min=99999, -5, abc, 25.01), which is acceptable but undisclosed. Repeated params (sport=nba&sport=cbb, min=2&min=8) are ignored and fall back to defaults; unknown sport, XSS strings in sport/book are not reflected (no XSS seen), all return 200.",
+  "evidence": "tickets/evidence/EFP-003.png; node fetch of the URLs listed",
+  "suspected_area": "packages/db/src/feed.ts parseEdgeFilters vs MIN_EDGES in edges/page.tsx"
+}

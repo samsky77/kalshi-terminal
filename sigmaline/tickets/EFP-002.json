@@ -1,0 +1,15 @@
+{
+  "id": "EFP-002",
+  "title": "Book filter for a valid book with no current edges shows 'All' but returns 0 rows",
+  "severity": "P2",
+  "persona": "Edge Finder power user",
+  "url": "http://localhost:3100/edges",
+  "device": "iPhone 13 (Playwright)",
+  "steps": [
+    "Open /edges?book=fanduel (a valid book key; no current edge is at FanDuel)"
+  ],
+  "expected": "Book select shows the active book, or the book is ignored/explained.",
+  "actual": "Count line says '0 of 1 live edge', but the Book select shows 'All' because options are built only from books present in the current feed (betmgm, draftkings only). Selects can't show the active filter. Also happens for any book that drops out of the feed after the user saved or shared a link.",
+  "evidence": "tickets/evidence/EFP-002.png; matrix run: 1080/4320 URL combos with book=fanduel had select book showing All (/tmp/claude-0/qa/matrix.js, copy at tickets/evidence/EFP-matrix.js). All other checks in the 4320-combo matrix (count line, row match, sort, other selects) passed.",
+  "suspected_area": "edges/page.tsx: `books` derived from feed.rows; include f.book in the option list."
+}

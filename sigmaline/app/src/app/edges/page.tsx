@@ -21,7 +21,11 @@ export default async function EdgeFinder({ searchParams }: { searchParams: Promi
   const sm = staleMinutes();
   const feed = await edgeFeed();
   const rows = applyEdgeFilters(feed.rows, f);
-  const books = [...new Set(feed.rows.map((r) => r.best_book).filter(Boolean) as string[])].sort();
+  // The active book stays selectable even with no live edges right now (EFP-002).
+  const books = [...new Set([...feed.rows.map((r) => r.best_book).filter(Boolean) as string[], ...(f.book !== 'all' ? [f.book] : [])])].sort();
+  // The active minimum stays selectable even if it isn't a preset (EFP-003).
+  const minNow = f.minEdge ? String(Math.round(f.minEdge * 1000) / 10) : '';
+  const minOptions = [...new Set([...MIN_EDGES, minNow])].sort((a, b) => Number(a || 0) - Number(b || 0));
   const sel = 'tap w-full border border-line bg-panel px-2 text-[13px] text-ink';
   return (
     <>
@@ -32,7 +36,8 @@ export default async function EdgeFinder({ searchParams }: { searchParams: Promi
           <p className="mt-1 text-[12px] text-muted">
             Every live edge across all sports, game lines and player props. Edge = fair probability × decimal odds − 1. Only prices updated in the last {sm} minutes count. Grades: A ≥ {pct(GRADE_CONFIG.A.minEdge, 0, false)} with model and consensus agreeing, B {pct(GRADE_CONFIG.B.minEdge, 0, false)}–{pct(GRADE_CONFIG.B.maxEdge, 0, false)}.
           </p>
-          <form method="get" className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-6" aria-label="Filter edges">
+          {/* key: remount on every filter change so the selects always show the active filters (EFP-001). */}
+          <form key={JSON.stringify(f)} method="get" className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-6" aria-label="Filter edges">
             <label className="flex flex-col gap-1"><span className="label">Sport</span>
               <select name="sport" defaultValue={f.sport} className={sel}>
                 <option value="all">All</option>
@@ -51,8 +56,8 @@ export default async function EdgeFinder({ searchParams }: { searchParams: Promi
               </select>
             </label>
             <label className="flex flex-col gap-1"><span className="label">Min edge</span>
-              <select name="min" defaultValue={f.minEdge ? String(Math.round(f.minEdge * 100)) : ''} className={sel}>
-                {MIN_EDGES.map((m) => <option key={m} value={m}>{m ? `${m}%+` : 'Any'}</option>)}
+              <select name="min" defaultValue={minNow} className={sel}>
+                {minOptions.map((m) => <option key={m} value={m}>{m ? `${m}%+` : 'Any'}</option>)}
               </select>
             </label>
             <label className="flex flex-col gap-1"><span className="label">Grade</span>

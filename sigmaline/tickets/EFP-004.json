@@ -1,0 +1,16 @@
+{
+  "id": "EFP-004",
+  "title": "edges_log rows from the first replay have price_ts after first_shown_at and after the game start",
+  "severity": "P3",
+  "persona": "Edge Finder power user",
+  "url": "http://localhost:3100/edges",
+  "device": "iPhone 13 (Playwright)",
+  "steps": [
+    "Read sigmaline/app/.data/demo-db.json edges_log, the 6 rows with start_time 2026-11-18",
+    "Compare price_ts to first_shown_at and start_time"
+  ],
+  "expected": "price_ts (book's own last_update) is not later than first_shown_at, which is before start_time.",
+  "actual": "e.g. nba-fa3e335565eb02c2: first_shown_at 2026-11-18T00:08:22Z, start 01:11Z, price_ts 03:08:18Z (3 h after logging and after the game). The 5 rows for the later replay (Nov 21) are consistent (price_ts 05:08:55 < first_shown 05:08:56). Also closing_price equals price_taken and clv equals edge_pct exactly on the old rows. Likely demo seed time-shift artifact, not a worker bug; flag only because Results/CLV shown from this data would look wrong. No other log problems found: no duplicate edge_keys, one row per currently shown edge, none logged at/after start, logged price/edge/grade equal market_prices, edge_price_updates is empty (no price changes in demo).",
+  "evidence": "node analysis of demo-db.json (edges_log vs market_prices/events)",
+  "suspected_area": "demo seeding (price_ts not rebased with other timestamps); not worker/src/edges.ts"
+}

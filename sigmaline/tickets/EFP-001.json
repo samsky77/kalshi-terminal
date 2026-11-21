@@ -1,0 +1,16 @@
+{
+  "id": "EFP-001",
+  "title": "Reset leaves the filter selects on their old values",
+  "severity": "P2",
+  "persona": "Edge Finder power user",
+  "url": "http://localhost:3100/edges",
+  "device": "iPhone 13 (Playwright)",
+  "steps": [
+    "Open /edges?sport=cbb&grade=A&sort=start",
+    "Tap Reset (client-side navigation to /edges)"
+  ],
+  "expected": "URL /edges with every select back to All / Any / A + B / Biggest edge.",
+  "actual": "URL becomes /edges and the list is unfiltered, but the selects still read sport=cbb, grade=A, sort=start (uncontrolled defaultValue is not re-applied on client navigation). The form shows filters that are not applied; a fresh load of /edges shows the defaults. Same stale state is likely after browser back/forward between filter URLs.",
+  "evidence": "tickets/evidence/EFP-001.png; /tmp/claude-0/qa/ui2.js printed 'sport=cbb type=all book=all min= grade=A sort=start' after Reset",
+  "suspected_area": "app/src/app/edges/page.tsx: selects use defaultValue; Reset is a next/link. Key the form on the filter string, or make Reset a plain <a>/reload."
+}

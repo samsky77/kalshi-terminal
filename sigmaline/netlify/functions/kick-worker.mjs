@@ -1,6 +1,6 @@
 /**
  * Netlify Scheduled Function: starts the Sigmaline worker (GitHub Actions workflow_dispatch) every
- * 15 minutes. GitHub's own `*/15` schedule is best-effort and in practice ran every 4-6 hours
+ * 15 minutes. GitHub's own every-15-minutes schedule is best-effort and in practice ran every 4-6 hours
  * (BASELINE B2), which missed most pre-game and closing windows. Netlify's scheduler is reliable,
  * free on every plan, and this function only makes one tiny API call, well inside its 30 s limit.
  *

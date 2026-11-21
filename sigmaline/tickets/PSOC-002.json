@@ -1,0 +1,16 @@
+{
+  "id": "PSOC-002",
+  "title": "Yes-only anytime-goalscorer markets are never priced: a one-sided market has no fair price and is dropped",
+  "severity": "P2",
+  "persona": "props user (soccer)",
+  "url": "pipeline",
+  "device": "node script (pipeline), synthetic FAKE events",
+  "steps": [
+    "Synthetic event, one book posts only {Yes +150} for player_goal_scorer_anytime / any Yes market (typical US-book shape: no No side)",
+    "priceMarkets -> filterFeed"
+  ],
+  "expected": "Either a clear consensus-only price or an explicit 'no fair price' state for the Yes side.",
+  "actual": "Consensus needs books quoting both sides, so a Yes-only market gets books=0, fair=NaN, ev=NaN, and filterFeed drops it (no_fair). The No row has no price (no_price). Nothing is shown. Anytime scorer is the most common soccer prop and many books list Yes only, so coverage may be much thinner than the Props tab implies.",
+  "evidence": "PSOC-script.ts: 'Fake Striker goal scorer anytime: Yes bk=0 fair=NaN ev=NaN'",
+  "suspected_area": "packages/core/src/pricing.ts (`full` requires every side), feed.ts"
+}

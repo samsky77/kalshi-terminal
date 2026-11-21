@@ -86,7 +86,7 @@ function edgeSentence(f: WriteupFacts): string {
     return `The price on ${who} (${price}) implies ${pct(1 / f.bestDecimal)}; we make it ${pct(f.fairP)}. That ${Math.round(gap * 1000) / 10}-point gap in win probability works out to about +${(f.ev * 100).toFixed(1)}% per bet (the edge).`;
   }
   if (sel.market === 'prop') {
-    const yesNo = sel.line === 0.5 && /anytime|goals$|_td$/.test(sel.stat ?? '');
+    const yesNo = sel.line === 0.5 && /anytime|goals$|_td$|receive_card/.test(sel.stat ?? '');
     const side = yesNo ? (sel.side === 'over' ? '“Yes”' : '“No”') : sel.side === 'over' ? 'over' : 'under';
     const basis = f.fairSource === 'consensus' || !ok(f.propMean)
       ? `the market consensus across ${f.booksChecked} books puts the ${side} at ${pct(f.fairP)}`
@@ -237,7 +237,12 @@ function riskSentence(f: WriteupFacts): string {
   const r = RISK[f.sport];
   if (s.market === 'spread' && s.line !== undefined) return Math.abs(s.line) <= 3.5 ? r.smallSpread : r.spread;
   if (s.market === 'total') return s.side === 'over' ? r.over : r.under;
-  if (s.market === 'prop') return r.prop;
+  if (s.market === 'prop') {
+    // Soccer: an Under / No loses to a single moment; an Over / Yes needs minutes on the pitch (PSOC-005).
+    if (f.sport === 'soccer' && s.side === 'under') return 'Risk: one moment settles it. A single shot, goal or booking turns an Under or No into a loss.';
+    if (f.sport === 'soccer') return 'Risk: minutes. If he doesn’t start, or comes off at the hour mark, there is less time to get there.';
+    return r.prop;
+  }
   if (f.injuries?.length) return `Risk: late injury news. If a listed player's status changes before ${START_WORD[f.sport]}, the edge can disappear.`;
   return r.ml;
 }

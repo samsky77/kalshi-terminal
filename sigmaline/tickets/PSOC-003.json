@@ -1,0 +1,17 @@
+{
+  "id": "PSOC-003",
+  "title": "UCL props are silently dropped: Champions League has no propLineKey, and the empty state blames the books",
+  "severity": "P2",
+  "persona": "props user (soccer)",
+  "url": "/slate?sport=soccer&view=props (code)",
+  "device": "node script (pipeline), synthetic FAKE events",
+  "steps": [
+    "Read packages/core/src/sports.ts: every soccer league has propLineKey except `ucl`",
+    "worker/src/ingest.ts leagueRefs() filters out leagues whose provider key is empty, and PROP_MARKETS are only requested from PropLine",
+    "Props view for soccer (slate/page.tsx:149-150)"
+  ],
+  "expected": "UCL either gets a PropLine key or the UI/ops log says UCL props are not covered.",
+  "actual": "UCL is skipped for PropLine entirely (props and PropLine game lines); the Odds API only gets game markets. No log line, no health counter and no UI hint. The soccer Props empty state says 'Books haven't posted props yet, or our data provider doesn't carry them' for all leagues; tennis has its own honest sentence but UCL does not. Props tab also has no league filter, so a user cannot tell UCL is uncovered. (Provider key name for UCL not verified: offline.)",
+  "evidence": "code reading, sports.ts:68, ingest.ts:27-29",
+  "suspected_area": "packages/core/src/sports.ts, worker/src/ingest.ts#leagueRefs, app/src/app/slate/page.tsx"
+}

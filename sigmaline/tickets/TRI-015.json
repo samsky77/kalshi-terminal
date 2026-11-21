@@ -1,0 +1,5 @@
+{ "id": "TRI-015", "title": "Date-only period end (YYYY-MM-DD) shows one day early on Account", "severity": "P3",
+  "persona": "Trial user, day 7 (QA-PAYWALL verification round)", "url": "http://localhost:3200/account", "device": "curl / node",
+  "steps": ["uid qa_tri_v_wdate: membership.activated active (end +30d), then membership.canceled with renewal_period_end '2026-12-11' (date only)", "Open /account"],
+  "expected": "Access until Dec 11, 2026 (the date sent).", "actual": "Status says 'access until Dec 10, 2026' and 'Access ends Dec 10, 2026': date-only is parsed as UTC midnight and rendered in America/New_York.",
+  "evidence": "evidence/TRI-verify.js (v2 snippet)", "suspected_area": "membership.ts toIso/ET date formatting for date-only strings" }

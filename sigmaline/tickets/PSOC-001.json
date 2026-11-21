@@ -1,0 +1,16 @@
+{
+  "id": "PSOC-001",
+  "title": "Stale quote with a large edge is hidden as a sanity anomaly instead of shown as STALE",
+  "severity": "P2",
+  "persona": "props user (soccer)",
+  "url": "pipeline",
+  "device": "node script (pipeline), synthetic FAKE events",
+  "steps": [
+    "Run evidence/PSOC-script.ts (npx tsx from sigmaline): 'Fake Stale' goalscorer, best book b4 at +500, last_update 120 min old, others fresh at about +300",
+    "quotesFromEvent -> priceMarkets -> filterFeed"
+  ],
+  "expected": "A row whose best price is older than the stale threshold is dimmed, tagged STALE and ungraded on the price board (README rule), whatever its edge.",
+  "actual": "Edge was 30.6% so filterFeed hit the sanity cap first (counts.sanity++) and the row went to anomalies: it is not on the board and is written to data_anomalies as bad data, never STALE. With the same stale quote at a 5% edge (evidence/PSOC-script2.ts) it correctly lands in `stale`. Stale quotes are exactly the ones that show big edges, so they are mis-bucketed.",
+  "evidence": "evidence/PSOC-script.ts output: 'Fake Stale Goals 1+: Yes ... ev=30.59% bestTs=120m' listed under ANOM, STALE list empty",
+  "suspected_area": "packages/core/src/feed.ts filterFeed: sanity check runs before the stale check (guess: swap the order)"
+}

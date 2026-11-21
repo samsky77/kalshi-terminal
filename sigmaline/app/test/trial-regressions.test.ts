@@ -144,3 +144,12 @@ describe('canceled/expired regressions', () => {
     expect(await access('c4')).toBe(false);
   });
 });
+
+describe('TRI-015', () => {
+  it('a date-only period end means the end of that day in US Eastern', async () => {
+    const { memberDate } = await import('../src/lib/membership');
+    const iso = toIso('2026-12-11')!;
+    expect(memberDate(iso)).toBe('Dec 11, 2026');
+    expect(Date.parse(iso)).toBeGreaterThan(Date.parse('2026-12-11T23:00:00-05:00'));
+  });
+});

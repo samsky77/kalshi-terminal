@@ -1,0 +1,16 @@
+{
+  "id": "PSOC-006",
+  "title": "Consensus includes the very book being bet and stale books, so thin soccer prop markets read as value from one outlier",
+  "severity": "P3",
+  "persona": "props user (soccer)",
+  "url": "pipeline",
+  "device": "node script (pipeline), synthetic FAKE events",
+  "steps": [
+    "4 books on one goalscorer: three at +140..+150, one at +200 (fresh)",
+    "Another market: one book at +240 but 90 min old"
+  ],
+  "expected": "Fair price for line shopping should not be dragged by the book being bet; stale books should not set the consensus.",
+  "actual": "Fair = de-vigged mean including the outlier (fair 2.67 vs 3.00 best, 12.3% edge). With 4 books the outlier moves the fair price. Stale 90-min book still contributes to consensusP (0.3099 vs 0.3148 without it). Currently ungraded after the coordinator's fixes (consensus-only), so impact is a displayed edge number only. Guess/low priority.",
+  "evidence": "PSOC-script2.ts: consensusP with vs without stale book",
+  "suspected_area": "packages/core/src/pricing.ts consensus over `full`"
+}

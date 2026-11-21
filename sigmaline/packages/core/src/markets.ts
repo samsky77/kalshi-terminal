@@ -115,7 +115,7 @@ export function selectionLabel(sel: Selection, home: string, away: string): stri
     case 'total': return `${sel.side === 'over' ? 'Over' : 'Under'} ${sel.line}`;
     case 'prop': {
       // "1 or more" markets (anytime scorer / TD) read as Yes / No.
-      if (sel.line === 0.5 && /anytime|goals$|_td$/.test(sel.stat ?? '')) return `${sel.player} ${propLabel(sel.stat)}${/anytime/.test(sel.stat ?? '') ? '' : ' 1+'}: ${sel.side === 'over' ? 'Yes' : 'No'}`;
+      if (sel.line === 0.5 && /anytime|goals$|_td$|receive_card/.test(sel.stat ?? '')) return `${sel.player} ${propLabel(sel.stat)}${/anytime|receive_card/.test(sel.stat ?? '') ? '' : ' 1+'}: ${sel.side === 'over' ? 'Yes' : 'No'}`;
       return `${sel.player} ${sel.side === 'over' ? 'Over' : 'Under'} ${sel.line} ${propLabel(sel.stat)}`;
     }
   }

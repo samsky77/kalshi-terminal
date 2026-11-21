@@ -96,7 +96,10 @@ export const PROP_MARKETS: Record<SportId, string[]> = {
   nfl: ['player_pass_yds', 'player_pass_tds', 'player_pass_completions', 'player_pass_attempts', 'player_pass_interceptions', 'player_rush_yds', 'player_rush_attempts', 'player_receptions', 'player_reception_yds', 'player_anytime_td'],
   cfb: ['player_pass_yds', 'player_pass_tds', 'player_rush_yds', 'player_receptions', 'player_reception_yds'],
   nhl: ['player_points', 'player_goals', 'player_assists', 'player_shots_on_goal', 'player_blocked_shots', 'goalie_saves'],
-  soccer: ['player_goals', 'player_shots_on_goal', 'player_assists', 'player_cards'],
+  // Both naming styles: The Odds API's documented soccer keys (player_goal_scorer_anytime,
+  // player_shots_on_target, player_shots, player_to_receive_card) and PropLine's generic ones.
+  // A key the provider doesn't offer is simply not returned (PSOC-004).
+  soccer: ['player_goal_scorer_anytime', 'player_shots_on_target', 'player_shots', 'player_assists', 'player_to_receive_card', 'player_goals', 'player_shots_on_goal', 'player_cards'],
   tennis: [],
 };
 
@@ -107,6 +110,7 @@ const PROP_LABEL: Record<string, string> = {
   player_pass_completions: 'Completions', player_pass_attempts: 'Pass attempts', player_pass_interceptions: 'Interceptions', player_rush_yds: 'Rushing yds',
   player_rush_attempts: 'Rush attempts', player_receptions: 'Receptions', player_reception_yds: 'Receiving yds', player_anytime_td: 'Anytime TD',
   player_goals: 'Goals', player_shots_on_goal: 'Shots on goal', player_blocked_shots: 'Blocked shots', goalie_saves: 'Saves', player_cards: 'Cards',
+  player_goal_scorer_anytime: 'Anytime goalscorer', player_shots_on_target: 'Shots on target', player_shots: 'Shots', player_to_receive_card: 'To be carded',
 };
 export function propLabel(stat: string | null | undefined): string {
   if (!stat) return '';

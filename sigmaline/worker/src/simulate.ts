@@ -111,6 +111,7 @@ const STAT_KEYS: Record<string, string[]> = {
   player_pass_interceptions: ['passing_interceptions', 'interceptions_thrown', 'int'], player_rush_attempts: ['rushing_attempts', 'rush_attempts', 'carries'],
   player_goals: ['goals', 'g'], player_shots_on_goal: ['shots_on_goal', 'shots_on_target', 'sog', 'shots'], player_blocked_shots: ['blocked_shots', 'blocks', 'blk'],
   goalie_saves: ['saves', 'sv'], player_cards: ['cards'],
+  player_goal_scorer_anytime: ['goals', 'g'], player_shots_on_target: ['shots_on_target', 'sot', 'shots_on_goal'], player_shots: ['shots', 'total_shots'],
 };
 /** Box-score totals built from parts (only when every part is present). */
 const COMPOSITE: Record<string, (s: Record<string, number>) => number | undefined> = {
@@ -120,6 +121,7 @@ const COMPOSITE: Record<string, (s: Record<string, number>) => number | undefine
   },
   // Hockey box scores may give goals and assists without a points field (PNHL-007).
   player_points: (s) => (typeof s.points === 'number' || typeof s.pts === 'number' ? undefined : typeof s.goals === 'number' && typeof s.assists === 'number' ? s.goals + s.assists : undefined),
+  player_to_receive_card: (s) => (typeof s.cards === 'number' ? s.cards : typeof s.yellow_cards === 'number' && typeof s.red_cards === 'number' ? s.yellow_cards + s.red_cards : undefined),
   player_cards: (s) => (typeof s.cards === 'number' ? s.cards : typeof s.yellow_cards === 'number' && typeof s.red_cards === 'number' ? s.yellow_cards + s.red_cards : undefined),
 };
 /** Prop markets we can settle from a box score (anything else must not be requested). */

@@ -1,0 +1,16 @@
+{
+  "id": "PSOC-004",
+  "title": "Soccer prop keys: three of the four requested names are probably not what the providers publish; documented alternatives are unmapped",
+  "severity": "P1",
+  "persona": "props user (soccer)",
+  "url": "pipeline / sports.ts",
+  "device": "node script (pipeline), synthetic FAKE events",
+  "steps": [
+    "PROP_MARKETS.soccer = player_goals, player_shots_on_goal, player_assists, player_cards",
+    "Feed synthetic markets named player_goal_scorer_anytime, player_shots_on_target, player_shots, player_to_receive_card, player_first_goal_scorer through quotesFromEvent, selectionLabel, statValue"
+  ],
+  "expected": "Keys requested match the provider docs (BASELINE says PropLine names soccer keys loosely), and each returned key has a label and a box-score mapping.",
+  "actual": "From my own knowledge of The Odds API soccer docs (not verifiable offline, please confirm against live X-PropLine-Missing-Markets): its soccer keys are player_goal_scorer_anytime, player_first_goal_scorer, player_shots_on_target, player_shots, player_assists, player_to_receive_card. If PropLine uses the same, player_goals, player_shots_on_goal and player_cards come back as 'missing' and soccer shows zero props. Keys outside the four are ingested (regex player_) but: labels read 'P goal scorer anytime: Yes', 'P Over 0.5 to receive card' (lowercase, awkward), statValue returns undefined for player_goal_scorer_anytime, player_shots_on_target, player_to_receive_card, so edges on them settle void after 24h (result silently void). Also soccer has no first/last scorer or shots (total) keys requested.",
+  "evidence": "evidence/PSOC-script2.ts statValue output: undefined for those keys",
+  "suspected_area": "packages/core/src/sports.ts PROP_MARKETS/PROP_LABEL, worker/src/simulate.ts STAT_KEYS, markets.ts selectionLabel"
+}

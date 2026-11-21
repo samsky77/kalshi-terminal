@@ -66,6 +66,9 @@ export function toIso(x: unknown): string | null {
     const d = new Date(ms);
     return Number.isFinite(d.getTime()) && d.getUTCFullYear() < 2200 ? d.toISOString() : null;
   }
+  // A date with no time means the END of that day in US Eastern (TRI-015: "2026-12-11" read as UTC
+  // midnight showed as Dec 10 and ended access early). 23:59:59 at UTC-5 (EST; under EDT it ends an hour late).
+  if (typeof x === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x.trim())) return new Date(Date.parse(`${x.trim()}T23:59:59-05:00`)).toISOString();
   if (typeof x === 'string') { const t = Date.parse(x); return Number.isFinite(t) ? new Date(t).toISOString() : null; }
   return null;
 }

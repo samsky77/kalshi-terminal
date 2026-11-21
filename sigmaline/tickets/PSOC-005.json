@@ -1,0 +1,15 @@
+{
+  "id": "PSOC-005",
+  "title": "Soccer prop write-up risk line is generic: same text for Under bets, cards and Yes/No scorer",
+  "severity": "P3",
+  "persona": "props user (soccer)",
+  "url": "buildWriteup (soccer prop)",
+  "device": "node script (pipeline), synthetic FAKE events",
+  "steps": [
+    "buildWriteup with sport=soccer, market=prop for Over goals, Under shots on goal 1.5, and a cards prop (evidence/PSOC-script.ts)"
+  ],
+  "expected": "Risk wording fits the bet: an Under benefits from an early substitution; cards risk is about discipline, not 'time to get there'; goalscorer risk should mention not starting (bet voids or loses depending on book).",
+  "actual": "All soccer props get 'Risk: substitutions and rotation. A player taken off at the hour mark has less time to get there.' For an Under or a cards prop that sentence is backwards or meaningless. Nothing about lineup / not starting. Rest of text is clean (no undefined, no invented stats; consensus-only wording used).",
+  "evidence": "PSOC-script.ts writeup output",
+  "suspected_area": "packages/core/src/writeup.ts RISK.soccer.prop / riskSentence"
+}

@@ -58,8 +58,9 @@ export function filterFeed(
     if (!(r.fairDecimal > 1) || !Number.isFinite(r.ev)) { counts.no_fair++; continue; }
     // Only an implausibly HIGH edge is bad data (a stale or mis-mapped price). A very negative edge is
     // an ordinary bad price, usually on a longshot; hiding it removed one side of the market (DAT-002).
-    if (r.ev > GRADE_CONFIG.sanityCap) { counts.sanity++; anomalies.push(r); continue; }
+    // Staleness first: an old quote with a big edge is a stale price, not a data error (PSOC-001).
     if (isStale(r.bestTs ?? r.snapshotTs, opt.nowMs, opt.staleMinutes)) { counts.stale++; stale.push({ ...r, grade: 'none' }); continue; }
+    if (r.ev > GRADE_CONFIG.sanityCap) { counts.sanity++; anomalies.push(r); continue; }
     keep.push(r);
   }
   return { keep, stale, anomalies, counts };

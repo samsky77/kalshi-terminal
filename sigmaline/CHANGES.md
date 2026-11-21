@@ -214,7 +214,7 @@ On the paywall QA server only, switching from another sport to the NHL tab idles
    - merge this branch and deploy;
    - check AND-001 on a deploy preview first.
 3. **Stale threshold vs tick cadence.** Either keep 10 minutes (edges vanish between 15-minute ticks), or raise it to about 20 minutes. Ticking every 5 minutes would exceed PropLine's 1,000/day with 7 sports.
-4. **Revocation (CAN-002).** Should deactivation / went-invalid end access immediately (current: yes, for refunds and chargebacks), or only at the period end?
+4. **Refunds and chargebacks (CAN-002): decided.** A deactivation / went-invalid event ends access immediately. A normal cancel keeps access to the paid-through date.
 5. **Consensus-only props for sports with no player model** (CBB, CFB, NHL, soccer). They're shown and capped at B today. Keep them, or hide them until a model exists (PCBB-002)?
 6. **Design-token contrast (A11-007).** The control borders are #2A2A2A on black, 1.38:1 against WCAG's 3:1 for non-text. Changing them is a small design change you asked me not to make unilaterally.
 7. **Marketing wording (CAS-021):** "Top pick" and "the bets worth making", plus the "every game simulated" claim above.

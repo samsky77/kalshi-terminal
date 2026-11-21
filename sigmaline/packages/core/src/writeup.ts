@@ -5,6 +5,7 @@
  * later, and must receive exactly this facts object with an instruction to add no facts.
  */
 import { bookName } from './books';
+import { edgePct } from './edge';
 import { formatAmerican } from './odds';
 import type { Selection, SportId } from './types';
 
@@ -94,8 +95,8 @@ function candidates(f: WriteupFacts): Candidate[] {
       });
     }
   }
-  if (f.booksChecked >= 3 && Number.isFinite(f.consensusP) && f.consensusP * f.bestDecimal > 1) {
-    c.push({ id: 'line_shop', score: (f.consensusP * f.bestDecimal - 1) * 30, text: `${book} is out of line with the other ${f.booksChecked - 1} books we checked; even the market's own fair price says this number is generous.` });
+  if (f.booksChecked >= 3 && Number.isFinite(f.consensusP) && edgePct(f.consensusP, f.bestDecimal) > 0) {
+    c.push({ id: 'line_shop', score: edgePct(f.consensusP, f.bestDecimal) * 30, text: `${book} is out of line with the other ${f.booksChecked - 1} books we checked; even the market's own fair price says this number is generous.` });
   }
   if (us && them && f.restDays && f.restDays[us] !== undefined && f.restDays[them] !== undefined) {
     const a = f.restDays[us]!, b = f.restDays[them]!;

@@ -85,7 +85,7 @@ describe('EV, fair and blend (hand-worked)', () => {
   });
   it('grades', () => {
     expect(gradePick(0.06, 0.1, 0.01)).toBe('A');
-    expect(gradePick(0.06, 0.1, -0.01)).toBe('B'); // consensus disagrees -> not A
+    expect(gradePick(0.06, 0.1, -0.01)).toBe('none'); // FAQ: >= 5% needs agreement for A, and B is 2-5% only
     expect(gradePick(0.03, 0.05, 0.01)).toBe('B');
     expect(gradePick(0.019, 0.05, 0.01)).toBe('none');
   });

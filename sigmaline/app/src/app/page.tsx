@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { gradeFaqAnswer } from '@sigmaline/core';
 import { Footer, GradeBadge, Header, Main, Section } from '@/components/chrome';
 import { JoinButton } from '@/components/join';
 import { results } from '@/lib/data';
@@ -12,7 +13,8 @@ const FAQ: [string, string][] = [
   ['Do you place bets for me?', 'No. Sigmaline is information only. We never place, hold or broker bets and never connect to your sportsbook accounts. You decide what, if anything, to bet.'],
   ['Where do the numbers on this page come from?', 'Only from the live record: picks logged automatically before each game and graded from official results. Backtests are shown separately and are never part of these numbers.'],
   ['How do I know you don’t delete losing picks?', 'Every pick is written to an append-only log. Each row’s SHA-256 hash covers its own contents and the row before it, so changing or deleting anything breaks the chain. Anyone can re-check it in the browser on the Results page.'],
-  ['What does a grade mean?', 'A: expected value of at least 5% and our model and the market consensus both agree the price is good. B: 2–5% EV. Anything under 2% is shown in grey as “No edge” and never published.'],
+  // Rendered from GRADE_CONFIG (packages/core/src/grades.ts): the same object the grading code reads.
+  ['What does a grade mean?', gradeFaqAnswer()],
   ['Which sports?', 'NBA, NHL, NFL, college basketball, college football, soccer (EPL, La Liga, Serie A, Bundesliga, Ligue 1, MLS, Champions League) and ATP/WTA tennis. Moneylines, spreads and totals; NBA and NFL player props are rolling out.'],
   ['Is profit guaranteed?', 'No. A positive-EV bet still loses often. Results vary, and past performance does not guarantee future results. Only bet what you can afford to lose.'],
   ['Can I cancel?', 'Yes, any time from your Whop account. You keep access until the end of the period you paid for. See the Terms for refunds.'],

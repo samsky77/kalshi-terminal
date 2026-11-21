@@ -1,3 +1,5 @@
+import { breakEvenDecimal, edgePct } from './edge';
+import { GRADE_CONFIG } from './grades';
 import type { Grade, OutcomeProbs } from './types';
 
 export interface GradeThresholds {
@@ -6,7 +8,8 @@ export interface GradeThresholds {
   /** EV for a B (default 0.02). Below this: no edge. */
   b: number;
 }
-export const DEFAULT_THRESHOLDS: GradeThresholds = { a: 0.05, b: 0.02 };
+/** Derived from GRADE_CONFIG (the single source of truth); kept for older call sites. */
+export const DEFAULT_THRESHOLDS: GradeThresholds = { a: GRADE_CONFIG.A.minEdge, b: GRADE_CONFIG.B.minEdge };
 
 export const W_MIN = 0.15;
 export const W_MAX = 0.6;
@@ -37,28 +40,33 @@ export function blendFair(model: OutcomeProbs, pConsensus: number, w: number): O
 
 /** EV per unit staked: p_win·decimal + p_push − 1 (= p·decimal − 1 when no push is possible). */
 export function expectedValue(fair: OutcomeProbs, decimal: number): number {
-  return fair.win * decimal + fair.push - 1;
+  return edgePct(fair.win, decimal, fair.push);
 }
 
 /** Decimal price at which EV is exactly zero. */
 export function fairDecimal(fair: OutcomeProbs): number {
-  return fair.win > 0 ? (1 - fair.push) / fair.win : NaN;
+  return breakEvenDecimal(fair.win, fair.push);
 }
 
 /**
- * A: EV ≥ a AND both the pure model and the pure market consensus say the best price is +EV
- * ("model and consensus point the same way"). B: EV ≥ b. Otherwise no edge.
+ * Grades come only from GRADE_CONFIG (see grades.ts and the FAQ):
+ *   A: edge ≥ 5% AND both the pure model and the pure consensus say the price is +EV.
+ *   B: 2% ≤ edge < 5%.
+ *   Otherwise (including ≥ 5% without agreement): no edge.
+ * The `t` argument is ignored for the boundaries; it exists only so old call sites still compile.
  */
-export function gradePick(ev: number, modelEv: number, consensusEv: number, t: GradeThresholds = DEFAULT_THRESHOLDS): Grade {
+export function gradePick(ev: number, modelEv: number, consensusEv: number, _t?: GradeThresholds): Grade {
+  void _t;
+  const c = GRADE_CONFIG;
   if (!Number.isFinite(ev)) return 'none';
-  if (ev >= t.a && modelEv > 0 && consensusEv > 0) return 'A';
-  if (ev >= t.b) return 'B';
+  if (ev >= c.A.minEdge && (!c.A.requireAgreement || (modelEv > 0 && consensusEv > 0))) return 'A';
+  if (ev >= c.B.minEdge && ev < c.B.maxEdge) return 'B';
   return 'none';
 }
 
 /** Record-only stake (spec §8): A = 2u, B = 1u. */
 export function stakeUnits(g: Grade): number {
-  return g === 'A' ? 2 : g === 'B' ? 1 : 0;
+  return g === 'A' ? GRADE_CONFIG.stake.A : g === 'B' ? GRADE_CONFIG.stake.B : 0;
 }
 
 export interface FilterInput {
@@ -73,13 +81,13 @@ export interface FilterInput {
 export interface FilterResult { ok: boolean; reasons: string[] }
 
 /** Pick filters (spec §5). A pick failing any of these is never published. */
-export const MAX_CREDIBLE_EV = 0.25;
+export const MAX_CREDIBLE_EV = GRADE_CONFIG.sanityCap;
 
 export function pickFilters(f: FilterInput, maxAgeMin = 90): FilterResult {
   const reasons: string[] = [];
   if (f.ev !== undefined && f.ev > MAX_CREDIBLE_EV) reasons.push(`EV above ${MAX_CREDIBLE_EV * 100}% (price is probably stale or wrong)`);
   if (!(f.snapshotAgeMin <= maxAgeMin)) reasons.push(`price snapshot older than ${maxAgeMin} min`);
-  const minBooks = f.isProp ? 2 : 3;
+  const minBooks = f.isProp ? GRADE_CONFIG.minBooks.prop : GRADE_CONFIG.minBooks.game;
   if (f.books < minBooks) reasons.push(`only ${f.books} book(s) priced this market (need ${minBooks})`);
   if (f.keyPlayerUnknown) reasons.push('a key player status is unknown');
   return { ok: reasons.length === 0, reasons };
@@ -90,5 +98,5 @@ export function pickFilters(f: FilterInput, maxAgeMin = 90): FilterResult {
  * i.e. p_close × decimal_taken − 1 (push-adjusted). Positive = you beat the close.
  */
 export function clv(takenDecimal: number, closeConditionalWin: number, pushProb = 0): number {
-  return closeConditionalWin * (1 - pushProb) * takenDecimal + pushProb - 1;
+  return edgePct(closeConditionalWin * (1 - pushProb), takenDecimal, pushProb);
 }

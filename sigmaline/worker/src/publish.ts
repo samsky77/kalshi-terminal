@@ -1,5 +1,5 @@
 import {
-  buildWriteup, pickFilters, selectionLabel, stakeUnits, PREGAME_WINDOW, type PricedSelection, type WriteupFacts,
+  buildWriteup, GRADE_CONFIG, pickFilters, selectionLabel, stakeUnits, PREGAME_WINDOW, type PricedSelection, type WriteupFacts,
 } from '@sigmaline/core';
 import { appendPick, getEvents, normTeam, type EventRow, type PickRow } from '@sigmaline/db';
 import type { Ctx } from './context';
@@ -22,7 +22,7 @@ export function publishable(sport: string, p: PricedSelection, env: Record<strin
 }
 
 /** Game-line edges above this are almost always a stale or mis-mapped quote, not value. */
-export const MAX_GAME_LINE_PICK_EV = 0.10;
+export const MAX_GAME_LINE_PICK_EV = GRADE_CONFIG.maxCredibleEdge.game;
 /** A spread/total pick needs at least this share of the deepest line's book count (and 5 books). */
 export const MIN_LINE_DEPTH_SHARE = 0.5;
 

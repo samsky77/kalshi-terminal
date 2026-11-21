@@ -1,4 +1,5 @@
-import { blendFair, conditionalWin, DEFAULT_THRESHOLDS, expectedValue, fairDecimal, gradePick, MAX_CREDIBLE_EV, type GradeThresholds } from './ev';
+import { GRADE_CONFIG } from './grades';
+import { blendFair, conditionalWin, expectedValue, fairDecimal, gradePick, type GradeThresholds } from './ev';
 import { priceSelection, selectionKey, settleFractions } from './markets';
 import { consensus } from './odds';
 import type { Grade, MarketType, OutcomeProbs, Selection, SimSamples, Side, SportId } from './types';
@@ -105,7 +106,7 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
         selection: sel, key: selectionKey(sel), books: full.length, bestBook, bestDecimal,
         consensusP: cP, model, fair, fairDecimal: fairDecimal(fair), ev, modelEv, consensusEv,
         // A grade needs a real market behind it: enough books (3, props 2) and a credible EV.
-        grade: full.length < (market === 'prop' ? 2 : 3) || ev > MAX_CREDIBLE_EV ? 'none' : gradePick(ev, modelEv, consensusEv, opt.thresholds ?? DEFAULT_THRESHOLDS),
+        grade: full.length < (market === 'prop' ? GRADE_CONFIG.minBooks.prop : GRADE_CONFIG.minBooks.game) || ev > GRADE_CONFIG.maxCredibleEdge.prop ? 'none' : gradePick(ev, modelEv, consensusEv),
         w: opt.marketOnly ? 0 : w, snapshotTs,
       });
     });
@@ -125,7 +126,7 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
 }
 
 /** Game lines (moneyline / spread / total) rarely carry real edges this large; above it is a bad quote. */
-export const GAME_LINE_MAX_CREDIBLE_EV = 0.10;
+export const GAME_LINE_MAX_CREDIBLE_EV = GRADE_CONFIG.maxCredibleEdge.game;
 
 /** Compact integer pmf of the simulated margin (home − away) and total, stored in sim_runs. */
 export interface DistSummary {

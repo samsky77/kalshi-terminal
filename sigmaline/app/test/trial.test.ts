@@ -117,7 +117,7 @@ describe('7-day free trial (Whop)', () => {
     expect(statusFromWebhook('membership.activated', { status: 'trialing' })).toBe('trialing');
     expect(statusFromWebhook('membership.updated', { status: 'past_due' })).toBe('past_due');
     expect(statusFromWebhook('membership.updated', { status: 'unresolved' })).toBe('past_due');
-    expect(statusFromWebhook('membership.deactivated', { status: 'canceled' })).toBe('canceled');
+    expect(statusFromWebhook('membership.deactivated', { status: 'canceled' })).toBe('expired'); // CAN-002: ends now
     expect(statusFromWebhook('membership_went_invalid', {})).toBe('expired');
     expect(statusFromWebhook('payment.failed', {})).toBe('past_due');
     expect(statusFromWebhook('membership.cancel_at_period_end_changed', {})).toBeNull();

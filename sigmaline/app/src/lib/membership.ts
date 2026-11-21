@@ -48,7 +48,8 @@ export function statusFromWebhook(type: string, data: any): MemberStatus | null 
   const t = type.toLowerCase();
   const fromData = fromWhopStatus(data?.status);
   // Expiry first: 'deactivated' contains 'activated'.
-  if (/went_invalid|deactivated|expired/.test(t)) return fromData === 'canceled' ? 'canceled' : 'expired';
+  // Deactivation ends access immediately (period end, refund or chargeback): CAN-002.
+  if (/went_invalid|deactivated|expired/.test(t)) return 'expired';
   if (/payment[._]failed/.test(t)) return 'past_due';
   if (fromData) return fromData;
   if (/went_valid|\bactivated|membership\.created|renew|payment[._]succeeded/.test(t)) return 'active';
@@ -121,6 +122,16 @@ export function applyEvent(prev: MemberState | null, evt: WebhookEvent): MemberS
   }
 
   if (status === 'past_due' && !(prevStatus === 'active' || prevStatus === 'trialing' || prevStatus === 'past_due')) return null;
+  // 'canceled' winds down a live membership; it can never revive an expired, locked-trial or unknown
+  // account (QA ticket CAN-001: chaining trials through a cancel event) nor push its end date later.
+  if (status === 'canceled') {
+    const live = prev && (prevStatus === 'trialing' || prevStatus === 'active' || prevStatus === 'past_due' || prevStatus === 'canceled') && hasAccess(prev, nowMs);
+    if (!live) return prev ? { ...prev, last_event_at: at } : null;
+    const prevEnd = prev!.expires_at ? Date.parse(prev!.expires_at) : NaN;
+    const newEnd = expires ? Date.parse(expires) : NaN;
+    const end = Number.isFinite(prevEnd) && Number.isFinite(newEnd) ? Math.min(prevEnd, newEnd) : Number.isFinite(prevEnd) ? prevEnd : newEnd;
+    return { ...prev!, status: 'canceled', expires_at: Number.isFinite(end) ? new Date(end).toISOString() : null, cancel_at_period_end: true, last_event_at: at };
+  }
 
   const otherMembership = !!membershipId && !!prev?.membership_id && membershipId !== prev.membership_id;
   if (status === 'trialing' && prev?.first_trial_at) {

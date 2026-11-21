@@ -34,13 +34,13 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
       <Main>
         {sp.membership === 'trial_used' && (
           <p className="mx-auto mt-3 max-w-3xl border border-amber px-4 py-2 text-[13px] text-amber" role="status">
-            You&apos;ve already used your free trial on this Whop account. <a className="underline" href={noTrialCheckoutUrl()}>Subscribe for ${OFFER.price}/month</a> to keep using Sigmaline.
+            You&apos;ve already used your free trial on this Whop account. <a className="tap inline-flex items-center underline" href={noTrialCheckoutUrl()}>Subscribe for ${OFFER.price}/month</a> to keep using Sigmaline.
           </p>
         )}
         {(sp.membership === 'expired' || sp.membership === 'past_due') && (
           <p className="mx-auto mt-3 max-w-3xl border border-amber px-4 py-2 text-[13px] text-amber" role="status">
             {sp.membership === 'past_due' ? 'Your last payment failed and the grace period is over. Update your card on Whop to get back in. ' : 'Your membership has ended. '}
-            <a className="underline" href="/account">See your account</a>{sp.membership === 'expired' && <> or <a className="underline" href={noTrialCheckoutUrl()}>subscribe again</a></>}.
+            <a className="tap inline-flex items-center underline" href="/account">See your account</a>{sp.membership === 'expired' && <> or <a className="tap inline-flex items-center underline" href={noTrialCheckoutUrl()}>subscribe again</a></>}.
           </p>
         )}
         {sp.membership === 'inactive' && (

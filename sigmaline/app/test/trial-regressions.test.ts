@@ -117,3 +117,30 @@ describe('trial regressions', () => {
     expect(applyEvent(a, { type: 'membership.deactivated', data: { id: 'mem_a' }, at: '2026-11-21T00:00:00Z' })?.status).toBe('expired');
   });
 });
+
+describe('canceled/expired regressions', () => {
+  it('CAN-001: a canceled event cannot revive an expired or locked-trial account', async () => {
+    await send('c1', 'membership.activated', { id: 'mem_a', status: 'trialing', updated_at: iso(Date.now() - 20 * DAY) });
+    await send('c1', 'membership.deactivated', { id: 'mem_a', status: 'expired', updated_at: iso(Date.now() - 10 * DAY) });
+    await send('c1', 'membership.activated', { id: 'mem_b', status: 'trialing', updated_at: iso(Date.now() - 2 * DAY) });
+    await send('c1', 'membership.cancel_at_period_end_changed', { id: 'mem_b', status: 'canceled', renewal_period_end: sec(Date.now() + 5 * DAY), updated_at: iso(Date.now()) });
+    expect(await access('c1')).toBe(false);
+    await send('c2', 'membership.activated', { id: 'mem_a', status: 'active', updated_at: iso(Date.now() - 3 * DAY) });
+    await send('c2', 'membership.deactivated', { id: 'mem_a', updated_at: iso(Date.now() - DAY) });
+    await send('c2', 'membership.updated', { id: 'mem_a', status: 'canceled', renewal_period_end: sec(Date.now() + 5 * DAY), updated_at: iso(Date.now()) });
+    expect(await access('c2')).toBe(false);
+  });
+  it('CAN-001: canceling a live membership keeps access to its period end but never extends it', async () => {
+    await send('c3', 'membership.activated', { id: 'mem_a', status: 'active', renewal_period_end: sec(Date.now() + 3 * DAY), updated_at: iso(Date.now() - 60000) });
+    await send('c3', 'membership.updated', { id: 'mem_a', status: 'canceled', renewal_period_end: sec(Date.now() + 30 * DAY), updated_at: iso(Date.now()) });
+    const m = await getMember(db, 'c3');
+    expect(m?.status).toBe('canceled');
+    expect(Math.abs(Date.parse(m!.expires_at!) - (Date.now() + 3 * DAY))).toBeLessThan(5000);
+    expect(await access('c3')).toBe(true);
+  });
+  it('CAN-002: went_invalid / deactivated ends access immediately', async () => {
+    await send('c4', 'membership.activated', { id: 'mem_a', status: 'active', renewal_period_end: sec(Date.now() + 5 * DAY), updated_at: iso(Date.now() - 60000) });
+    await send('c4', 'membership.went_invalid', { id: 'mem_a', status: 'canceled', valid: false, updated_at: iso(Date.now()) });
+    expect(await access('c4')).toBe(false);
+  });
+});

@@ -32,8 +32,8 @@ export function Ago({ ts, staleMin, serverNow, className = '' }: { ts: string | 
   const now = live || serverNow;
   const stale = !ts || now - Date.parse(ts) > staleMin * 60000;
   return (
-    <span className={`whitespace-nowrap text-[10px] ${className}`} title={ts ? new Date(ts).toISOString() : undefined}>
-      {stale && <span className="mr-1 border border-muted px-1 font-semibold uppercase tracking-[0.1em] text-ink">Stale</span>}
+    <span className={`whitespace-nowrap text-[12px] text-muted ${className}`} title={ts ? new Date(ts).toISOString() : undefined}>
+      {stale && <span className="mr-1 border border-muted px-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink">Stale</span>}
       <time dateTime={ts ?? undefined}>{agoText(ts, now)}</time>
     </span>
   );

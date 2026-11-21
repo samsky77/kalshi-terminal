@@ -98,7 +98,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           {props.length ? (
             <>
               {props.every((p) => p.fair_source === 'consensus') && (
-                <p className="mb-1 text-[12px] text-muted"><span className="mr-1 border border-line px-1 text-[10px] uppercase tracking-[0.1em] text-ink">Consensus-only</span>No player simulation for this game: each fair price is the no-vig consensus of every book.</p>
+                <p className="mb-1 text-[12px] text-muted"><span className="mr-1 border border-line px-1 text-[11px] uppercase tracking-[0.1em] text-ink">Consensus-only</span>No player simulation for this game: each fair price is the no-vig consensus of every book.</p>
               )}
               <ul>{props.map((p) => <PropRow key={p.selection_key} r={{ ...p, label: selectionLabel(p.selection, e.home, e.away), grade: started ? 'none' : p.grade }} now={now} sm={sm} />)}</ul>
             </>
@@ -159,7 +159,7 @@ function MarketRow({ p, home, away, now, sm, started }: { p: PriceRow; home: str
     <FreshRow as="tr" ts={p.price_ts} staleMin={sm} serverNow={now} className={`border-t border-line2 ${edge ? '' : 'text-muted'}`}>
       <td className="py-2 pr-2">
         {selectionLabel(p.selection, home, away)}
-        <span className="block text-[10px] text-muted">{bookName(p.best_book)} · {p.books} {p.books === 1 ? 'book' : 'books'}{p.fair_source === 'consensus' ? ' · consensus-only' : ''}</span>
+        <span className="block text-[11px] text-muted">{bookName(p.best_book)} · {p.books} {p.books === 1 ? 'book' : 'books'}{p.fair_source === 'consensus' ? ' · consensus-only' : ''}</span>
         <Ago ts={p.price_ts} staleMin={sm} serverNow={now} />
       </td>
       <td className="py-2 text-right">{american(p.best_decimal)}</td>

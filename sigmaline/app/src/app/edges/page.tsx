@@ -87,7 +87,7 @@ export default async function EdgeFinder({ searchParams }: { searchParams: Promi
                     <span className="block text-[12px]"><span className="text-amber">{american(r.best_decimal)}</span> <span className="text-muted">{bookName(r.best_book)} · {r.books} books</span></span>
                     <span className="flex flex-wrap items-center gap-2">
                       <Ago ts={r.price_ts} staleMin={sm} serverNow={now} />
-                      {r.fair_source === 'consensus' && <span className="text-[10px] uppercase tracking-[0.1em] text-muted">consensus-only</span>}
+                      {r.fair_source === 'consensus' && <span className="text-[11px] uppercase tracking-[0.1em] text-muted">consensus-only</span>}
                     </span>
                   </span>
                   <span className="flex flex-col items-end gap-1 text-right">

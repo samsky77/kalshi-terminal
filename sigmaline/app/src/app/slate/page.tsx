@@ -87,7 +87,7 @@ async function Lines({ sport, edgesOnly, now, sm }: { sport: SportId; edgesOnly:
               <Link href={`/game/${encodeURIComponent(r.event.id)}`} prefetch={false} className="grid min-h-[60px] grid-cols-[52px_1fr_auto] items-center gap-2 py-2 hover:bg-panel">
                 <span className="text-[12px] leading-tight text-muted">
                   {time(r.event.commence_time)}
-                  {!isToday && <span className="block text-[10px] uppercase">Tmrw</span>}
+                  {!isToday && <span className="block text-[11px] uppercase">Tmrw</span>}
                 </span>
                 <span className="min-w-0">
                   <span className={`block truncate text-[13px] ${edge ? 'text-ink' : 'text-muted'}`}>{r.event.label}</span>
@@ -98,7 +98,7 @@ async function Lines({ sport, edgesOnly, now, sm }: { sport: SportId; edgesOnly:
                       <Ago ts={p.price_ts} staleMin={sm} serverNow={now} />
                     </>
                   ) : <span className="block text-[12px] text-muted">No prices yet</span>}
-                  {r.published && <span className="block text-[10px] uppercase tracking-[0.12em] text-amber">Logged pick</span>}
+                  {r.published && <span className="block text-[11px] uppercase tracking-[0.12em] text-amber">Logged pick</span>}
                 </span>
                 <span className="flex flex-col items-end gap-1 text-right">
                   <span className={`text-[12px] ${edge ? 'text-fair' : 'text-muted'}`}>{p ? american(p.fair_decimal) : '—'}</span>
@@ -136,7 +136,7 @@ async function Props({ sport, edgesOnly, now, sm }: { sport: SportId; edgesOnly:
       <p className="label pb-1">{rows.length} prop prices · {events} {events === 1 ? 'game' : 'games'}</p>
       {consensusOnly && (
         <p className="pb-2 text-[12px] text-muted">
-          <span className="mr-1 border border-line px-1 text-[10px] uppercase tracking-[0.1em] text-ink">Consensus-only</span>
+          <span className="mr-1 border border-line px-1 text-[11px] uppercase tracking-[0.1em] text-ink">Consensus-only</span>
           We don&apos;t simulate {SPORT_DEFS[sport].label} players yet, so the fair price is the no-vig consensus of every book. Edges here come from a book being out of line with the market.
         </p>
       )}

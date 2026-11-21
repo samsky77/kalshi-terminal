@@ -78,8 +78,8 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
                 <tbody>
                   {el.rows.map((r) => (
                     <tr key={r.edge_key} className="border-t border-line2 align-top">
-                      <td className="py-2 pr-2 text-muted">{shortDate(r.first_shown_at)}<span className="block text-[10px]">{new Date(r.first_shown_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })} ET</span></td>
-                      <td className="py-2 pr-2"><span className="mr-1 inline-block"><GradeBadge grade={r.grade} /></span>{r.selection_label}<span className="block text-[10px] text-muted">{r.event_name}</span></td>
+                      <td className="py-2 pr-2 text-muted">{shortDate(r.first_shown_at)}<span className="block text-[11px]">{new Date(r.first_shown_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })} ET</span></td>
+                      <td className="py-2 pr-2"><span className="mr-1 inline-block"><GradeBadge grade={r.grade} /></span>{r.selection_label}<span className="block text-[11px] text-muted">{r.event_name}</span></td>
                       <td className="py-2 pr-2">{bookName(r.book)}</td>
                       <td className="py-2 pr-2">{american(r.price_taken)}</td>
                       <td className="py-2 pr-2 text-amber">{pct(r.edge_pct)}</td>
@@ -111,7 +111,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
                 {log.map((r) => (
                   <tr key={r.id} className="border-t border-line2 align-top">
                     <td className="py-2 pr-2 text-muted">{new Date(r.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })}</td>
-                    <td className="py-2 pr-2"><span className="flex items-center gap-1"><GradeBadge grade={r.grade} /> {r.label}</span><span className="block text-[10px] text-muted">{r.event_name}</span></td>
+                    <td className="py-2 pr-2"><span className="flex items-center gap-1"><GradeBadge grade={r.grade} /> {r.label}</span><span className="block text-[11px] text-muted">{r.event_name}</span></td>
                     <td className="py-2 pr-2">{bookName(r.book)}</td>
                     <td className="py-2 pr-2">{american(r.price_decimal)}</td>
                     <td className="py-2 pr-2 text-muted">{american(r.result?.closing_decimal ?? null)}</td>
@@ -140,7 +140,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
                   <span className="label mr-2">Backtest (simulated)</span>
                   {SPORT_DEFS[b.sport as SportId]?.label ?? b.sport} · {b.kind === 'accuracy' ? `${b.games} games · Brier ${Number(b.metrics.brier).toFixed(3)} · log loss ${Number(b.metrics.logLoss).toFixed(3)}` : `${b.games_with_odds} games with odds · ${b.metrics.bets} bets · ROI ${pct(b.metrics.roi)}`}
                   {b.from_date && <span className="text-muted"> · {b.from_date} to {b.to_date}</span>}
-                  <span className="block text-[10px] text-muted">Source: {b.source === 'nflverse-data (CC BY 4.0)' ? 'NFL schedule data: nflverse (CC BY 4.0)' : b.source === 'openfootball (CC0)' ? 'Soccer results: openfootball (CC0)' : b.source}{b.kind === 'price' ? ' · priced at closing lines, so CLV is not meaningful' : ''}</span>
+                  <span className="block text-[11px] text-muted">Source: {b.source === 'nflverse-data (CC BY 4.0)' ? 'NFL schedule data: nflverse (CC BY 4.0)' : b.source === 'openfootball (CC0)' ? 'Soccer results: openfootball (CC0)' : b.source}{b.kind === 'price' ? ' · priced at closing lines, so CLV is not meaningful' : ''}</span>
                 </li>
               ))}
             </ul>
@@ -157,7 +157,7 @@ function Stat({ label, value, sub, amber }: { label: string; value: string; sub?
     <div className="bg-panel p-3">
       <dt className="label">{label}</dt>
       <dd className={`mt-1 text-[20px] font-semibold ${amber ? 'text-amber' : ''}`}>{value}</dd>
-      {sub && <dd className="text-[10px] text-muted">{sub}</dd>}
+      {sub && <dd className="text-[11px] text-muted">{sub}</dd>}
     </div>
   );
 }

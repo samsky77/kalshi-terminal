@@ -14,13 +14,13 @@ export function PropRow({ r, now, sm }: { r: FeedPrice; now: number; sm: number 
         <span className="block text-[12px]"><span className={edge ? 'text-amber' : 'text-ink'}>{american(r.best_decimal)}</span> <span className="text-muted">{bookName(r.best_book)} · {r.books} books · {propLabel(r.selection.stat)}</span></span>
         <span className="flex flex-wrap items-center gap-2">
           <Ago ts={r.price_ts} staleMin={sm} serverNow={now} />
-          {r.fair_source === 'consensus' && <span className="text-[10px] uppercase tracking-[0.1em] text-muted">consensus-only</span>}
+          {r.fair_source === 'consensus' && <span className="text-[11px] uppercase tracking-[0.1em] text-muted">consensus-only</span>}
         </span>
       </span>
       <span className="flex flex-col items-end gap-1 text-right">
         <span className="text-[12px] text-fair">fair {american(r.fair_decimal)}</span>
         <span className={`text-[12px] ${edge ? 'text-amber' : 'text-muted'}`}>{pct(r.ev)}</span>
-        {edge ? <span className="edge-only"><GradeBadge grade={r.grade} /></span> : <span className="text-[10px] text-muted">{(r.ev ?? 0) >= GRADE_CONFIG.B.minEdge ? 'not graded' : 'no edge'}</span>}
+        {edge ? <span className="edge-only"><GradeBadge grade={r.grade} /></span> : <span className="text-[11px] text-muted">{(r.ev ?? 0) >= GRADE_CONFIG.B.minEdge ? 'not graded' : 'no edge'}</span>}
       </span>
     </FreshRow>
   );

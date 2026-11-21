@@ -1,0 +1,17 @@
+{
+  "id": "SLO-002",
+  "title": "Slate sport-tab and Game lines/Props switches show no skeleton and cause big layout shifts (CLS 0.14 and 0.27)",
+  "severity": "P2",
+  "persona": "User on slow 3G (400 kbps, 400 ms RTT, 4x CPU)",
+  "url": "http://localhost:3100/slate?sport=nba",
+  "device": "Pixel 7 emulation, Chromium, CDP throttling",
+  "steps": [
+    "Load /slate?sport=nba, enable Slow 3G",
+    "Tap CBB tab, then tap Props",
+    "Observe layout-shift entries"
+  ],
+  "expected": "Skeleton/placeholder while the new slate loads; CLS < 0.1 per navigation",
+  "actual": "Tab nba->cbb: skeleton never shown, 1486 ms, 36.4 KB RSC payload, layout shift 0.1429 (footer pushed down when 76 CBB rows replace 3 NBA rows). Lines->Props toggle: skeleton never shown, 628 ms, shift 0.2668 (footer + 'P.text-ink' empty state). The old list stays on screen until the new one swaps in, so the page appears frozen for 0.6-1.5 s. Lighthouse initial-load CLS is 0, so this only shows on client navigation.",
+  "evidence": "nav.js output: 'tab nba->cbb' cls 0.1429 shifts [FOOTER]; 'cbb Props toggle' cls 0.2668",
+  "suspected_area": "slate/loading.tsx only triggers on route-segment change, not searchParams change; need Suspense with key={sport+view} or min-height on content"
+}

@@ -1,0 +1,16 @@
+{
+  "id": "SLO-006",
+  "title": "Offline: privacy and responsible-gambling pages not precached, and /results?query shows the offline page though /results is cached",
+  "severity": "P3",
+  "persona": "User on slow 3G (400 kbps, 400 ms RTT, 4x CPU)",
+  "url": "http://localhost:3100/legal/privacy",
+  "device": "Pixel 7 emulation, Chromium, CDP throttling",
+  "steps": [
+    "Visit /, /results, /legal/terms online (SW active), go offline",
+    "Reload /legal/privacy, /legal/responsible-gambling, /results?x=1"
+  ],
+  "expected": "All pages listed as public in sw.js open offline",
+  "actual": "Cached in sl-pages-v2: only /, /results, /legal/terms (pages visited). Offline /legal/privacy and /results?x=1 returned the Offline page. Also activate handler deletes every cache except SHELL, so sl-pages-v2 is wiped on every SW update. Positives: /slate, /edges and /game/* offline show the offline page on both QA-OPEN and QA-PAYWALL, and no /slate, /edges, /game or /api entry exists in any cache (no paid data served).",
+  "evidence": "off.js output for 3100 and 3200",
+  "suspected_area": "public/sw.js: PUBLIC_PAGES not precached; ks.filter(k => k !== SHELL) deletes PAGES; !url.search rule"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "SLO-001",
+  "title": "No loading feedback for ~640 ms after tapping nav bar (Edge Finder/Slate): skeleton only appears after the first RSC response",
+  "severity": "P2",
+  "persona": "User on slow 3G (400 kbps, 400 ms RTT, 4x CPU)",
+  "url": "http://localhost:3100/slate?sport=nba",
+  "device": "Pixel 7 emulation, Chromium, CDP throttling",
+  "steps": [
+    "Load /slate?sport=nba, enable Slow 3G + 4x CPU",
+    "Tap EDGES in the nav bar",
+    "Screenshot 250 ms later"
+  ],
+  "expected": "Immediate pending state (skeleton or progress) on tap",
+  "actual": "At 250 ms the old slate is still shown with only the nav label highlighted, no skeleton or spinner. Skeleton ([aria-busy]) first appeared 637 ms after tap for /edges (106 ms for /slate, which was already in the router cache); full content at 1160 ms. Nav links, sport tabs, view toggles and game links all use prefetch={false}, so loading.tsx is never prefetched and appears only once the server round trip returns. Slate->game: 749 ms, skeleton never observed.",
+  "evidence": "evidence/SLO-001.png; script run output: nav Edge Finder skeletonAtMs=637, ms=1160, 2 requests 7.3 KB",
+  "suspected_area": "prefetch={false} on chrome.tsx nav / sport-tabs; no useLinkStatus/pending indicator"
+}

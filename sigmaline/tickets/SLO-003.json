@@ -1,0 +1,16 @@
+{
+  "id": "SLO-003",
+  "title": "CBB slate sends 193 KB of HTML (49 KB gzipped, 934 DOM nodes) with all 76 games; NBA is 36 KB",
+  "severity": "P2",
+  "persona": "User on slow 3G (400 kbps, 400 ms RTT, 4x CPU)",
+  "url": "http://localhost:3100/slate?sport=cbb",
+  "device": "Pixel 7 emulation, Chromium, CDP throttling",
+  "steps": [
+    "Load /slate?sport=cbb on Slow 3G",
+    "Compare document size with /slate?sport=nba"
+  ],
+  "expected": "Payload proportional to what fits on a phone screen (paginate, collapse or lazy-load)",
+  "actual": "CBB slate document: 50.0 KB transferred / 193.5 KB decoded vs NBA 10.6 KB / 36.7 KB. Total page 206.6 KB. Lighthouse mobile (default throttling): Perf 96, LCP 1.9 s, TBT 230 ms (vs 80 ms NBA), DOM 934 elements. Client nav to CBB costs 36.4 KB of RSC. Passes the thresholds now but grows with the schedule (full CBB day is larger).",
+  "evidence": "perf.js output; lhout/cbb.json (Perf 96, TBT 230 ms)",
+  "suspected_area": "slate/page.tsx Lines renders every game, no limit/pagination; each row ships full markup"
+}

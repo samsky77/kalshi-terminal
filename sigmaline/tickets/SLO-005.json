@@ -1,0 +1,15 @@
+{
+  "id": "SLO-005",
+  "title": "Every paid slate load prefetches three legal pages (12.6 KB, 4 background requests); landing/results/game prefetch /slate",
+  "severity": "P3",
+  "persona": "User on slow 3G (400 kbps, 400 ms RTT, 4x CPU)",
+  "url": "http://localhost:3100/slate?sport=nba",
+  "device": "Pixel 7 emulation, Chromium, CDP throttling",
+  "steps": [
+    "Load /slate?sport=nba on Slow 3G, list Fetch requests"
+  ],
+  "expected": "No speculative prefetch competing with the main content on a slow link",
+  "actual": "NBA slate: 19 requests, 182 KB; 4 Fetch prefetches = 12.6 KB (/legal/terms 4.6, /legal/privacy 3.7, /legal/responsible-gambling 3.6 KB, plus another) from footer Links in default prefetch mode. /results and /game pages prefetch /slate?_rsc (1.8 KB). Not a flood (no game-link prefetching: all 76 game links use prefetch={false}), but pure waste on 3G and the slate prefetch of a paid route hits the server for logged-out users.",
+  "evidence": "perf.js output byType Fetch n=4 b=12607",
+  "suspected_area": "chrome.tsx Footer Link without prefetch={false}"
+}

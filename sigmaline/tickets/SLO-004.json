@@ -1,0 +1,15 @@
+{
+  "id": "SLO-004",
+  "title": "Font payload is 42% of landing/game weight: 4 fonts, 92 KB, only 2 preloaded; sans variable font (46 KB) causes late swap",
+  "severity": "P3",
+  "persona": "User on slow 3G (400 kbps, 400 ms RTT, 4x CPU)",
+  "url": "http://localhost:3100/",
+  "device": "Pixel 7 emulation, Chromium, CDP throttling",
+  "steps": [
+    "Load / and /game/<id> on Slow 3G, list requests"
+  ],
+  "expected": "Lean fonts (subset, fewer weights) and every above-the-fold font preloaded",
+  "actual": "Landing: 216 KB total, fonts 92.5 KB (plex-sans-var 46.1 KB, mono-600 16.0, mono-700 15.3, mono-400 15.1); game page 219.7 KB, fonts 92.5 KB. Layout preloads only mono-400/600, so sans-var and mono-700 are discovered after CSS and swap in late (font-display: swap); landing CLS 0.013 from the swap. Game page Lighthouse LCP is 2.5 s (97 Perf), right at the limit; slate 2.0 s, Edge Finder 2.0 s. JS is 110 KB over 7 chunks (c7879cf7 54.9 KB + 131 46.3 KB framework), no app-level bloat seen.",
+  "evidence": "perf.js output; lhout/game.json (LCP 2.5 s)",
+  "suspected_area": "layout.tsx preloads, globals.css @font-face, plex-sans-var.woff2 subset"
+}

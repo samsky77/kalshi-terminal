@@ -23,6 +23,14 @@ sigmaline/
 
 ---
 
+## New in this release: do these first (about 15 minutes)
+
+1. **Database migration.** Supabase → SQL Editor → paste all of `sigmaline/supabase/migrations/0002_edges_trial_feed.sql` → Run. It's safe to run twice. It adds the append-only edge log, the feed cache, junk-row accounting, trial columns and snapshot retention.
+2. **Free the disk once.** In the same editor, run `vacuum full odds_snapshots;` on its own. The database was 710 MB (the free tier is 500 MB); about 1.2M old rows were already deleted, and this returns the space. After that, every tick prunes old snapshots automatically.
+3. **Reliable 15-minute ticks.** GitHub only ran the `*/15` schedule every 4–6 hours. Create a fine-grained GitHub token for this repository with **Actions: Read and write** only, then add it in Netlify as `GH_DISPATCH_TOKEN`. The Netlify scheduled function `kick-worker` (in `sigmaline/netlify/functions/`) then starts the worker every 15 minutes.
+4. **Whop trial.** In Whop, give the product's plan a **7-day free trial** and turn on "collect payment method up front". Its checkout link goes in `NEXT_PUBLIC_WHOP_CHECKOUT_URL`. Optionally, make a second plan with no trial and put its link in `NEXT_PUBLIC_WHOP_CHECKOUT_URL_NO_TRIAL` (shown to accounts that already used their trial). Add the webhook events `membership.activated`, `membership.deactivated`, `membership.updated` (if offered), `payment.succeeded` and `payment.failed`.
+5. **Props.** Nothing to do: PropLine's bulk pull now includes each sport's prop markets at no extra request cost. Player *simulations* (rather than consensus-only fair prices) still need `PROPS_NBA_ENABLED` / `PROPS_NFL_ENABLED`, because the per-player game logs cost one request per player.
+
 ## What you need to do (owner checklist)
 
 Everything below can start on free plans. Check your Netlify plan's limits before the first paying user.

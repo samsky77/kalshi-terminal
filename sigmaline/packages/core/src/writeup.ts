@@ -41,6 +41,14 @@ export interface WriteupFacts {
   lineMove?: { from: number; to: number };
   form?: { team: 'home' | 'away'; games: number; avgMargin: number }[];
   ratingGap?: { offence?: number; defence?: number };
+  /** Soccer: simulated probability of a draw (from the stored sim summary). */
+  drawP?: number;
+  /** Tennis: best-of-3 or best-of-5 (stored event meta). */
+  bestOf?: number;
+  /** 'consensus' = no independent model for this market (props without a player sim, cold start). */
+  fairSource?: 'blend' | 'consensus';
+  /** Props: the player simulation's projected mean for the stat, when a player model ran. */
+  propMean?: number;
 }
 
 export interface Writeup {
@@ -51,6 +59,10 @@ export interface Writeup {
 }
 
 const pct = (p: number) => `${Math.round(p * 100)}%`;
+const ok = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
+
+/** What each sport calls the start of the game. */
+export const START_WORD: Record<SportId, string> = { nba: 'tip-off', cbb: 'tip-off', nhl: 'puck drop', nfl: 'kickoff', cfb: 'kickoff', soccer: 'kickoff', tennis: 'first serve' };
 const unitWord: Record<SportId, string> = { nba: 'points', cbb: 'points', nfl: 'points', cfb: 'points', nhl: 'goals', soccer: 'goals', tennis: 'games' };
 
 function edgeSentence(f: WriteupFacts): string {
@@ -72,6 +84,13 @@ function edgeSentence(f: WriteupFacts): string {
   if (sel.market === 'ml') {
     const who = sel.side === 'draw' ? 'the draw' : f.team;
     return `The price on ${who} (${price}) implies ${pct(1 / f.bestDecimal)}; we make it ${pct(f.fairP)}. That ${Math.round(gap * 1000) / 10}-point gap is the edge.`;
+  }
+  if (sel.market === 'prop') {
+    const side = sel.side === 'over' ? 'over' : 'under';
+    const basis = f.fairSource === 'consensus' || !ok(f.propMean)
+      ? `the market consensus across ${f.booksChecked} books puts the ${side} at ${pct(f.fairP)}`
+      : `our player sims project ${f.propMean.toFixed(1)}, which puts the ${side} at ${pct(f.fairP)}`;
+    return `${f.selectionLabel} at ${price}: ${basis}, against ${pct(1 / f.bestDecimal)} implied by the price. That's roughly +${(f.ev * 100).toFixed(1)}% EV.`;
   }
   return `${f.selectionLabel} at ${price}: we make it ${pct(f.fairP)} against ${pct(1 / f.bestDecimal)} implied by the price.`;
 }
@@ -98,16 +117,17 @@ function candidates(f: WriteupFacts): Candidate[] {
   if (f.booksChecked >= 3 && Number.isFinite(f.consensusP) && edgePct(f.consensusP, f.bestDecimal) > 0) {
     c.push({ id: 'line_shop', score: edgePct(f.consensusP, f.bestDecimal) * 30, text: `${book} is out of line with the other ${f.booksChecked - 1} books we checked; even the market's own fair price says this number is generous.` });
   }
-  if (us && them && f.restDays && f.restDays[us] !== undefined && f.restDays[them] !== undefined) {
+  // Back-to-backs only exist in basketball and hockey; football rest edges are 2+ extra days.
+  if (us && them && f.restDays && f.restDays[us] !== undefined && f.restDays[them] !== undefined && f.sport !== 'soccer' && f.sport !== 'tennis') {
     const a = f.restDays[us]!, b = f.restDays[them]!;
-    if (b <= 0 && a >= 1) c.push({ id: 'rest', score: 0.9, text: `${f.opponent} are on the second night of a back-to-back (tired legs usually show up late); ${f.team} had ${a} day${a === 1 ? '' : 's'} off.` });
+    if (b <= 0 && a >= 1 && (f.sport === 'nba' || f.sport === 'cbb' || f.sport === 'nhl')) c.push({ id: 'rest', score: 0.9, text: `${f.opponent} are on the second night of a back-to-back (tired legs usually show up late); ${f.team} had ${a} day${a === 1 ? '' : 's'} off.` });
     else if (a - b >= 2) c.push({ id: 'rest', score: 0.6, text: `${f.team} come in with ${a - b} more days of rest.` });
   }
   if (f.injuries?.length && us && them) {
     const out = f.injuries.filter((i) => i.team === them && /out|doubtful/i.test(i.status));
     if (out.length) c.push({ id: 'injuries', score: 0.8 + 0.2 * out.length, text: `${f.opponent} are listed without ${out.slice(0, 2).map((i) => i.player).join(' and ')}.` });
   }
-  if (f.paceVsAvg !== undefined && f.selection.market === 'total') {
+  if (f.paceVsAvg !== undefined && f.selection.market === 'total' && f.sport !== 'tennis') {
     const d = f.paceVsAvg - 1;
     if ((d > 0.02 && side === 'over') || (d < -0.02 && side === 'under')) {
       c.push({ id: 'pace', score: Math.abs(d) * 15, text: `Projected pace is ${Math.abs(d * 100).toFixed(0)}% ${d > 0 ? 'above' : 'below'} league average (pace = how many scoring chances each team gets).` });
@@ -133,21 +153,96 @@ function candidates(f: WriteupFacts): Candidate[] {
   return c.sort((a, b) => b.score - a.score);
 }
 
+/** Sport-specific context sentences built only from stored facts; a missing fact skips the sentence. */
+function sportContext(f: WriteupFacts): Candidate[] {
+  const c: Candidate[] = [];
+  const s = f.selection;
+  if (f.sport === 'soccer' && s.market === 'ml' && s.side !== 'draw' && ok(f.drawP) && f.drawP >= 0.15) {
+    c.push({ id: 'draw_risk', score: 0.7, text: `Draw risk is real here: our sims have it at ${pct(f.drawP)}, and a draw loses a ${f.team ?? 'team'} win bet.` });
+  }
+  if (f.sport === 'soccer' && s.market === 'ml' && s.side === 'draw' && ok(f.drawP)) {
+    c.push({ id: 'draw_risk', score: 0.7, text: `Our sims land on a draw ${pct(f.drawP)} of the time.` });
+  }
+  if (f.sport === 'tennis' && (f.bestOf === 3 || f.bestOf === 5)) {
+    c.push({ id: 'format', score: 0.3, text: f.bestOf === 5 ? 'Best-of-five sets gives the stronger player more room to recover from a slow start.' : 'Best-of-three sets leaves less room to recover from a slow start, which helps the underdog.' });
+  }
+  if ((f.sport === 'nfl' || f.sport === 'cfb') && s.market === 'spread' && ok(s.line) && [3, 7].includes(Math.abs(Math.round(s.line)))) {
+    c.push({ id: 'key_number', score: 0.5, text: `${Math.abs(s.line)} is close to a key number in football (games land on 3 and 7 far more than other margins), which is where half a point is worth the most.` });
+  }
+  return c;
+}
+
+const RISK: Record<SportId, { spread: string; smallSpread: string; over: string; under: string; ml: string; prop: string }> = {
+  nba: {
+    spread: 'Risk: NBA leads swing fast; if the starters sit in a blowout, the bench decides the margin.',
+    smallSpread: 'Risk: it\'s a small number, so one late run or intentional-foul sequence can swing it.',
+    over: 'Risk: a slow, foul-light game or an early blowout that empties the bench kills an over.',
+    under: 'Risk: overtime, or a hot shooting night from three, would bury the under.',
+    ml: 'Risk: late scratches. NBA teams rest players on short notice, so check the injury report before tip-off.',
+    prop: 'Risk: minutes. If the game gets lopsided or the rotation changes, the volume dries up.',
+  },
+  cbb: {
+    spread: 'Risk: college lines move on thin information, and a late foul-shooting parade can move the margin a lot.',
+    smallSpread: 'Risk: it\'s a small number, so free throws at the end of the game can swing it either way.',
+    over: 'Risk: college pace varies a lot; a grinding half-court game kills an over.',
+    under: 'Risk: late-game fouling adds free points, which is how unders die in college.',
+    ml: 'Risk: college rosters change quickly and news travels late, so check for late lineup news before tip-off.',
+    prop: 'Risk: foul trouble and blowouts cut college minutes fast.',
+  },
+  nfl: {
+    spread: 'Risk: if the other side jumps out early, the game script turns against us fast.',
+    smallSpread: 'Risk: it\'s a small number, so a late field goal can swing it either way.',
+    over: 'Risk: a slow start, or a team running the clock with a lead, kills an over.',
+    under: 'Risk: a couple of turnovers in short fields can bury the under quickly.',
+    ml: 'Risk: the market is usually right; if this line moves against us before kickoff, the edge was probably noise.',
+    prop: 'Risk: game script. A blowout changes who gets the ball and how often.',
+  },
+  cfb: {
+    spread: 'Risk: big college spreads invite late backdoor covers once the starters come out.',
+    smallSpread: 'Risk: it\'s a small number, so a late field goal can swing it either way.',
+    over: 'Risk: a slow start, or a team running the clock with a lead, kills an over.',
+    under: 'Risk: college defences give up big plays; a couple of long scores bury an under.',
+    ml: 'Risk: college depth charts change late, so check for news before kickoff.',
+    prop: 'Risk: game script and snap counts. A blowout means the backups play.',
+  },
+  nhl: {
+    spread: 'Risk: NHL games are low scoring, so one empty-net goal decides a lot of puck lines.',
+    smallSpread: 'Risk: NHL games are low scoring, so one empty-net goal decides a lot of puck lines.',
+    over: 'Risk: a hot goalie can hold a game under on his own.',
+    under: 'Risk: a late empty-net goal or two can push a close game over.',
+    ml: 'Risk: about a quarter of NHL games go to overtime or a shootout, which is close to a coin flip.',
+    prop: 'Risk: ice time. Shots and points depend on minutes and power-play time, which change with the score.',
+  },
+  soccer: {
+    spread: 'Risk: one goal decides most matches, so a single deflection or penalty swings the handicap.',
+    smallSpread: 'Risk: one goal decides most matches, so a single deflection or penalty swings the handicap.',
+    over: 'Risk: an early red card or a cagey first half can kill an over.',
+    under: 'Risk: one early goal opens a match up and can bury the under.',
+    ml: 'Risk: a draw is always on the table in soccer, and it loses a win bet.',
+    prop: 'Risk: substitutions and rotation. A player taken off at the hour mark has less time to get there.',
+  },
+  tennis: {
+    spread: 'Risk: one break of serve in a tight set can swing a games handicap.',
+    smallSpread: 'Risk: one break of serve in a tight set can swing a games handicap.',
+    over: 'Risk: a one-sided match or a retirement ends things early, which kills an over.',
+    under: 'Risk: tiebreaks add games quickly and can bury an under.',
+    ml: 'Risk: retirements. Books settle them differently, so check your book\'s rule before you bet.',
+    prop: 'Risk: a short, one-sided match leaves less time to reach the number.',
+  },
+};
+
 function riskSentence(f: WriteupFacts): string {
   const s = f.selection;
-  if (s.market === 'spread' && s.line !== undefined) {
-    return Math.abs(s.line) <= 3.5
-      ? `Risk: it's a small number, so a late field goal or a garbage-time score can swing it either way.`
-      : `Risk: if ${f.opponent ?? 'the other side'} jump out early, the game script turns against us fast.`;
-  }
-  if (s.market === 'total') return s.side === 'over' ? `Risk: a slow start or a blowout where starters sit kills an over.` : `Risk: overtime, or a high-scoring first half, would bury the under.`;
-  if (s.market === 'prop') return `Risk: minutes. If the game gets lopsided or the rotation changes, the volume dries up.`;
-  if (f.injuries?.length) return `Risk: late injury news. If the status of a listed player changes, the edge can disappear.`;
-  return `Risk: the market is usually right; if this line moves against us before kick-off, the edge was probably noise.`;
+  const r = RISK[f.sport];
+  if (s.market === 'spread' && s.line !== undefined) return Math.abs(s.line) <= 3.5 ? r.smallSpread : r.spread;
+  if (s.market === 'total') return s.side === 'over' ? r.over : r.under;
+  if (s.market === 'prop') return r.prop;
+  if (f.injuries?.length) return `Risk: late injury news. If a listed player's status changes before ${START_WORD[f.sport]}, the edge can disappear.`;
+  return r.ml;
 }
 
 export function buildWriteup(f: WriteupFacts): Writeup {
-  const picked = candidates(f).slice(0, 3);
+  const picked = [...candidates(f), ...sportContext(f)].sort((a, b) => b.score - a.score).slice(0, 3);
   if (!picked.length) {
     picked.push({ id: 'books', score: 0, text: `${bookName(f.book)} has the best price of the ${f.booksChecked} book${f.booksChecked === 1 ? '' : 's'} we checked for this market.` });
   }

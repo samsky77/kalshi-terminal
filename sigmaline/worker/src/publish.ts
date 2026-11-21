@@ -108,7 +108,9 @@ export function writeupFacts(sim: SimResult, p: PricedSelection, extra: Partial<
     team, opponent, bestDecimal: p.bestDecimal, book: p.bestBook ?? '', modelP: p.model.win / Math.max(1e-9, p.model.win + p.model.loss),
     consensusP: p.consensusP, fairP: p.fair.win / Math.max(1e-9, p.fair.win + p.fair.loss), ev: p.ev, booksChecked: p.books,
     modelMargin: sim.summary.meanHome - sim.summary.meanAway, modelTotal: sim.summary.meanHome + sim.summary.meanAway,
-    restDays: sim.rest, modelIndependent: sim.expectationSource === 'ratings' || sim.expectationSource === 'tennis-elo', ...extra,
+    restDays: sim.rest, modelIndependent: (sim.expectationSource === 'ratings' || sim.expectationSource === 'tennis-elo') && p.fairSource !== 'consensus',
+    drawP: e.sport_id === 'soccer' ? sim.summary.draw : undefined, bestOf: e.sport_id === 'tennis' ? (e.meta as { bestOf?: number }).bestOf : undefined,
+    fairSource: p.fairSource, ...extra,
   };
 }
 

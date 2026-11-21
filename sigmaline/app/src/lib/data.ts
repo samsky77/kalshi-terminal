@@ -203,13 +203,15 @@ async function keyFactors(e: EventRow, sim: GameDetail['sim'], prices: PriceRow[
   const f: { label: string; value: string }[] = [];
   const rest = sim?.inputs?.rest;
   const restTxt = (d?: number) => (d === undefined ? 'n/a' : d === 0 ? 'back-to-back' : `${d} day${d === 1 ? '' : 's'}`);
-  if (rest && (rest.home !== undefined || rest.away !== undefined)) f.push({ label: 'Rest', value: `${short(e.away)} ${restTxt(rest.away)} · ${short(e.home)} ${restTxt(rest.home)}` });
+  const restSports = ['nba', 'cbb', 'nhl', 'nfl', 'cfb'];
+  if (restSports.includes(e.sport_id) && rest && (rest.home !== undefined || rest.away !== undefined)) f.push({ label: 'Rest', value: `${short(e.away)} ${restTxt(rest.away)} · ${short(e.home)} ${restTxt(rest.home)}` });
   const inj = await injuriesFor(e);
-  f.push({ label: 'Injuries', value: inj.length ? inj.slice(0, 4).map((i) => `${i.player} (${i.status})`).join(', ') : 'none listed' });
+  // Injuries only where the injury feed covers the sport (PropLine: NBA, NFL, NHL, CBB, CFB) and only what it lists.
+  if (inj.length) f.push({ label: 'Injuries', value: inj.slice(0, 4).map((i) => `${i.player} (${i.status})`).join(', ') });
   const avg = LEAGUE_AVG_TOTAL[e.sport_id];
   if (sim && avg) {
     const t = sim.summary.meanHome + sim.summary.meanAway;
-    f.push({ label: e.sport_id === 'nhl' || e.sport_id === 'soccer' ? 'Projected goals' : 'Projected pace', value: `${t.toFixed(1)} total (${t >= avg ? '+' : ''}${(((t / avg) - 1) * 100).toFixed(0)}% vs league avg)` });
+    f.push({ label: e.sport_id === 'nhl' || e.sport_id === 'soccer' ? 'Projected goals' : 'Projected total', value: `${t.toFixed(1)} total (${t >= avg ? '+' : ''}${(((t / avg) - 1) * 100).toFixed(0)}% vs league avg)` });
   }
   const books = Math.max(0, ...prices.map((p) => p.books));
   f.push({ label: 'Books checked', value: String(books || sim?.inputs?.snapshot?.books || 0) });

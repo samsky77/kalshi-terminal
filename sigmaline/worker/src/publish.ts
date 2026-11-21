@@ -144,7 +144,10 @@ export async function publishDue(ctx: Ctx): Promise<PublishReport[]> {
     const unknown = inj.hasData && keyPlayerUnknown(sim, inj.list, propPlayers);
     const cands = choosePicks(sim, ctx, unknown);
     const report: PublishReport = { event: `${e.away} @ ${e.home}`, published: [], rejected: [] };
+    const existing = new Set((await ctx.db.select<{ market: string; selection: string }>('picks', { eq: { event_id: e.id } })).map((p) => p.selection.startsWith('prop:') ? p.selection.split(':').slice(0, 1).concat(p.selection.split(':').slice(3)).join(':') : p.market));
     for (const c of cands) {
+      const slotKey = c.p.selection.market === 'prop' ? `prop:${c.p.selection.player ?? ''}:${c.p.selection.stat ?? ''}` : c.p.selection.market;
+      if (existing.has(slotKey)) { report.rejected.push({ label: selectionLabel(c.p.selection, e.home, e.away), reasons: ['a pick in this market is already logged for this game'] }); continue; }
       const label = selectionLabel(c.p.selection, e.home, e.away);
       if (!c.ok) { report.rejected.push({ label, reasons: c.reasons }); continue; }
       const move = await lineMovement(ctx, e, c.p);

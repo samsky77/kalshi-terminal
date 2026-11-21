@@ -105,3 +105,17 @@ describe('QA regressions SHP-001 / SHP-002', () => {
     for (const p of out.filter((x) => x.selection.line === -10.5 || x.selection.line === 10.5)) expect(p.grade).toBe('none');
   });
 });
+
+describe('QA regression CAS-003', () => {
+  it('when both sides of one market look +EV (a stale price somewhere), neither is graded', () => {
+    const samples: SimSamples = { n: 2, home: Int16Array.from([100, 90]), away: Int16Array.from([95, 99]), winner: Int8Array.from([1, -1]) };
+    const q = (book: string, home: number, away: number): MarketQuote => ({ book, market: 'ml', prices: { home, away }, ts: iso(1) });
+    // consensus ~80/20; book a is generous on the favourite, book b on the dog (prices sum < 100%)
+    const out = priceMarkets(samples, [q('a', 1.3, 3.9), q('b', 1.23, 4.8), q('c', 1.25, 4.2), q('d', 1.25, 4.1)], { sport: 'nba', threeWay: false, bettable: new Set(['a', 'b', 'c', 'd']), w: {}, marketOnly: true });
+    const home = out.find((p) => p.selection.side === 'home')!, away = out.find((p) => p.selection.side === 'away')!;
+    expect(home.ev).toBeGreaterThan(0.02);
+    expect(away.ev).toBeGreaterThan(0.02);
+    expect(home.grade).toBe('none');
+    expect(away.grade).toBe('none');
+  });
+});

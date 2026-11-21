@@ -17,6 +17,7 @@ const FAQ: [string, string][] = [
   ['What does a grade mean?', gradeFaqAnswer()],
   ['Which sports?', 'NBA, NHL, NFL, college basketball, college football, soccer (EPL, La Liga, Serie A, Bundesliga, Ligue 1, MLS, Champions League) and ATP/WTA tennis. Moneylines, spreads and totals; NBA and NFL player props are rolling out.'],
   ['Is profit guaranteed?', 'No. A positive-EV bet still loses often. Results vary, and past performance does not guarantee future results. Only bet what you can afford to lose.'],
+  ['What do Fair, Edge, CLV and units mean?', 'Fair is the price at which a bet breaks even by our numbers. Edge is how much better the best book’s price is than fair: fair probability × decimal odds − 1, so +4% means about 4 cents per dollar over the long run. CLV (closing line value) compares the price we flagged with the final price before the start; beating the close is the best early sign the edges are real. Units are a fixed stake size for the record (A = 2 units, B = 1), not advice. Small samples swing a lot, so judge us on hundreds of bets, not a handful.'],
   ['How does the free trial work?', OFFER.fine],
   ['Can I cancel?', 'Yes, any time from your Whop account. Cancel during the trial and you are never charged; cancel later and you keep access until the end of the period you paid for. See the Terms for refunds.'],
 ];
@@ -99,7 +100,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
             <ul className="prose-sl mt-2 space-y-1 text-[14px]">
               <li>Full slate for 7 sports with fair prices, EV and grades</li>
               <li>Simulation breakdowns, line movement and CLV</li>
-              <li>Push and Discord alerts for every new pick</li>
+              <li>Push and Discord alerts for the strongest new picks</li>
               <li>Cancel any time on Whop</li>
             </ul>
             <p className="mt-2 text-[12px] text-muted">{OFFER.fine} The Results page is public, so you can judge us before you start.</p>

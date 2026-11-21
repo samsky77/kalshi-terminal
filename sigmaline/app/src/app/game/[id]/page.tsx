@@ -72,6 +72,9 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
         {g.histogram && (
           <Section title={g.histogram.axis === 'total' ? 'Simulated total' : 'Simulated final margin'} right={<span className="label">{(g.sim?.n_sims ?? 10000).toLocaleString()} runs</span>}>
             <MarginHistogram bins={g.histogram.bins} axis={g.histogram.axis} pickLabel={top && top.grade !== 'none' ? label : null} />
+            {(top?.fair_source === 'consensus' || g.sim?.inputs?.source !== 'ratings') && (
+              <p className="mt-1 text-[12px] text-muted">We don&apos;t have enough results yet to rate these teams, so the fair prices on this page are the market consensus, not this simulation. The chart shows the score spread the market implies; its percentages can differ from the fair price above.</p>
+            )}
           </Section>
         )}
 

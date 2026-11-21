@@ -142,6 +142,16 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
     if ((m === 'spread' || m === 'total' || m === 'prop') && !isMain && p.books < Math.max(alt.minBooks, Math.ceil(top * alt.minShareOfMain))) p.grade = 'none';
     if (m !== 'prop' && p.ev > GAME_LINE_MAX_CREDIBLE_EV) p.grade = 'none';
   }
+  // Both sides of one market can't both be +EV against one fair price unless a quote is stale or
+  // mis-mapped (QA ticket CAS-003: Rockets −476 and Jazz +600 both graded B). Grade neither.
+  const sideGroup = (p: PricedSelection) => {
+    const s = p.selection;
+    const ln = s.market === 'spread' && s.line !== undefined ? Math.abs(s.line) : s.line ?? '';
+    return [s.market, ln, s.player ?? '', s.stat ?? ''].join('|');
+  };
+  const gradedBySide = new Map<string, PricedSelection[]>();
+  for (const p of out) if (p.grade !== 'none') { const k = sideGroup(p); const a = gradedBySide.get(k); if (a) a.push(p); else gradedBySide.set(k, [p]); }
+  for (const g of gradedBySide.values()) if (g.length > 1) for (const p of g) p.grade = 'none';
   return out.sort((a, b) => (b.ev || -9) - (a.ev || -9));
 }
 

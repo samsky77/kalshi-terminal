@@ -15,10 +15,10 @@
   "dependencies": {
     "@sigmaline/core": "0.1.0",
     "@supabase/supabase-js": "^2.49.4",
+    "@types/pg": "^8.23.1",
     "pg": "^8.23.1"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.3.14",
-    "@types/pg": "^8.23.1"
+    "@electric-sql/pglite": "^0.3.14"
   }
 }

@@ -26,8 +26,8 @@ export const GRADE_CONFIG = {
   maxCredibleEdge: { game: 0.10, prop: 0.25 },
   /** |edge| above this is bad data: hidden from the feed and written to `data_anomalies`. */
   sanityCap: 0.25,
-  /** Minutes after the book's own last_update before a price is STALE (dimmed, never graded). */
-  staleMinutes: 10,
+  /** Minutes after the book's own last_update before a price is STALE (dimmed, never graded). Set above the 15-min tick so prices from a normal tick aren't stale. */
+  staleMinutes: 20,
   /** Record-only stake per grade, in units. */
   stake: { A: 2, B: 1 },
 } as const;

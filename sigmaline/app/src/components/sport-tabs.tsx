@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Pending } from '@/components/pending';
 import { SPORT_DEFS, SPORTS, type SportId } from '@sigmaline/core';
 
 export function SportTabs({ active, hrefFor }: { active: SportId; hrefFor: (s: SportId) => string }) {
@@ -16,6 +17,7 @@ export function SportTabs({ active, hrefFor }: { active: SportId; hrefFor: (s: S
                 className={`tap flex items-center px-3 text-[13px] font-semibold tracking-[0.12em] ${on ? 'border-b-2 border-amber text-ink' : 'border-b-2 border-transparent text-muted hover:text-ink'}`}
               >
                 {SPORT_DEFS[s].tab}
+                <Pending />
               </Link>
             </li>
           );

@@ -1,0 +1,18 @@
+{
+  "id": "AND-001",
+  "title": "Sport tab / view taps on QA-PAYWALL /slate take 9-15 s to change anything, with no feedback",
+  "severity": "P1",
+  "persona": "New Android Chrome visitor wanting to install the PWA",
+  "url": "http://localhost:3200/slate",
+  "device": "Pixel 7 (Android Chrome, Playwright Chromium)",
+  "steps": [
+    "Create trialing user qa_and_1 via signed webhook, set sl_session cookie",
+    "Open /slate on Pixel 7, wait for networkidle",
+    "Tap NHL (or CBB/CFB/NBA) tab",
+    "Poll location.search and the '<N> UPCOMING GAMES' header every 100ms"
+  ],
+  "expected": "Tab switch updates URL and list within ~0.5 s (as on QA-OPEN :3100, 60-170 ms).",
+  "actual": "On :3200 the RSC request /slate?sport=nhl&_rsc=... finishes in ~30 ms, yet URL and list only change after ~14.4 s (CBB: 8.8-15 s; CFB, NBA same). Selected tab and list stay on the old sport meanwhile, no loading state; users tap again. Same with service worker blocked (not SW). Same script on :3100 is instant. No long tasks recorded. A first tap in one earlier run took 450 ms, so it is intermittent-ish but reproduced in most runs.",
+  "evidence": "Playwright timings: 'NHL 181 | 3 UPCOMING|2 -> 14436 ?sport=nhl|15 UPCOMING'. Server TTFB via curl 20-35 ms.",
+  "suspected_area": "Suspected: client router transition stalls only with paywall ON (requirePaid in app/slate/layout.tsx / guard, or loading.tsx streaming); a guess."
+}

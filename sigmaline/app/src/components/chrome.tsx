@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Pending } from '@/components/pending';
 import { dateLong, DISCLAIMER } from '@/lib/format';
 
 export function Header({ nav = 'member', demo = false }: { nav?: 'member' | 'public' | 'none'; demo?: boolean }) {
@@ -22,7 +23,7 @@ export function Header({ nav = 'member', demo = false }: { nav?: 'member' | 'pub
             ? [['/slate', 'Slate'], ['/edges', 'Edges'], ['/results', 'Results'], ['/alerts', 'Alerts'], ['/account', 'Account']]
             : [['/', 'Home'], ['/results', 'Results'], ['/login', 'Sign in']]
           ).map(([href, label]) => (
-            <Link key={href} href={href} prefetch={false} className="tap flex shrink-0 items-center px-[9px] text-muted hover:text-ink sm:px-3">{label}</Link>
+            <Link key={href} href={href} prefetch={false} className="tap flex shrink-0 items-center px-[9px] text-muted hover:text-ink sm:px-3">{label}<Pending /></Link>
           ))}
         </nav>
       )}
@@ -36,10 +37,10 @@ export function Footer({ sharpApi = false }: { sharpApi?: boolean }) {
       <p>{DISCLAIMER}</p>
       {sharpApi && <p className="mt-1">Data provided by SharpAPI</p>}
       <p className="mt-2 flex flex-wrap gap-x-4">
-        <Link className="tap inline-flex items-center underline" href="/legal/terms">Terms</Link>
-        <Link className="tap inline-flex items-center underline" href="/legal/privacy">Privacy</Link>
-        <Link className="tap inline-flex items-center underline" href="/legal/responsible-gambling">Responsible gambling</Link>
-        <Link className="tap inline-flex items-center underline" href="/results">Track record</Link>
+        <Link prefetch={false} className="tap inline-flex items-center underline" href="/legal/terms">Terms</Link>
+        <Link prefetch={false} className="tap inline-flex items-center underline" href="/legal/privacy">Privacy</Link>
+        <Link prefetch={false} className="tap inline-flex items-center underline" href="/legal/responsible-gambling">Responsible gambling</Link>
+        <Link prefetch={false} className="tap inline-flex items-center underline" href="/results">Track record</Link>
       </p>
       <p className="mt-1">Sigmaline never places, holds or brokers bets and never connects to sportsbook accounts.</p>
     </footer>

@@ -3,6 +3,7 @@ import { SPORT_DEFS, SPORTS, type SportId } from '@sigmaline/core';
 import type { EdgeRow, FeedPrice } from '@sigmaline/db';
 import { Ago, FreshRow } from '@/components/ago';
 import { PropRow } from '@/components/prop-row';
+import { Pending } from '@/components/pending';
 import { Footer, GradeBadge, Header, Main } from '@/components/chrome';
 import { SportTabs } from '@/components/sport-tabs';
 import { isPriceStale, propsFeed, quotaState, slate, staleMinutes } from '@/lib/data';
@@ -15,7 +16,7 @@ export const metadata = { title: 'Slate' };
 
 type View = 'lines' | 'props';
 
-export default async function SlatePage({ searchParams }: { searchParams: Promise<{ sport?: string; edges?: string; view?: string }> }) {
+export default async function SlatePage({ searchParams }: { searchParams: Promise<{ sport?: string; edges?: string; view?: string; all?: string }> }) {
   const sp = await searchParams;
   const sport = (SPORTS as string[]).includes(sp.sport ?? '') ? (sp.sport as SportId) : 'nba';
   const view: View = sp.view === 'props' ? 'props' : 'lines';
@@ -41,6 +42,7 @@ export default async function SlatePage({ searchParams }: { searchParams: Promis
               <Link key={v} href={qs({ view: v })} prefetch={false} aria-current={v === view ? 'page' : undefined}
                 className={`tap inline-flex items-center border px-3 text-[11px] font-semibold uppercase tracking-[0.12em] ${v === view ? 'border-amber text-amber' : 'border-line text-muted'}`}>
                 {v === 'lines' ? 'Game lines' : 'Props'}
+                <Pending />
               </Link>
             ))}
           </nav>
@@ -48,21 +50,27 @@ export default async function SlatePage({ searchParams }: { searchParams: Promis
             className={`tap inline-flex items-center gap-2 border px-3 text-[11px] font-semibold uppercase tracking-[0.12em] ${edgesOnly ? 'border-amber text-amber' : 'border-line text-muted'}`}>
             <span aria-hidden className={`inline-block h-2.5 w-2.5 ${edgesOnly ? 'bg-amber' : 'border border-muted'}`} />
             Edges only
+            <Pending />
           </Link>
         </div>
-        {view === 'lines' ? <Lines sport={sport} edgesOnly={edgesOnly} now={now} sm={sm} /> : <Props sport={sport} edgesOnly={edgesOnly} now={now} sm={sm} />}
+        {view === 'lines' ? <Lines sport={sport} edgesOnly={edgesOnly} now={now} sm={sm} showAll={sp.all === '1'} allHref={`${qs({})}&all=1`} /> : <Props sport={sport} edgesOnly={edgesOnly} now={now} sm={sm} />}
       </Main>
       <Footer />
     </>
   );
 }
 
-async function Lines({ sport, edgesOnly, now, sm }: { sport: SportId; edgesOnly: boolean; now: number; sm: number }) {
+/** Long slates (CBB can have 70+ games) show the first rows; the rest load on request (SLO-003). */
+const SLATE_PAGE = 40;
+
+async function Lines({ sport, edgesOnly, now, sm, showAll, allHref }: { sport: SportId; edgesOnly: boolean; now: number; sm: number; showAll: boolean; allHref: string }) {
   const [{ rows, asOf }, quota] = await Promise.all([slate(sport), quotaState()]);
   // Games with no price at all aren't shown as rows (DAT-001); they're counted under the list.
   const priced = rows.filter((r) => r.top || r.main);
   const unpriced = rows.length - priced.length;
-  const shown = edgesOnly ? priced.filter((r) => r.top) : priced;
+  const matching = edgesOnly ? priced.filter((r) => r.top) : priced;
+  const shown = showAll ? matching : matching.slice(0, SLATE_PAGE);
+  const hidden = matching.length - shown.length;
   const exhausted = Object.values(quota).some((q) => q.mode === 'exhausted');
   const today = new Date(now).toLocaleDateString('en-US', { timeZone: 'America/New_York' });
   return (
@@ -117,6 +125,7 @@ async function Lines({ sport, edgesOnly, now, sm }: { sport: SportId; edgesOnly:
           );
         })}
       </ul>
+      {hidden > 0 && <Link href={allHref} prefetch={false} className="tap my-2 inline-flex w-full items-center justify-center border border-line text-[12px] uppercase tracking-[0.12em] text-ink">Show all {matching.length} games<Pending /></Link>}
       {unpriced > 0 && <p className="py-3 text-[12px] text-muted">{unpriced} more {unpriced === 1 ? 'game has' : 'games have'} no prices from the books yet and will appear once they do.</p>}
     </div>
   );

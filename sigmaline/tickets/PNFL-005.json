@@ -1,0 +1,16 @@
+{
+  "id": "PNFL-005",
+  "title": "One-sided suspended prop market: the live sibling is still graded B",
+  "severity": "P2",
+  "persona": "NFL props user",
+  "device": "n/a (pipeline script /tmp/pnfl/run.ts, copy in tickets/evidence/PNFL-pipeline-run.ts, output PNFL-pipeline-run.log)",
+  "url": "n/a",
+  "steps": [
+    "Event with betmgm player_pass_tds Over 2.5 flagged suspended:true, Under live, plus two other books",
+    "quotesFromEvent -> priceMarkets -> filterFeed"
+  ],
+  "expected": "A market where the book has suspended one side is untrustworthy; the other side should not be the best price or graded.",
+  "actual": "\"Susp QB Under 2.5 Passing TDs\" shows betmgm 1.90 as best price, grade B (+2.5%) in the kept feed. The suspended outcome is removed, but the book's live side is used as the best price. README says suspended rows never appear. Judgement call: could be intended.",
+  "evidence": "tickets/evidence/PNFL-pipeline-run.log; UI check: /slate?sport=nfl&view=props shows the correct empty state (\"No NFL player props right now\") on QA-OPEN",
+  "suspected_area": "packages/core/src/oddsformat.ts, pricing.ts | oddsformat.ts drops only the suspended outcome"
+}

@@ -1,0 +1,16 @@
+{
+  "id": "PNFL-006",
+  "title": "NFL zero-stat games may be missing from player logs (and so from sim inputs and settlement)",
+  "severity": "P3",
+  "persona": "NFL props user",
+  "device": "n/a (pipeline script /tmp/pnfl/run.ts, copy in tickets/evidence/PNFL-pipeline-run.ts, output PNFL-pipeline-run.log)",
+  "url": "n/a",
+  "steps": [
+    "Read the log builder: a row is written only when statValue returns a number",
+    "Guess: a provider box score omits the key when a player has 0 interceptions / 0 receptions / 0 TDs"
+  ],
+  "expected": "A player on the field with no key counts as 0, or the game is skipped consistently.",
+  "actual": "Unverified guess. If the provider omits zero stats, the projection mean is biased high (zero games dropped) and a settled Under-0.5 on interceptions / anytime-TD No would wait 24h and then void. Needs a real PropLine game-log response to confirm.",
+  "evidence": "tickets/evidence/PNFL-pipeline-run.log; UI check: /slate?sport=nfl&view=props shows the correct empty state (\"No NFL player props right now\") on QA-OPEN",
+  "suspected_area": "worker/src/simulate.ts statValue, tick.ts refreshPlayerLogs | simulate.ts statValue / logs"
+}

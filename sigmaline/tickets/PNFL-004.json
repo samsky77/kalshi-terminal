@@ -1,0 +1,15 @@
+{
+  "id": "PNFL-004",
+  "title": "Write-up for Yes/No anytime TD reads \"project 0.5 ... puts the under at 63% against 63%\"",
+  "severity": "P3",
+  "persona": "NFL props user",
+  "device": "n/a (pipeline script /tmp/pnfl/run.ts, copy in tickets/evidence/PNFL-pipeline-run.ts, output PNFL-pipeline-run.log)",
+  "url": "n/a",
+  "steps": [
+    "buildWriteup for \"Fake RB Anytime TD: No\" with propMean 0.45, fairSource blend"
+  ],
+  "expected": "Plain wording for a Yes/No market, e.g. \"we make a TD 37%\".",
+  "actual": "Edge text says \"our player sims project 0.5, which puts the under at 63%\": \"0.5\" (rounded 0.45 TDs) is meaningless to the reader and \"under\" does not match the Yes/No label. Also \"63% against 63%\" next to \"+0.8% EV\" looks contradictory because of rounding.",
+  "evidence": "tickets/evidence/PNFL-pipeline-run.log; UI check: /slate?sport=nfl&view=props shows the correct empty state (\"No NFL player props right now\") on QA-OPEN",
+  "suspected_area": "packages/core/src/writeup.ts edgeSentence (prop branch) | writeup.ts"
+}

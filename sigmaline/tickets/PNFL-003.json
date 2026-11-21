@@ -1,0 +1,16 @@
+{
+  "id": "PNFL-003",
+  "title": "Yes-only anytime-TD markets are dropped from the feed (no No side, no consensus)",
+  "severity": "P2",
+  "persona": "NFL props user",
+  "device": "n/a (pipeline script /tmp/pnfl/run.ts, copy in tickets/evidence/PNFL-pipeline-run.ts, output PNFL-pipeline-run.log)",
+  "url": "n/a",
+  "steps": [
+    "quotesFromEvent with player_anytime_td outcomes that only carry \"Yes\" (3 books, prices 4.0/3.6/3.6)",
+    "priceMarkets then filterFeed"
+  ],
+  "expected": "Anytime TD shows as Yes/No with a fair price, or at least the Yes row with a clearly labelled one-sided market.",
+  "actual": "Both rows are hidden (no_price for No, no_fair for Yes; consensus needs both sides). Many real feeds list only Yes for anytime TD (guess about the real PropLine/Odds API shape, not verified), so the market would never appear. Two-sided Yes/No works and labels as \"X Anytime TD: Yes/No\".",
+  "evidence": "tickets/evidence/PNFL-pipeline-run.log; UI check: /slate?sport=nfl&view=props shows the correct empty state (\"No NFL player props right now\") on QA-OPEN",
+  "suspected_area": "packages/core/src/oddsformat.ts, packages/core/src/pricing.ts | pricing.ts consensus requires every side"
+}

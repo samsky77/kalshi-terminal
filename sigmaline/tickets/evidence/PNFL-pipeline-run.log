@@ -1,0 +1,123 @@
+quotes 58 suspended 1
+
+=== sim false priced 36 keep 30 stale 1 anom 3 {"no_price":1,"no_fair":1,"started":0,"duplicate":0,"suspended":0,"sanity":3,"stale":1}
+ANOM  Big Edge RB Over 80.5 Rushing yds          bk 3 draftkings 3.50 cP 0.500 fair 2.00 ev 0.750 chk 0.750 consensus g=none mEv NaN cEv 0.750
+ANOM  Stale Consensus WR Over 6.5 Receptions     bk 3 draftkings 2.10 cP 0.645 fair 1.55 ev 0.354 chk 0.354 consensus g=none mEv NaN cEv 0.354
+ANOM  Stale RB Over 50.5 Rushing yds             bk 3 draftkings 2.60 cP 0.500 fair 2.00 ev 0.300 chk 0.300 consensus g=none mEv NaN cEv 0.300
+keep  Fake QB Over 249.5 Passing yds             bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake QB Over 1.5 Passing TDs               bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake QB Over 21.5 Completions              bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake QB Over 33.5 Pass attempts            bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake QB Over 0.5 Interceptions             bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake RB Over 64.5 Rushing yds              bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake RB Over 15.5 Rush attempts            bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake WR Over 5.5 Receptions                bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake WR Over 68.5 Receiving yds            bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Susp QB Under 2.5 Passing TDs              bk 2 betmgm 1.90 cP 0.540 fair 1.85 ev 0.025 chk 0.025 consensus g=B mEv NaN cEv 0.025
+keep  Susp QB Over 2.5 Passing TDs               bk 2 draftkings 2.20 cP 0.460 fair 2.17 ev 0.013 chk 0.013 consensus g=none mEv NaN cEv 0.013
+keep  Fake RB Anytime TD: No                     bk 3 fanduel 1.60 cP 0.618 fair 1.62 ev -0.011 chk -0.011 consensus g=none mEv NaN cEv -0.011
+keep  Fake QB Under 274.5 Passing yds            bk 2 fanduel 1.40 cP 0.699 fair 1.43 ev -0.022 chk -0.022 consensus g=none mEv NaN cEv -0.022
+keep  Fake QB Under 299.5 Passing yds            bk 1 draftkings 1.15 cP 0.849 fair 1.18 ev -0.024 chk -0.024 consensus g=none mEv NaN cEv -0.024
+keep  Fake TE Under 4.5 Receptions               bk 1 draftkings 1.50 cP 0.645 fair 1.55 ev -0.033 chk -0.033 consensus g=none mEv NaN cEv -0.033
+keep  Fake QB Under 249.5 Passing yds            bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake QB Under 1.5 Passing TDs              bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake QB Under 21.5 Completions             bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake QB Under 33.5 Pass attempts           bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake QB Under 0.5 Interceptions            bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake RB Under 64.5 Rushing yds             bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake RB Under 15.5 Rush attempts           bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake WR Under 5.5 Receptions               bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake WR Under 68.5 Receiving yds           bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake RB Anytime TD: Yes                    bk 3 draftkings 2.50 cP 0.382 fair 2.62 ev -0.045 chk -0.045 consensus g=none mEv NaN cEv -0.045
+keep  Stale RB Under 50.5 Rushing yds            bk 3 fanduel 1.90 cP 0.500 fair 2.00 ev -0.050 chk -0.050 consensus g=none mEv NaN cEv -0.050
+keep  Big Edge RB Under 80.5 Rushing yds         bk 3 fanduel 1.90 cP 0.500 fair 2.00 ev -0.050 chk -0.050 consensus g=none mEv NaN cEv -0.050
+keep  Fake TE Over 4.5 Receptions                bk 1 draftkings 2.60 cP 0.355 fair 2.81 ev -0.076 chk -0.076 consensus g=none mEv NaN cEv -0.076
+DROP  Stale Consensus WR Under 6.5 Receptions    bk 3 fanduel 2.60 cP 0.355 fair 2.81 ev -0.076 chk -0.076 consensus g=none mEv NaN cEv -0.076
+keep  Fake QB Over 274.5 Passing yds             bk 2 draftkings 3.00 cP 0.301 fair 3.32 ev -0.096 chk -0.096 consensus g=none mEv NaN cEv -0.096
+keep  Fake QB Over 299.5 Passing yds             bk 1 draftkings 5.00 cP 0.151 fair 6.61 ev -0.244 chk -0.244 consensus g=none mEv NaN cEv -0.244
+DROP  YesOnly WR Anytime TD: Yes                 bk 0 draftkings 4.00 cP NaN fair NaN ev NaN chk NaN consensus g=none mEv NaN cEv NaN
+DROP  YesOnly WR Anytime TD: No                  bk 0 null NaN cP NaN fair NaN ev NaN chk NaN consensus g=none mEv NaN cEv NaN
+
+=== sim true priced 36 keep 30 stale 1 anom 3 {"no_price":1,"no_fair":1,"started":0,"duplicate":0,"suspended":0,"sanity":3,"stale":1}
+ANOM  Big Edge RB Over 80.5 Rushing yds          bk 3 draftkings 3.50 cP 0.500 fair 2.00 ev 0.750 chk 0.750 consensus g=none mEv NaN cEv 0.750
+ANOM  Stale Consensus WR Over 6.5 Receptions     bk 3 draftkings 2.10 cP 0.645 fair 1.55 ev 0.354 chk 0.354 consensus g=none mEv NaN cEv 0.354
+ANOM  Stale RB Over 50.5 Rushing yds             bk 3 draftkings 2.60 cP 0.500 fair 2.00 ev 0.300 chk 0.300 consensus g=none mEv NaN cEv 0.300
+keep  Fake WR Over 5.5 Receptions                bk 4 draftkings 2.20 cP 0.494 fair 1.94 ev 0.135 chk 0.135 blend g=A mEv 0.225 cEv 0.086
+keep  Fake QB Over 1.5 Passing TDs               bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake QB Over 21.5 Completions              bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake QB Over 33.5 Pass attempts            bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake QB Over 0.5 Interceptions             bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake RB Over 64.5 Rushing yds              bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake RB Over 15.5 Rush attempts            bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake WR Over 68.5 Receiving yds            bk 4 draftkings 2.20 cP 0.494 fair 2.03 ev 0.086 chk 0.086 consensus g=none mEv NaN cEv 0.086
+keep  Fake QB Over 249.5 Passing yds             bk 4 draftkings 2.20 cP 0.494 fair 2.04 ev 0.079 chk 0.079 blend g=A mEv 0.067 cEv 0.086
+keep  Fake QB Over 299.5 Passing yds             bk 1 draftkings 5.00 cP 0.151 fair 4.80 ev 0.042 chk 0.042 blend g=none mEv 0.571 cEv -0.244
+keep  Susp QB Under 2.5 Passing TDs              bk 2 betmgm 1.90 cP 0.540 fair 1.85 ev 0.025 chk 0.025 consensus g=B mEv NaN cEv 0.025
+keep  Susp QB Over 2.5 Passing TDs               bk 2 draftkings 2.20 cP 0.460 fair 2.17 ev 0.013 chk 0.013 consensus g=none mEv NaN cEv 0.013
+keep  Fake RB Anytime TD: No                     bk 3 fanduel 1.60 cP 0.618 fair 1.59 ev 0.008 chk 0.008 blend g=none mEv 0.043 cEv -0.011
+keep  Fake QB Over 274.5 Passing yds             bk 2 draftkings 3.00 cP 0.301 fair 2.99 ev 0.005 chk 0.005 blend g=none mEv 0.192 cEv -0.096
+keep  Fake QB Under 249.5 Passing yds            bk 4 betmgm 1.90 cP 0.506 fair 1.96 ev -0.032 chk -0.032 blend g=none mEv -0.022 cEv -0.038
+keep  Fake TE Under 4.5 Receptions               bk 1 draftkings 1.50 cP 0.645 fair 1.55 ev -0.033 chk -0.033 consensus g=none mEv NaN cEv -0.033
+keep  Fake QB Under 1.5 Passing TDs              bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake QB Under 21.5 Completions             bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake QB Under 33.5 Pass attempts           bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake QB Under 0.5 Interceptions            bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake RB Under 64.5 Rushing yds             bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake RB Under 15.5 Rush attempts           bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Fake WR Under 68.5 Receiving yds           bk 4 betmgm 1.90 cP 0.506 fair 1.98 ev -0.038 chk -0.038 consensus g=none mEv NaN cEv -0.038
+keep  Stale RB Under 50.5 Rushing yds            bk 3 fanduel 1.90 cP 0.500 fair 2.00 ev -0.050 chk -0.050 consensus g=none mEv NaN cEv -0.050
+keep  Big Edge RB Under 80.5 Rushing yds         bk 3 fanduel 1.90 cP 0.500 fair 2.00 ev -0.050 chk -0.050 consensus g=none mEv NaN cEv -0.050
+keep  Fake QB Under 274.5 Passing yds            bk 2 fanduel 1.40 cP 0.699 fair 1.50 ev -0.069 chk -0.069 blend g=none mEv -0.156 cEv -0.022
+keep  Fake RB Anytime TD: Yes                    bk 3 draftkings 2.50 cP 0.382 fair 2.70 ev -0.074 chk -0.074 blend g=none mEv -0.130 cEv -0.045
+keep  Fake TE Over 4.5 Receptions                bk 1 draftkings 2.60 cP 0.355 fair 2.81 ev -0.076 chk -0.076 consensus g=none mEv NaN cEv -0.076
+DROP  Stale Consensus WR Under 6.5 Receptions    bk 3 fanduel 2.60 cP 0.355 fair 2.81 ev -0.076 chk -0.076 consensus g=none mEv NaN cEv -0.076
+keep  Fake WR Under 5.5 Receptions               bk 4 betmgm 1.90 cP 0.506 fair 2.07 ev -0.080 chk -0.080 blend g=none mEv -0.158 cEv -0.038
+keep  Fake QB Under 299.5 Passing yds            bk 1 draftkings 1.15 cP 0.849 fair 1.26 ev -0.090 chk -0.090 blend g=none mEv -0.211 cEv -0.024
+DROP  YesOnly WR Anytime TD: Yes                 bk 0 draftkings 4.00 cP NaN fair NaN ev NaN chk NaN consensus g=none mEv NaN cEv NaN
+DROP  YesOnly WR Anytime TD: No                  bk 0 null NaN cP NaN fair NaN ev NaN chk NaN consensus g=none mEv NaN cEv NaN
+
+WRITEUP blend {
+ "edge": "Fake QB Over 249.5 Passing yds at +120: our player sims project 262.0, which puts the over at 49%, against 45% implied by the price. That's roughly +7.9% EV.",
+ "reasons": [
+  "DraftKings is out of line with the other 3 books we checked; even the market's own fair price says this number is generous."
+ ],
+ "risk": "Risk: game script. A blowout changes who gets the ball and how often.",
+ "drivers": [
+  "line_shop"
+ ]
+}
+
+WRITEUP consensus {
+ "edge": "Fake QB Over 249.5 Passing yds at +120: the market consensus across 4 books puts the over at 49%, against 45% implied by the price. That's roughly +7.9% EV.",
+ "reasons": [
+  "DraftKings is out of line with the other 3 books we checked; even the market's own fair price says this number is generous."
+ ],
+ "risk": "Risk: game script. A blowout changes who gets the ball and how often.",
+ "drivers": [
+  "line_shop"
+ ]
+}
+{
+ "edge": "Fake RB Anytime TD: No at −167: our player sims project 0.5, which puts the under at 63%, against 63% implied by the price. That's roughly +0.8% EV.",
+ "reasons": [
+  "FanDuel has the best price of the 3 books we checked for this market."
+ ],
+ "risk": "Risk: game script. A blowout changes who gets the ball and how often.",
+ "drivers": [
+  "books"
+ ]
+}
+player_pass_yds => Passing yds
+player_pass_tds => Passing TDs
+player_pass_completions => Completions
+player_pass_attempts => Pass attempts
+player_pass_interceptions => Interceptions
+player_rush_yds => Rushing yds
+player_rush_attempts => Rush attempts
+player_receptions => Receptions
+player_reception_yds => Receiving yds
+player_anytime_td => Anytime TD
+grade player_pass_tds 1.5 2 win
+grade player_anytime_td 0.5 1 win
+grade player_pass_yds 249 249 push
+grade player_pass_yds 249.5 250 win

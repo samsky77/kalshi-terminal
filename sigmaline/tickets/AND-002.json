@@ -1,0 +1,15 @@
+{
+  "id": "AND-002",
+  "title": "PWA icons are plain amber squares (no logo/wordmark)",
+  "severity": "P3",
+  "persona": "New Android Chrome visitor wanting to install the PWA",
+  "url": "http://localhost:3200/manifest.webmanifest",
+  "device": "Pixel 7 (Android Chrome, Playwright Chromium)",
+  "steps": [
+    "Fetch /icons/icon-192.png, icon-512.png, icon-maskable-512.png and view"
+  ],
+  "expected": "Branded app icon (e.g. sigma mark) on the Android home screen; maskable icon with logo inside the safe zone.",
+  "actual": "All three icons are a solid amber square centred on #0A0A0A (maskable one just smaller). The installed app shows an anonymous block. Sizes (192/512/512), types, status 200, purpose any+maskable, colours #0A0A0A and display standalone are all valid.",
+  "evidence": "sigmaline/app/public/icons/*.png",
+  "suspected_area": "Design asset."
+}

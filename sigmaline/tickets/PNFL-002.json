@@ -1,0 +1,17 @@
+{
+  "id": "PNFL-002",
+  "title": "NFL game-log refresh: 16-player cap per event and a recency test that re-pulls NFL players every tick",
+  "severity": "P2",
+  "persona": "NFL props user",
+  "device": "n/a (pipeline script /tmp/pnfl/run.ts, copy in tickets/evidence/PNFL-pipeline-run.ts, output PNFL-pipeline-run.log)",
+  "url": "n/a",
+  "steps": [
+    "Read refreshPlayerLogs",
+    "Line 59 slices players to 16; NFL props cover far more players per game, in arbitrary snapshot order",
+    "Line 61 skips a player only if their newest game_date is < 2 days old, but NFL teams play weekly so that is never true"
+  ],
+  "expected": "Logs fetched once per player per day-ish, for all players with props, within budget.",
+  "actual": "Players beyond the first 16 never get logs (so never a sim); the first 16 are re-fetched (1 request each, 20 games) on every tick, burning the PropLine budget. Guess: the check should use a fetched-at time, not the last game date.",
+  "evidence": "tickets/evidence/PNFL-pipeline-run.log; UI check: /slate?sport=nfl&view=props shows the correct empty state (\"No NFL player props right now\") on QA-OPEN",
+  "suspected_area": "worker/src/tick.ts:59-61 | worker/src/tick.ts"
+}

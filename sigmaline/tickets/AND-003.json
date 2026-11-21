@@ -1,0 +1,17 @@
+{
+  "id": "AND-003",
+  "title": "Age/eligibility gate: no '21+' wording, and disabled CTA gives no feedback and is not focusable",
+  "severity": "P3",
+  "persona": "New Android Chrome visitor wanting to install the PWA",
+  "url": "http://localhost:3200/",
+  "device": "Pixel 7 (Android Chrome, Playwright Chromium)",
+  "steps": [
+    "Open / on Pixel 7 (360px)",
+    "Read the checkbox label next to 'Start 7-day free trial'",
+    "Tap the CTA with the box unchecked"
+  ],
+  "expected": "Gate says the visitor is 21+ (or of legal age); tapping a disabled CTA explains what to tick; button reachable by keyboard/TalkBack.",
+  "actual": "Label reads 'I am legally allowed to bet where I live.' (no 21+). Unchecked CTA is an <a> with no href, aria-disabled, tabIndex 0 reported but not a real link/button; tap does nothing and shows no message. With box ticked the href becomes https://whop.com/checkout/qa-trial-plan (works). Footer does say 21+.",
+  "evidence": "app/src/components/join.tsx",
+  "suspected_area": "JoinButton."
+}

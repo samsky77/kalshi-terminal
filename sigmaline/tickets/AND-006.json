@@ -1,0 +1,16 @@
+{
+  "id": "AND-006",
+  "title": "Service worker activate deletes the public-pages cache on every SW update",
+  "severity": "P3",
+  "persona": "New Android Chrome visitor wanting to install the PWA",
+  "url": "http://localhost:3200/sw.js",
+  "device": "Pixel 7 (Android Chrome, Playwright Chromium)",
+  "steps": [
+    "Read /sw.js: SHELL='sl-shell-v2', PAGES='sl-pages-v2'",
+    "activate handler deletes every cache key !== SHELL"
+  ],
+  "expected": "Activate keeps current-version caches (SHELL and PAGES), deleting only old versions.",
+  "actual": "Filter `k !== SHELL` also deletes sl-pages-v2. After any future SW update, cached / and /results are wiped until each is visited online again, so offline opens show the offline page. Not reproduced live (needs a new SW version); code reading only. Observed fine today: SW registers (scope /, activated), after visiting /, /results, /legal/terms they are cached and open offline; /slate, /edges, /account, /game/<id> show the offline page offline; caches hold no /api/ URLs and no paid pages (signed-in run too).",
+  "evidence": "sw.js lines for activate",
+  "suspected_area": "Guess: should be ks.filter(k=>k!==SHELL&&k!==PAGES)."
+}

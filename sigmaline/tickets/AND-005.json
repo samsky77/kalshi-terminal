@@ -1,0 +1,16 @@
+{
+  "id": "AND-005",
+  "title": "Manifest lacks id, screenshots and a logged-out-friendly start_url",
+  "severity": "P3",
+  "persona": "New Android Chrome visitor wanting to install the PWA",
+  "url": "http://localhost:3200/manifest.webmanifest",
+  "device": "Pixel 7 (Android Chrome, Playwright Chromium)",
+  "steps": [
+    "Fetch manifest",
+    "Inspect fields"
+  ],
+  "expected": "Stable `id`, `screenshots` (Chrome rich install UI on Android), start_url that works for any visitor.",
+  "actual": "Manifest has name, short_name, scope /, start_url /slate, standalone, portrait, colours, 3 icons - but no `id` (identity falls back to start_url, so changing start_url later re-installs), no screenshots/lang/categories. A visitor who installs before signing in launches into /slate -> /login?next=%2Fslate (acceptable, but note).",
+  "evidence": "curl localhost:3200/manifest.webmanifest",
+  "suspected_area": "app/public/manifest.webmanifest"
+}

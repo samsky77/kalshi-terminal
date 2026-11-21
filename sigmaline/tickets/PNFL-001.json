@@ -1,0 +1,17 @@
+{
+  "id": "PNFL-001",
+  "title": "NFL player model can never run: player_logs.team is never populated",
+  "severity": "P1",
+  "persona": "NFL props user",
+  "device": "n/a (pipeline script /tmp/pnfl/run.ts, copy in tickets/evidence/PNFL-pipeline-run.ts, output PNFL-pipeline-run.log)",
+  "url": "n/a",
+  "steps": [
+    "Read tick.ts:68: team comes from (g as any).team",
+    "PlayerGameRow (providers/types.ts:15) has no team and propline.getPlayerGames does not map one",
+    "simulate.ts: a player whose logs have no team is skipped (\"can't place the player on a side\")"
+  ],
+  "expected": "With PROPS_NFL_ENABLED=true, NFL prop rows with player logs are priced fair=blend (sim) and labelled as sim.",
+  "actual": "Every log row is written with team=null, so simulateEvent skips every player; propsUsed is always 0 and every NFL prop row stays consensus-only, whatever the flag. In my synthetic run, rows only reach \"blend\" when I inject projections by hand.",
+  "evidence": "tickets/evidence/PNFL-pipeline-run.log; UI check: /slate?sport=nfl&view=props shows the correct empty state (\"No NFL player props right now\") on QA-OPEN",
+  "suspected_area": "worker/src/tick.ts refreshPlayerLogs; worker/src/providers/propline.ts getPlayerGames; worker/src/simulate.ts | worker ingestion: team not carried from provider game logs"
+}

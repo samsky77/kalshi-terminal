@@ -1,0 +1,15 @@
+{
+  "id": "AND-004",
+  "title": "Gate checkbox is squeezed to ~17-19 px wide at 360 px",
+  "severity": "P3",
+  "persona": "New Android Chrome visitor wanting to install the PWA",
+  "url": "http://localhost:3200/",
+  "device": "Pixel 7 (Android Chrome, Playwright Chromium)",
+  "steps": [
+    "Pixel 7 viewport 360x800, scroll to the CTA checkbox"
+  ],
+  "expected": "Checkbox stays a 20x20 square (label row is 44 px, so tap target is fine).",
+  "actual": "Checkbox bounding box 18.6x20 (17x20 for the pricing one): flex item shrinks, so it is not square.",
+  "evidence": "evidence/AND-gate-360.png",
+  "suspected_area": "join.tsx: input has h-5 w-5 without shrink-0."
+}

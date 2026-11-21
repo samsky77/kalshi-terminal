@@ -109,7 +109,7 @@ const STAT_KEYS: Record<string, string[]> = {
   player_blocks: ['blocks', 'blk'], player_steals: ['steals', 'stl'], player_turnovers: ['turnovers', 'tov', 'to'],
   player_pass_completions: ['passing_completions', 'completions', 'cmp'], player_pass_attempts: ['passing_attempts', 'pass_attempts', 'att'],
   player_pass_interceptions: ['passing_interceptions', 'interceptions_thrown', 'int'], player_rush_attempts: ['rushing_attempts', 'rush_attempts', 'carries'],
-  player_goals: ['goals', 'g'], player_shots_on_goal: ['shots_on_goal', 'shots_on_target', 'sog'], player_blocked_shots: ['blocked_shots', 'blocks', 'blk'],
+  player_goals: ['goals', 'g'], player_shots_on_goal: ['shots_on_goal', 'shots_on_target', 'sog', 'shots'], player_blocked_shots: ['blocked_shots', 'blocks', 'blk'],
   goalie_saves: ['saves', 'sv'], player_cards: ['cards'],
 };
 /** Box-score totals built from parts (only when every part is present). */
@@ -118,6 +118,8 @@ const COMPOSITE: Record<string, (s: Record<string, number>) => number | undefine
     const parts = [['rushing_touchdowns', 'rush_tds'], ['receiving_touchdowns', 'rec_tds']].map((ks) => ks.map((k) => s[k]).find((v) => typeof v === 'number'));
     return parts.every((v) => v !== undefined) ? (parts as number[]).reduce((a, b) => a + b, 0) : undefined;
   },
+  // Hockey box scores may give goals and assists without a points field (PNHL-007).
+  player_points: (s) => (typeof s.points === 'number' || typeof s.pts === 'number' ? undefined : typeof s.goals === 'number' && typeof s.assists === 'number' ? s.goals + s.assists : undefined),
   player_cards: (s) => (typeof s.cards === 'number' ? s.cards : typeof s.yellow_cards === 'number' && typeof s.red_cards === 'number' ? s.yellow_cards + s.red_cards : undefined),
 };
 /** Prop markets we can settle from a box score (anything else must not be requested). */
@@ -188,15 +190,16 @@ export async function simulateEvent(ctx: Ctx, e: EventRow, kind?: SnapshotRow['k
       const logs = await ctx.db.select<{ value: number; minutes: number | null; game_date: string; team: string | null }>('player_logs', { eq: { sport, player: q.player, stat: q.stat }, order: [{ col: 'game_date', asc: false }], limit: 25 });
       const proj = projectFromLogs(logs.map((l) => ({ value: Number(l.value), minutes: l.minutes ?? undefined, daysAgo: (ctx.now().getTime() - Date.parse(l.game_date)) / 86400000 })), { halfLifeDays: 30 });
       if (!proj) continue;
-      const lt = logs[0]?.team ? normTeam(logs[0].team) : '';
-      const team = lt && lt === normTeam(e.home) ? 'home' : lt && lt === normTeam(e.away) ? 'away' : null;
+      // The provider's own player_team for this event first (PNFL-001), then the team in the game logs.
+      const side = (t: string | null | undefined) => { const n = t ? normTeam(t) : ''; return n && n === normTeam(e.home) ? 'home' : n && n === normTeam(e.away) ? 'away' : null; };
+      const team = side(q.team) ?? side(logs[0]?.team);
       if (!team) continue; // can't place the player on a side: skip rather than guess
       players.set(k, { player: q.player, stat: q.stat, team, mean: proj.mean, dispersion: proj.dispersion, beta: PROP_BETA[q.stat] ?? 0.7 });
     }
     if (players.size) { simulateProps(sim.samples, [...players.values()], expectation.home, expectation.away, seed); propsUsed = players.size; }
   }
   const marketOnly = source === 'market' || source === 'tennis-market';
-  const priced = priceMarkets(sim.samples, quotes, { sport, threeWay: def.threeWay, bettable: new Set(ctx.settings.bettableBooks), w: model.params.w, thresholds: ctx.settings.thresholds, marketOnly });
+  const priced = priceMarkets(sim.samples, quotes, { sport, threeWay: def.threeWay, bettable: new Set(ctx.settings.bettableBooks), w: model.params.w, thresholds: ctx.settings.thresholds, marketOnly, nowMs: ctx.now().getTime() });
   const books = new Set(gameQuotes.map((q) => q.book)).size;
   return {
     event: e, model, seed, samples: sim.samples, summary: summarize(sim.samples), priced, expectation, expectationSource: source, anchor,

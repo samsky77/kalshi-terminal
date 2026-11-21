@@ -1,0 +1,16 @@
+{
+  "id": "PNHL-005",
+  "title": "Prop rows still show the edge % when STALE (only grade is hidden)",
+  "severity": "P2",
+  "persona": "NHL props user",
+  "url": "/slate?sport=nhl&view=props",
+  "device": "n/a",
+  "steps": [
+    "Code reading. app/src/components/prop-row.tsx renders `pct(r.ev)` outside any `.edge-only` wrapper; globals.css hides only `.edge-only` when `.is-stale`.",
+    "Same pattern in game/[id]/page.tsx MarketRow. Not reproducible on demo data because the stale threshold is stretched."
+  ],
+  "expected": "Stale rows have no grade or edge (README product rule): the edge % is hidden too.",
+  "actual": "Dimmed row still prints e.g. '+10.0%' next to 'STALE'; filterFeed deliberately keeps `ev` on stale rows.",
+  "evidence": "app/src/components/prop-row.tsx line ~21",
+  "suspected_area": "prop-row.tsx / MarketRow: wrap edge % in .edge-only (or show a dash when stale). Suspected, not observed live"
+}

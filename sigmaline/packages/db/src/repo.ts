@@ -150,6 +150,8 @@ export interface SnapshotRow {
   line: number | null;
   player: string | null;
   stat: string | null;
+  /** Props: the player's team (migration 0002). */
+  team?: string | null;
   prices: Record<string, number>;
   ts: string;
   kind: 'pregame' | 'closing' | 'refresh' | 'history';
@@ -159,7 +161,7 @@ export interface SnapshotRow {
 export function quoteFromSnapshot(s: SnapshotRow): MarketQuote {
   return {
     book: s.book, market: s.market, line: s.line === null ? undefined : Number(s.line),
-    player: s.player ?? undefined, stat: s.stat ?? undefined, prices: s.prices as MarketQuote['prices'], ts: s.ts,
+    player: s.player ?? undefined, stat: s.stat ?? undefined, team: s.team ?? undefined, prices: s.prices as MarketQuote['prices'], ts: s.ts,
   };
 }
 

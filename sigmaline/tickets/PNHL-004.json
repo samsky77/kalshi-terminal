@@ -1,0 +1,15 @@
+{
+  "id": "PNHL-004",
+  "title": "Props tab picks the main line by book count only: ties are arbitrary and a graded edge on another line is hidden",
+  "severity": "P2",
+  "persona": "NHL props user",
+  "url": "/slate?sport=nhl&view=props",
+  "device": "n/a",
+  "steps": [
+    "Code reading, not reproducible on demo data (no props). buildProps in packages/db/src/feed.ts keeps rows with books == deepest, then keeps the first line seen per player/stat."
+  ],
+  "expected": "When two lines tie on book count the choice is deterministic (e.g. closest to even money); a graded edge on an alternate line is not dropped from the Props tab and the 'Edges only' toggle.",
+  "actual": "Ties depend on DB row order (sort by books is the only key). Any alt line with fewer books than the deepest is dropped even if graded (altLine allows grading with >=5 books and >=50% of main), so 'Edges only' on Props misses edges that Edge Finder lists.",
+  "evidence": "packages/db/src/feed.ts lines 160-172",
+  "suspected_area": "packages/db/src/feed.ts buildProps (suspected from reading; not run)"
+}

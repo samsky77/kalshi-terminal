@@ -19,7 +19,7 @@ export function PropRow({ r, now, sm }: { r: FeedPrice; now: number; sm: number 
       </span>
       <span className="flex flex-col items-end gap-1 text-right">
         <span className="text-[12px] text-fair">fair {american(r.fair_decimal)}</span>
-        <span className={`text-[12px] ${edge ? 'text-amber' : 'text-muted'}`}>{pct(r.ev)}</span>
+        <span className={`edge-only text-[12px] ${edge ? 'text-amber' : 'text-muted'}`}>{pct(r.ev)}</span>
         {edge ? <span className="edge-only"><GradeBadge grade={r.grade} /></span> : <span className="text-[11px] text-muted">{(r.ev ?? 0) >= GRADE_CONFIG.B.minEdge ? 'not graded' : 'no edge'}</span>}
       </span>
     </FreshRow>

@@ -1,3 +1,4 @@
+import { isStale } from './feed';
 import { GRADE_CONFIG } from './grades';
 import { blendFair, conditionalWin, expectedValue, fairDecimal, gradePick, type GradeThresholds } from './ev';
 import { priceSelection, selectionKey, settleFractions } from './markets';
@@ -12,6 +13,8 @@ export interface MarketQuote {
   line?: number;
   player?: string;
   stat?: string;
+  /** Props: the player's team as the provider spells it (home or away team name). */
+  team?: string;
   /** Decimal price per side, keyed by side. */
   prices: Partial<Record<Side, number>>;
   ts: string;
@@ -68,6 +71,13 @@ export interface PriceOptions {
    * otherwise small shape differences between our sim and the books would look like fake edges.
    */
   marketOnly?: boolean;
+  /**
+   * Pricing time. When set, books whose quote is older than GRADE_CONFIG.staleMinutes are left out of
+   * the best price and the consensus whenever fresh books exist (PNHL-001: one stale book used to
+   * become the best price and turn the whole row STALE). A market where every book is stale is still
+   * priced from them and shown as STALE.
+   */
+  nowMs?: number;
 }
 
 /**
@@ -88,6 +98,10 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
     // Latest quote per book
     const byBook = new Map<string, MarketQuote>();
     for (const q of g) { const prev = byBook.get(q.book); if (!prev || prev.ts < q.ts) byBook.set(q.book, q); }
+    if (opt.nowMs !== undefined) {
+      const fresh = [...byBook.values()].filter((q) => !isStale(q.ts, opt.nowMs!));
+      if (fresh.length && fresh.length < byBook.size) { byBook.clear(); for (const q of fresh) byBook.set(q.book, q); }
+    }
     const full = [...byBook.values()].filter((q) => sides.every((s) => (q.prices[s] ?? 0) > 1));
     const cons = consensus(full.map((q) => ({ book: q.book, prices: sides.map((s) => q.prices[s]!) })));
     const snapshotTs = [...byBook.values()].reduce((m, q) => (q.ts > m ? q.ts : m), '');

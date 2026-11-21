@@ -1,0 +1,16 @@
+{
+  "id": "PNHL-006",
+  "title": "Edge Finder with Market = Props shows the generic empty text for a sport that has no props",
+  "severity": "P3",
+  "persona": "NHL props user",
+  "url": "/edges?sport=nhl&type=prop",
+  "device": "iPhone 13 360px",
+  "steps": [
+    "Open http://localhost:3100/edges?sport=nhl&type=prop (the market filter's param is `type`; `market=props` is silently ignored and shows all edges).",
+    "Read the result."
+  ],
+  "expected": "An empty state that says there are no NHL props (like the Props tab does), not 'Loosen them or press Reset'.",
+  "actual": "Header says '0 OF 1 LIVE EDGE' and 'No edges match these filters. Loosen them or press Reset.' Nothing explains props are unavailable; the '1' counts a game-line edge outside the filter.",
+  "evidence": "evidence/PNHL-game-360.png (game page) and live URL",
+  "suspected_area": "app/src/app/edges/page.tsx empty state"
+}

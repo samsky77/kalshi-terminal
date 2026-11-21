@@ -1,0 +1,15 @@
+{
+  "id": "PNHL-007",
+  "title": "NHL box-score mappings are guesses: player_points has no goals+assists fallback; shots and assists aliases may miss",
+  "severity": "P3",
+  "persona": "NHL props user",
+  "url": "n/a (pipeline script)",
+  "device": "n/a",
+  "steps": [
+    "Read worker/src/simulate.ts STAT_KEYS (post-fix): player_points ['points','pts'], player_assists ['assists','ast'], player_shots_on_goal ['shots_on_goal','shots_on_target','sog'], player_goals ['goals','g'], goalie_saves ['saves','sv'], player_blocked_shots ['blocked_shots','blocks','blk']."
+  ],
+  "expected": "NHL points settle even if the provider's hockey box score gives only goals and assists (points = G + A); common aliases (shots, 'a') are covered.",
+  "actual": "If PropLine's NHL game stats omit `points` or name shots `shots`, statValue returns undefined, no player_logs row is written, and every such edge settles void after the 24 h wait. No composite exists for NHL points (COMPOSITE has only anytime_td/cards). Goalie and skater stats are separate keys so no collision; backup goalies who do not play correctly void.",
+  "evidence": "worker/src/simulate.ts STAT_KEYS/COMPOSITE",
+  "suspected_area": "Guess: PropLine NHL field names unverified (no live response available). Suggest points = goals+assists composite and adding 'shots'/'a' aliases"
+}

@@ -119,3 +119,15 @@ describe('QA regression CAS-003', () => {
     expect(away.grade).toBe('none');
   });
 });
+
+describe('QA regression PNHL-001', () => {
+  it('a stale book is not the best price when fresh books exist', () => {
+    const samples: SimSamples = { n: 2, home: Int16Array.from([100, 90]), away: Int16Array.from([95, 99]), winner: Int8Array.from([1, -1]) };
+    const q = (book: string, over: number, under: number, minsAgo: number): MarketQuote => ({ book, market: 'prop', line: 2.5, player: 'P', stat: 'player_shots_on_goal', prices: { over, under }, ts: iso(minsAgo) });
+    const out = priceMarkets(samples, [q('a', 2.6, 1.5, 120), q('b', 2.0, 1.8, 1), q('c', 1.95, 1.85, 2)], { sport: 'nhl', threeWay: false, bettable: new Set(['a', 'b', 'c']), w: {}, nowMs: NOW });
+    const over = out.find((p) => p.selection.side === 'over')!;
+    expect(over.bestBook).toBe('b');
+    expect(over.books).toBe(2);
+    expect(isStale(over.bestTs, NOW)).toBe(false);
+  });
+});

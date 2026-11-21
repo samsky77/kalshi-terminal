@@ -1,0 +1,16 @@
+{
+  "id": "PNHL-003",
+  "title": "Single-book prop lines are shown with a 'fair' price that is just that book's own de-vigged price",
+  "severity": "P3",
+  "persona": "NHL props user",
+  "url": "n/a (pipeline script)",
+  "device": "n/a",
+  "steps": [
+    "Run `cd sigmaline && npx tsx tickets/evidence/PNHL-pipeline-script.ts` (synthetic fake NHL event, 4 fresh fake books plus one book 45 min old).",
+    "Look at 'Fake Solo Over/Under 1.5 Points' (one book) and 'Over 4.5 Shots on goal' (one book)."
+  ],
+  "expected": "Rows backed by one book show no fair price or are hidden (nothing to compare against); README says no fair price means no row.",
+  "actual": "Rows are kept in the feed with books=1, fairSource=consensus, fair 2.000 / EV -5.0% (the book's own margin). Grade is correctly none. The Props tab would show 'fair +100' and '1 books \u00b7 consensus-only' as if it were a market fair price.",
+  "evidence": "evidence/PNHL-pipeline-output.txt",
+  "suspected_area": "packages/core/src/pricing.ts / feed.ts: no min-books requirement for display; also prop-row.tsx prints '{books} books' without singular"
+}

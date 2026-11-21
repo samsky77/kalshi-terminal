@@ -7,6 +7,8 @@ export interface OddsApiOutcome {
   name: string; price: number; point?: number | null; description?: string;
   /** Provider flags we honour when present (PropLine / exchanges): suspended or no stake allowed. */
   suspended?: boolean; is_suspended?: boolean; limit?: number | null; redacted?: boolean;
+  /** PropLine: the player's team in this event's own spelling (equals home_team or away_team). */
+  player_team?: string | null;
 }
 export interface OddsApiMarket { key: string; last_update?: string; outcomes: OddsApiOutcome[]; team?: string | null }
 export interface OddsApiBookmaker { key: string; title?: string; last_update?: string; markets: OddsApiMarket[] }
@@ -73,7 +75,7 @@ export function quotesFromEvent(ev: OddsApiEvent, priceFormat: 'decimal' | 'amer
         if (u) prices.under = toDec(u.price);
         out.push({ book: bk.key, market: 'total', line, prices, ts });
       } else if (PROP_MARKETS.test(m.key)) {
-        const byPlayer = new Map<string, { line: number; prices: Partial<Record<Side, number>> }>();
+        const byPlayer = new Map<string, { line: number; prices: Partial<Record<Side, number>>; team?: string }>();
         for (const o of m.outcomes) {
           if (!o.description) continue;
           // Over/Under props carry a point. Yes/No props (anytime scorer / TD) are "1 or more",
@@ -86,10 +88,11 @@ export function quotesFromEvent(ev: OddsApiEvent, priceFormat: 'decimal' | 'amer
           const k = `${o.description}|${point}`;
           const cur = byPlayer.get(k) ?? { line: point, prices: {} };
           cur.prices[side] = toDec(o.price);
+          if (o.player_team) cur.team = o.player_team;
           byPlayer.set(k, cur);
         }
         for (const [k, v] of byPlayer) {
-          out.push({ book: bk.key, market: 'prop', line: v.line, player: k.split('|')[0], stat: m.key, prices: v.prices, ts });
+          out.push({ book: bk.key, market: 'prop', line: v.line, player: k.split('|')[0], stat: m.key, prices: v.prices, ts, ...(v.team ? { team: v.team } : {}) });
         }
       }
     }

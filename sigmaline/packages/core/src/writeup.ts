@@ -86,10 +86,11 @@ function edgeSentence(f: WriteupFacts): string {
     return `The price on ${who} (${price}) implies ${pct(1 / f.bestDecimal)}; we make it ${pct(f.fairP)}. That ${Math.round(gap * 1000) / 10}-point gap in win probability works out to about +${(f.ev * 100).toFixed(1)}% per bet (the edge).`;
   }
   if (sel.market === 'prop') {
-    const side = sel.side === 'over' ? 'over' : 'under';
+    const yesNo = sel.line === 0.5 && /anytime|goals$|_td$/.test(sel.stat ?? '');
+    const side = yesNo ? (sel.side === 'over' ? '“Yes”' : '“No”') : sel.side === 'over' ? 'over' : 'under';
     const basis = f.fairSource === 'consensus' || !ok(f.propMean)
       ? `the market consensus across ${f.booksChecked} books puts the ${side} at ${pct(f.fairP)}`
-      : `our player sims project ${f.propMean.toFixed(1)}, which puts the ${side} at ${pct(f.fairP)}`;
+      : `our player sims project ${f.propMean < 5 ? f.propMean.toFixed(2) : f.propMean.toFixed(1)}, which puts the ${side} at ${pct(f.fairP)}`;
     return `${f.selectionLabel} at ${price}: ${basis}, against ${pct(1 / f.bestDecimal)} implied by the price. That's roughly +${(f.ev * 100).toFixed(1)}% EV.`;
   }
   return `${f.selectionLabel} at ${price}: we make it ${pct(f.fairP)} against ${pct(1 / f.bestDecimal)} implied by the price.`;

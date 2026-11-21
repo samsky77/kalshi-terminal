@@ -1,0 +1,15 @@
+{
+  "id": "PNHL-002",
+  "title": "Yes-only anytime-goal markets never produce a row",
+  "severity": "P2",
+  "persona": "NHL props user",
+  "url": "n/a (pipeline script)",
+  "device": "n/a",
+  "steps": [
+    "Run tickets/evidence/PNHL-pipeline-script2.ts (first case): three books quote player_goals only as Yes (no No outcome, no point), as anytime-scorer markets normally are."
+  ],
+  "expected": "A Yes-only market is shown at the best Yes price (fair price from consensus where possible), or the app says one-sided markets are not supported.",
+  "actual": "quotesFromEvent makes a prop quote with prices {over} only. priceMarkets needs both sides for consensus, so Yes gets no fair price (filterFeed no_fair) and the synthetic No side gets no price (no_price). Nothing is shown. Counts: no_price 1, no_fair 1.",
+  "evidence": "evidence/PNHL-pipeline-script2.ts output",
+  "suspected_area": "packages/core/src/pricing.ts (consensus needs both sides). Guess: depends on whether the real provider sends a No side for player_goals; unverified because demo has no props"
+}

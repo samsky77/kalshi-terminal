@@ -1,0 +1,16 @@
+{
+  "id": "PNHL-001",
+  "title": "A single stale book's best price takes over the whole prop row; fresh books' prices vanish and the stale quote still feeds consensus",
+  "severity": "P2",
+  "persona": "NHL props user",
+  "url": "n/a (pipeline script)",
+  "device": "n/a",
+  "steps": [
+    "Run `cd sigmaline && npx tsx tickets/evidence/PNHL-pipeline-script.ts` (synthetic fake NHL event, 4 fresh fake books plus one book 45 min old).",
+    "Look at 'Fake Skater One Over 1.5 Blocked shots' (fakebook_stale quotes 2.20, last_update 45 min old; four fresh books quote ~1.90-1.96)."
+  ],
+  "expected": "The row prices off the best FRESH book (about 1.96, edge about -2%); a stale quote neither wins the row nor counts as one of the books behind the fair price.",
+  "actual": "bestBook=fakebook_stale at 2.20, EV +10%. filterFeed moves the whole selection to `stale` (grade none, STALE tag), so the row shows the stale price and the fresh best price is not shown. books=5 and the 0.5000 consensus include the stale quote.",
+  "evidence": "evidence/PNHL-pipeline-output.txt (priced vs stale sections)",
+  "suspected_area": "packages/core/src/pricing.ts priceMarkets: byBook/best-price/consensus loop does not exclude stale quotes; packages/core/src/feed.ts filterFeed judges staleness only on the best book"
+}

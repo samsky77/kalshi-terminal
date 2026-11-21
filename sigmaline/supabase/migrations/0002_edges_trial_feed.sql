@@ -2,6 +2,7 @@
 -- Whop trial states, snapshot retention. Safe to run more than once. Apply after 0001_init.sql.
 
 -- ── Price timestamps and fair-price source on the price board ──────────────────
+alter table odds_snapshots add column if not exists team text;               -- props: the player's team (provider spelling)
 alter table market_prices add column if not exists price_ts timestamptz;          -- best book's own last_update
 alter table market_prices add column if not exists fair_source text not null default 'blend'; -- 'blend' | 'consensus'
 create index if not exists market_prices_graded on market_prices (grade) where grade <> 'none';

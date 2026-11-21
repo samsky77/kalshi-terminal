@@ -49,6 +49,8 @@ async function refreshInjuries(ctx: Ctx, sports: SportId[]): Promise<void> {
 
 /** Pre-game: refresh game logs for every prop player in the window (once a day per player). */
 async function refreshPlayerLogs(ctx: Ctx, sport: SportId, leagueId: string, events: EventRow[]): Promise<void> {
+  const fetched = (await ctx.db.select<{ value: Record<string, string> }>('settings', { eq: { key: 'player_logs_fetched' }, limit: 1 }))[0]?.value ?? {};
+  let logCalls = 0;
   const prov = ctx.providers.propline;
   if (!prov.enabled || !prov.getPlayerGames) return;
   const ref = (await leagueRefs(ctx, sport, prov)).find((r) => r.leagueId === leagueId);
@@ -56,9 +58,13 @@ async function refreshPlayerLogs(ctx: Ctx, sport: SportId, leagueId: string, eve
   for (const e of events) {
     const snaps = await ctx.db.select<{ player: string | null; stat: string | null }>('odds_snapshots', { eq: { event_id: e.id, market: 'prop' } });
     const players = [...new Set(snaps.map((s) => s.player).filter(Boolean) as string[])];
-    for (const pl of players.slice(0, 16)) {
-      const recent = await ctx.db.select<{ game_date: string }>('player_logs', { eq: { sport, player: pl }, order: [{ col: 'game_date', asc: false }], limit: 1 });
-      if (recent[0] && ctx.now().getTime() - Date.parse(recent[0].game_date) < 2 * 86400000) continue;
+    for (const pl of players.slice(0, 30)) {
+      // Once a day per player by FETCH time (game dates are weekly in the NFL, so the old check re-pulled
+      // the same players every tick: PNFL-002), and at most 60 requests per tick.
+      const fk = `${sport}|${pl}`;
+      if (fetched[fk] && ctx.now().getTime() - Date.parse(fetched[fk]) < 20 * 3600000) continue;
+      if (++logCalls > 60) break;
+      fetched[fk] = ctx.now().toISOString();
       if (!mayPull(ctx, 'propline', 'props', 1)) return;
       try {
         const r = await prov.getPlayerGames(ref, pl, 20);
@@ -71,6 +77,8 @@ async function refreshPlayerLogs(ctx: Ctx, sport: SportId, leagueId: string, eve
       } catch (err) { ctx.log(`player logs failed ${pl}: ${(err as Error).message}`); }
     }
   }
+  for (const [k, v] of Object.entries(fetched)) if (ctx.now().getTime() - Date.parse(v) > 3 * 86400000) delete fetched[k];
+  await ctx.db.upsert('settings', { key: 'player_logs_fetched', value: fetched, updated_at: ctx.now().toISOString() }, 'key');
 }
 
 export interface TickReport { pulls: unknown[]; simulated: number; published: number; closing: number; finals: number; graded: number; alerts: unknown; edgesClosed?: number; edgesSettled?: number; feed?: unknown; cache?: unknown }

@@ -112,7 +112,7 @@ export async function pullOdds(ctx: Ctx, sport: SportId, leagueId: string, kind:
           const rowKind = snapshotKind(Date.parse(e.commence_time), ctx.now().getTime());
           const stats = { suspended: 0 };
           for (const q of keepDeepLines(quotesFromEvent(ev, res.priceFormat, pulledAt, stats))) {
-            rows.push({ event_id: e.id, provider: pid, book: q.book, market: q.market, line: q.line ?? null, player: q.player ?? null, stat: q.stat ?? null, prices: q.prices as Record<string, number>, ts: q.ts, kind: rowKind, pulled_at: pulledAt });
+            rows.push({ event_id: e.id, provider: pid, book: q.book, market: q.market, line: q.line ?? null, player: q.player ?? null, stat: q.stat ?? null, ...(q.team ? { team: q.team } : {}), prices: q.prices as Record<string, number>, ts: q.ts, kind: rowKind, pulled_at: pulledAt });
             if (q.market !== 'prop') { const s = bookCount.get(e.id) ?? new Set(); s.add(q.book); bookCount.set(e.id, s); }
           }
           ctx.feedStats.counts.suspended += stats.suspended;

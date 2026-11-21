@@ -163,12 +163,15 @@ export async function buildProps(db: Db, sport: SportId, now = new Date()): Prom
   for (const r of raw) deepest.set(k(r), Math.max(deepest.get(k(r)) ?? 0, Number(r.books)));
   const rows: EdgeRow[] = [];
   const seenLine = new Map<string, number | null>();
-  for (const r of raw.sort((a, b) => Number(b.books) - Number(a.books))) {
-    if (Number(r.books) < (deepest.get(k(r)) ?? 0)) continue;
-    // one line per player/stat (both sides of it)
+  // Deterministic: most books first, then the lower line (PNHL-004). Graded rows on other lines are
+  // kept too, so 'Edges only' here matches the Edge Finder.
+  for (const r of raw.sort((a, b) => Number(b.books) - Number(a.books) || (num(a.line) ?? 0) - (num(b.line) ?? 0))) {
+    const graded = r.grade !== 'none';
+    if (!graded && Number(r.books) < (deepest.get(k(r)) ?? 0)) continue;
+    // one main line per player/stat (both sides of it), plus any graded line
     const line = num(r.line);
-    if (seenLine.has(k(r)) && seenLine.get(k(r)) !== line) continue;
-    seenLine.set(k(r), line);
+    if (!graded && seenLine.has(k(r)) && seenLine.get(k(r)) !== line) continue;
+    if (!seenLine.has(k(r))) seenLine.set(k(r), line);
     const e = byId.get(r.event_id)!;
     rows.push({ ...normPrice(r, e.home, e.away), event: feedEvent(e) });
   }

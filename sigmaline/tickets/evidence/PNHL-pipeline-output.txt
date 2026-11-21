@@ -1,0 +1,70 @@
+quotes 36 suspended 1
+label player_points => Points
+label player_goals => Goals
+label player_assists => Assists
+label player_shots_on_goal => Shots on goal
+label player_blocked_shots => Blocked shots
+label goalie_saves => Saves
+counts {
+  no_price: 0,
+  no_fair: 0,
+  started: 0,
+  duplicate: 0,
+  suspended: 0,
+  sanity: 2,
+  stale: 1
+} keep 17 stale 1 anom 2
+--- priced (all)
+Fake Skater One Goals 1+: Yes | prop:over:0.5:Fake Skater One:player_goals | books | 5 | best | fakebook_e | 9 | cP | 0.3780 | fairDec | 2.646 | ev | 240.19% | grade | none | consensus
+Fake Skater One Over 2.5 Shots on goal | prop:over:2.5:Fake Skater One:player_shots_on_goal | books | 5 | best | fakebook_e | 3.3 | cP | 0.5000 | fairDec | 2.000 | ev | 65.00% | grade | none | consensus
+Fake Skater One Over 1.5 Blocked shots | prop:over:1.5:Fake Skater One:player_blocked_shots | books | 5 | best | fakebook_stale | 2.2 | cP | 0.5000 | fairDec | 2.000 | ev | 10.00% | grade | A | consensus
+Fake Skater One Goals 1+: No | prop:under:0.5:Fake Skater One:player_goals | books | 5 | best | fakebook_d | 1.61 | cP | 0.6220 | fairDec | 1.608 | ev | 0.14% | grade | none | consensus
+Fake Skater Two Goals 1+: No | prop:under:0.5:Fake Skater Two:player_goals | books | 4 | best | fakebook_d | 1.61 | cP | 0.6204 | fairDec | 1.612 | ev | -0.11% | grade | none | consensus
+Fake Skater One Under 0.5 Assists | prop:under:0.5:Fake Skater One:player_assists | books | 3 | best | fakebook_d | 1.81 | cP | 0.5462 | fairDec | 1.831 | ev | -1.13% | grade | none | consensus
+Fake Skater One Under 0.5 Points | prop:under:0.5:Fake Skater One:player_points | books | 4 | best | fakebook_d | 1.91 | cP | 0.5137 | fairDec | 1.947 | ev | -1.89% | grade | none | consensus
+Fake Skater One Under 3.5 Shots on goal | prop:under:3.5:Fake Skater One:player_shots_on_goal | books | 3 | best | fakebook_c | 1.34 | cP | 0.7317 | fairDec | 1.367 | ev | -1.95% | grade | none | consensus
+Fake Skater One Over 0.5 Assists | prop:over:0.5:Fake Skater One:player_assists | books | 3 | best | fakebook_d | 2.16 | cP | 0.4538 | fairDec | 2.204 | ev | -1.99% | grade | none | consensus
+Fake Skater One Under 2.5 Shots on goal | prop:under:2.5:Fake Skater One:player_shots_on_goal | books | 5 | best | fakebook_d | 1.96 | cP | 0.5000 | fairDec | 2.000 | ev | -2.00% | grade | none | consensus
+Fake Skater One Under 1.5 Blocked shots | prop:under:1.5:Fake Skater One:player_blocked_shots | books | 5 | best | fakebook_d | 1.96 | cP | 0.5000 | fairDec | 2.000 | ev | -2.00% | grade | none | consensus
+Fake Goalie Over 26.5 Saves | prop:over:26.5:Fake Goalie:goalie_saves | books | 4 | best | fakebook_d | 1.96 | cP | 0.5000 | fairDec | 2.000 | ev | -2.00% | grade | none | consensus
+Fake Goalie Under 26.5 Saves | prop:under:26.5:Fake Goalie:goalie_saves | books | 4 | best | fakebook_d | 1.96 | cP | 0.5000 | fairDec | 2.000 | ev | -2.00% | grade | none | consensus
+Fake Skater One Over 0.5 Points | prop:over:0.5:Fake Skater One:player_points | books | 4 | best | fakebook_d | 2.01 | cP | 0.4863 | fairDec | 2.056 | ev | -2.25% | grade | none | consensus
+Fake Skater Two Goals 1+: Yes | prop:over:0.5:Fake Skater Two:player_goals | books | 4 | best | fakebook_d | 2.56 | cP | 0.3796 | fairDec | 2.635 | ev | -2.83% | grade | none | consensus
+Fake Skater One Under 4.5 Shots on goal | prop:under:4.5:Fake Skater One:player_shots_on_goal | books | 1 | best | fakebook_a | 1.4 | cP | 0.6853 | fairDec | 1.459 | ev | -4.05% | grade | none | consensus
+Fake Solo Over 1.5 Points | prop:over:1.5:Fake Solo:player_points | books | 1 | best | fakebook_a | 1.9 | cP | 0.5000 | fairDec | 2.000 | ev | -5.00% | grade | none | consensus
+Fake Solo Under 1.5 Points | prop:under:1.5:Fake Solo:player_points | books | 1 | best | fakebook_a | 1.9 | cP | 0.5000 | fairDec | 2.000 | ev | -5.00% | grade | none | consensus
+Fake Skater One Over 4.5 Shots on goal | prop:over:4.5:Fake Skater One:player_shots_on_goal | books | 1 | best | fakebook_a | 2.8 | cP | 0.3147 | fairDec | 3.178 | ev | -11.89% | grade | none | consensus
+Fake Skater One Over 3.5 Shots on goal | prop:over:3.5:Fake Skater One:player_shots_on_goal | books | 3 | best | fakebook_c | 3.24 | cP | 0.2683 | fairDec | 3.727 | ev | -13.07% | grade | none | consensus
+--- keep
+Fake Skater One Goals 1+: No | prop:under:0.5:Fake Skater One:player_goals | books | 5 | best | fakebook_d | 1.61 | cP | 0.6220 | fairDec | 1.608 | ev | 0.14% | grade | none | consensus
+Fake Skater Two Goals 1+: No | prop:under:0.5:Fake Skater Two:player_goals | books | 4 | best | fakebook_d | 1.61 | cP | 0.6204 | fairDec | 1.612 | ev | -0.11% | grade | none | consensus
+Fake Skater One Under 0.5 Assists | prop:under:0.5:Fake Skater One:player_assists | books | 3 | best | fakebook_d | 1.81 | cP | 0.5462 | fairDec | 1.831 | ev | -1.13% | grade | none | consensus
+Fake Skater One Under 0.5 Points | prop:under:0.5:Fake Skater One:player_points | books | 4 | best | fakebook_d | 1.91 | cP | 0.5137 | fairDec | 1.947 | ev | -1.89% | grade | none | consensus
+Fake Skater One Under 3.5 Shots on goal | prop:under:3.5:Fake Skater One:player_shots_on_goal | books | 3 | best | fakebook_c | 1.34 | cP | 0.7317 | fairDec | 1.367 | ev | -1.95% | grade | none | consensus
+Fake Skater One Over 0.5 Assists | prop:over:0.5:Fake Skater One:player_assists | books | 3 | best | fakebook_d | 2.16 | cP | 0.4538 | fairDec | 2.204 | ev | -1.99% | grade | none | consensus
+Fake Skater One Under 2.5 Shots on goal | prop:under:2.5:Fake Skater One:player_shots_on_goal | books | 5 | best | fakebook_d | 1.96 | cP | 0.5000 | fairDec | 2.000 | ev | -2.00% | grade | none | consensus
+Fake Skater One Under 1.5 Blocked shots | prop:under:1.5:Fake Skater One:player_blocked_shots | books | 5 | best | fakebook_d | 1.96 | cP | 0.5000 | fairDec | 2.000 | ev | -2.00% | grade | none | consensus
+Fake Goalie Over 26.5 Saves | prop:over:26.5:Fake Goalie:goalie_saves | books | 4 | best | fakebook_d | 1.96 | cP | 0.5000 | fairDec | 2.000 | ev | -2.00% | grade | none | consensus
+Fake Goalie Under 26.5 Saves | prop:under:26.5:Fake Goalie:goalie_saves | books | 4 | best | fakebook_d | 1.96 | cP | 0.5000 | fairDec | 2.000 | ev | -2.00% | grade | none | consensus
+Fake Skater One Over 0.5 Points | prop:over:0.5:Fake Skater One:player_points | books | 4 | best | fakebook_d | 2.01 | cP | 0.4863 | fairDec | 2.056 | ev | -2.25% | grade | none | consensus
+Fake Skater Two Goals 1+: Yes | prop:over:0.5:Fake Skater Two:player_goals | books | 4 | best | fakebook_d | 2.56 | cP | 0.3796 | fairDec | 2.635 | ev | -2.83% | grade | none | consensus
+Fake Skater One Under 4.5 Shots on goal | prop:under:4.5:Fake Skater One:player_shots_on_goal | books | 1 | best | fakebook_a | 1.4 | cP | 0.6853 | fairDec | 1.459 | ev | -4.05% | grade | none | consensus
+Fake Solo Over 1.5 Points | prop:over:1.5:Fake Solo:player_points | books | 1 | best | fakebook_a | 1.9 | cP | 0.5000 | fairDec | 2.000 | ev | -5.00% | grade | none | consensus
+Fake Solo Under 1.5 Points | prop:under:1.5:Fake Solo:player_points | books | 1 | best | fakebook_a | 1.9 | cP | 0.5000 | fairDec | 2.000 | ev | -5.00% | grade | none | consensus
+Fake Skater One Over 4.5 Shots on goal | prop:over:4.5:Fake Skater One:player_shots_on_goal | books | 1 | best | fakebook_a | 2.8 | cP | 0.3147 | fairDec | 3.178 | ev | -11.89% | grade | none | consensus
+Fake Skater One Over 3.5 Shots on goal | prop:over:3.5:Fake Skater One:player_shots_on_goal | books | 3 | best | fakebook_c | 3.24 | cP | 0.2683 | fairDec | 3.727 | ev | -13.07% | grade | none | consensus
+--- stale
+Fake Skater One Over 1.5 Blocked shots | prop:over:1.5:Fake Skater One:player_blocked_shots | books | 5 | best | fakebook_stale | 2.2 | cP | 0.5000 | fairDec | 2.000 | ev | 10.00% | grade | none | consensus
+--- anomalies
+Fake Skater One Goals 1+: Yes | prop:over:0.5:Fake Skater One:player_goals | books | 5 | best | fakebook_e | 9 | cP | 0.3780 | fairDec | 2.646 | ev | 240.19% | grade | none | consensus
+Fake Skater One Over 2.5 Shots on goal | prop:over:2.5:Fake Skater One:player_shots_on_goal | books | 5 | best | fakebook_e | 3.3 | cP | 0.5000 | fairDec | 2.000 | ev | 65.00% | grade | none | consensus
+{
+ "edge": "Fake Skater One Over 4.5 Shots on goal at +180: the market consensus across 1 books puts the over at 31%, against 36% implied by the price. That's roughly +-11.9% EV.",
+ "reasons": [
+  "Fakebook A has the best price of the 1 book we checked for this market."
+ ],
+ "risk": "Risk: ice time. Shots and points depend on minutes and power-play time, which change with the score.",
+ "drivers": [
+  "books"
+ ]
+}

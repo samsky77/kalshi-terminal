@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { getMember, type MemberRow } from '@sigmaline/db';
 import { demoMode, getDb } from './db';
 import { SESSION_COOKIE, verifySession, type Session } from './session';
+import { hasAccess, type MemberState } from './membership';
 import { checkAccess } from './whop';
 
 export const MEMBERSHIP_CACHE_MS = 10 * 60 * 1000;
@@ -35,10 +36,13 @@ export async function memberStatus(uid: string, email: string | null, now = Date
     let active: boolean | null = null;
     try { active = await checkAccess(uid); } catch { active = null; }
     if (active !== null) {
-      const row = {
-        whop_user_id: uid, email: email ?? m?.email ?? null, status: active ? 'active' : m?.status === 'active' ? 'expired' : (m?.status ?? 'none'),
-        checked_at: new Date(now).toISOString(),
-      };
+      // Whop's access check says yes/no; the webhook keeps the finer state (trialing / past_due /
+      // canceled-until). Keep that state while Whop still grants access; downgrade when it doesn't.
+      const keep = m?.status === 'trialing' || m?.status === 'past_due' || (m?.status === 'canceled' && hasAccess(m as MemberState, now));
+      const status = active
+        ? (keep || m?.status === 'trial_used' ? m!.status : 'active')
+        : (m?.status === 'canceled' && hasAccess(m as MemberState, now) ? 'canceled' : m && m.status !== 'none' ? 'expired' : 'none');
+      const row = { whop_user_id: uid, email: email ?? m?.email ?? null, status, checked_at: new Date(now).toISOString() };
       await db.upsert('members', row, 'whop_user_id');
       m = await getMember(db, uid);
     }
@@ -53,7 +57,7 @@ export async function viewerFromToken(token: string | undefined): Promise<Viewer
   if (!session) return { session: null, member: null, active: false, admin: false };
   const member = await memberStatus(session.uid, session.email);
   const admin = !!process.env.ADMIN_EMAIL && !!session.email && session.email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
-  const active = admin || member?.status === 'active';
+  const active = admin || hasAccess(member as MemberState | null);
   return { session, member, active, admin };
 }
 

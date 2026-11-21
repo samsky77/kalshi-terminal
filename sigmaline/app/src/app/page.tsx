@@ -5,7 +5,7 @@ import { JoinButton } from '@/components/join';
 import { results } from '@/lib/data';
 import { demoMode } from '@/lib/db';
 import { american, pct, shortDate, units } from '@/lib/format';
-import { checkoutUrl } from '@/lib/whop';
+import { checkoutUrl, noTrialCheckoutUrl, OFFER } from '@/lib/whop';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,8 @@ const FAQ: [string, string][] = [
   ['What does a grade mean?', gradeFaqAnswer()],
   ['Which sports?', 'NBA, NHL, NFL, college basketball, college football, soccer (EPL, La Liga, Serie A, Bundesliga, Ligue 1, MLS, Champions League) and ATP/WTA tennis. Moneylines, spreads and totals; NBA and NFL player props are rolling out.'],
   ['Is profit guaranteed?', 'No. A positive-EV bet still loses often. Results vary, and past performance does not guarantee future results. Only bet what you can afford to lose.'],
-  ['Can I cancel?', 'Yes, any time from your Whop account. You keep access until the end of the period you paid for. See the Terms for refunds.'],
+  ['How does the free trial work?', OFFER.fine],
+  ['Can I cancel?', 'Yes, any time from your Whop account. Cancel during the trial and you are never charged; cancel later and you keep access until the end of the period you paid for. See the Terms for refunds.'],
 ];
 
 export default async function Landing({ searchParams }: { searchParams: Promise<{ membership?: string }> }) {
@@ -30,6 +31,11 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
     <>
       <Header nav="public" demo={demoMode()} />
       <Main>
+        {sp.membership === 'trial_used' && (
+          <p className="mx-auto mt-3 max-w-3xl border border-amber px-4 py-2 text-[13px] text-amber" role="status">
+            You&apos;ve already used your free trial on this Whop account. <a className="underline" href={noTrialCheckoutUrl()}>Subscribe for ${OFFER.price}/month</a> to keep using Sigmaline.
+          </p>
+        )}
         {sp.membership === 'inactive' && (
           <p className="mx-auto mt-3 max-w-3xl border border-amber px-4 py-2 text-[13px] text-amber" role="status">
             You&apos;re signed in, but we couldn&apos;t find an active membership. Join below, or manage billing on Whop.
@@ -41,7 +47,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
           <p className="prose-sl mt-3 text-[16px] leading-relaxed text-ink">
             Sigmaline prices every game on the slate from its own simulations, compares that fair price with the best line at the books you can bet, and flags only the bets with positive expected value. Each one comes with a grade and a plain-English reason why.
           </p>
-          <div className="mt-5 max-w-md"><JoinButton href={checkout} label="Join as a Founding Member" /></div>
+          <div className="mt-5 max-w-md"><JoinButton href={checkout} label={OFFER.cta} sub={`${OFFER.after} after the trial · card required · cancel any time`} /></div>
         </section>
 
         <Section title="How it works">
@@ -82,15 +88,16 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         <Section title="Pricing">
           <div className="panel p-4">
             <p className="label text-amber">Founding Member</p>
-            <p className="mt-1 text-[32px] font-semibold">$25<span className="text-[14px] text-muted">/month</span></p>
+            <p className="mt-1 text-[22px] font-semibold text-amber">{OFFER.trialDays} days free</p>
+            <p className="text-[32px] font-semibold">${OFFER.price}<span className="text-[14px] text-muted">/month after the trial</span></p>
             <ul className="prose-sl mt-2 space-y-1 text-[14px]">
               <li>Full slate for 7 sports with fair prices, EV and grades</li>
               <li>Simulation breakdowns, line movement and CLV</li>
               <li>Push and Discord alerts for every new pick</li>
               <li>Cancel any time on Whop</li>
             </ul>
-            <p className="mt-2 text-[11px] text-muted">There is no free tier. The Results page is public, so you can judge us before you join.</p>
-            <div className="mt-4 max-w-md"><JoinButton href={checkout} /></div>
+            <p className="mt-2 text-[12px] text-muted">{OFFER.fine} The Results page is public, so you can judge us before you start.</p>
+            <div className="mt-4 max-w-md"><JoinButton href={checkout} label={OFFER.cta} sub={`${OFFER.after} · cancel any time on Whop`} /></div>
           </div>
         </Section>
 

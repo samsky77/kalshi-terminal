@@ -1,6 +1,8 @@
 import { Footer, Header, Main, Section } from '@/components/chrome';
 import { demoMode } from '@/lib/db';
 import { requirePaid } from '@/lib/guard';
+import { statusLabel } from '@/lib/membership';
+import { OFFER } from '@/lib/whop';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Account' };
@@ -15,10 +17,10 @@ export default async function AccountPage() {
         <div className="mx-auto max-w-3xl px-4 pt-3"><h1 className="text-[18px] font-semibold">Account</h1></div>
         <Section title="Membership">
           <dl className="panel divide-y divide-line2 text-[13px]">
-            <div className="flex justify-between px-3 py-2"><dt className="label">Status</dt><dd className={v.active ? 'text-amber' : ''}>{v.admin && m?.status !== 'active' ? 'Admin' : (m?.status ?? 'unknown')}</dd></div>
+            <div className="flex justify-between gap-3 px-3 py-2"><dt className="label">Status</dt><dd className={`text-right ${v.active ? 'text-amber' : ''}`}>{v.admin && !m ? 'Admin' : statusLabel(m)}</dd></div>
             <div className="flex justify-between px-3 py-2"><dt className="label">Email</dt><dd>{v.session?.email ?? '—'}</dd></div>
             <div className="flex justify-between px-3 py-2"><dt className="label">Renews / ends</dt><dd>{m?.expires_at ? new Date(m.expires_at).toLocaleDateString('en-US') : '—'}</dd></div>
-            <div className="flex justify-between px-3 py-2"><dt className="label">Plan</dt><dd>Founding Member · $25/mo</dd></div>
+            <div className="flex justify-between px-3 py-2"><dt className="label">Plan</dt><dd>Founding Member · ${OFFER.price}/mo</dd></div>
           </dl>
           <a href="https://whop.com/@me/settings/memberships/" target="_blank" rel="noopener noreferrer" className="tap mt-3 inline-flex items-center border border-line px-4 text-[13px] uppercase tracking-[0.12em] text-ink">Manage billing on Whop</a>
         </Section>

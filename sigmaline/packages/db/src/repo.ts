@@ -289,6 +289,11 @@ export interface MemberRow {
   quiet_end: string | null;
   time_zone: string;
   age_confirmed_at: string | null;
+  /** Migration 0002 (trial states). Optional so older databases still read. */
+  membership_id?: string | null;
+  cancel_at_period_end?: boolean | null;
+  trial_ends_at?: string | null;
+  first_trial_at?: string | null;
 }
 
 export async function getMember(db: Db, id: string): Promise<MemberRow | null> {

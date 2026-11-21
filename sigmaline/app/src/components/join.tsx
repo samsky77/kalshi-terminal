@@ -2,7 +2,7 @@
 import { useState } from 'react';
 
 /** "Join" opens Whop checkout, but only after the 21+ confirmation. */
-export function JoinButton({ href, label = 'Join — $25/mo' }: { href: string; label?: string }) {
+export function JoinButton({ href, label, sub }: { href: string; label: string; sub?: string }) {
   const [ok, setOk] = useState(false);
   return (
     <div>
@@ -18,6 +18,7 @@ export function JoinButton({ href, label = 'Join — $25/mo' }: { href: string; 
       >
         {label}
       </a>
+      {sub && <p className="mt-1 text-[12px] text-muted">{sub}</p>}
     </div>
   );
 }

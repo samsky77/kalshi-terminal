@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { memberStatus } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { cookieOptions, SESSION_COOKIE, SESSION_DAYS, signSession, verifySession } from '@/lib/session';
+import { hasAccess, type MemberState } from '@/lib/membership';
 import { exchangeCode, userInfo } from '@/lib/whop';
 
 export const dynamic = 'force-dynamic';
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
     const m = await memberStatus(u.sub, u.email ?? null);
     const session = await signSession({ uid: u.sub, email: u.email ?? null, exp: Date.now() + SESSION_DAYS * 86400000 });
     const admin = !!process.env.ADMIN_EMAIL && u.email?.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
-    const dest = m?.status === 'active' || admin ? next : '/?membership=inactive';
+    const dest = hasAccess(m as MemberState | null) || admin ? next : `/?membership=${m?.status === 'trial_used' ? 'trial_used' : 'inactive'}`;
     const res = NextResponse.redirect(new URL(dest, req.url));
     res.cookies.set(SESSION_COOKIE, session, cookieOptions(SESSION_DAYS * 86400));
     res.cookies.set('sl_oauth', '', cookieOptions(0));

@@ -86,22 +86,30 @@ export async function verifyWebhook(body: string, headers: Headers, secret: stri
   });
 }
 
+/** Checkout for the trial plan (7-day free trial, card collected up front, set up in Whop). */
 export function checkoutUrl(): string {
   return process.env.NEXT_PUBLIC_WHOP_CHECKOUT_URL || 'https://whop.com';
 }
 
-/** Map a Whop webhook type to a membership status (null = ignore). */
-export function statusFor(type: string, data: any): 'active' | 'canceled' | 'expired' | null {
-  const t = type.toLowerCase();
-  // Expiry first: 'deactivated' contains 'activated'.
-  if (/went_invalid|deactivated|expired/.test(t)) return 'expired';
-  if (/went_valid|\bactivated|membership\.created|created|renew|payment\.succeeded|payment_succeeded/.test(t)) return 'active';
-  if (/cancel/.test(t)) {
-    // cancel-at-period-end keeps access until expiry; Whop sends went_invalid / deactivated at the end
-    return data?.status === 'canceled' || data?.valid === false ? 'canceled' : null;
-  }
-  return null;
+/** Checkout for the same product without a trial, for accounts that already used theirs. */
+export function noTrialCheckoutUrl(): string {
+  return process.env.NEXT_PUBLIC_WHOP_CHECKOUT_URL_NO_TRIAL || checkoutUrl();
 }
+
+const PRICE = Number(process.env.NEXT_PUBLIC_PRICE_MONTHLY || 25);
+const TRIAL_DAYS = 7;
+
+/** Trial and price copy. One place, so the CTA, pricing box, FAQ and account page say the same thing. */
+export const OFFER = {
+  trialDays: TRIAL_DAYS,
+  price: PRICE,
+  cta: `Start ${TRIAL_DAYS}-day free trial`,
+  after: `then $${PRICE}/month`,
+  fine: `Card required to start. You won’t be charged during the ${TRIAL_DAYS}-day trial; cancel any time before it ends and you pay nothing. After the trial it’s $${PRICE}/month until you cancel. One free trial per account.`,
+};
+
+/** Map a Whop webhook to a membership status (null = ignore). One rule, in membership.ts. */
+export { statusFromWebhook as statusFor } from './membership';
 
 export function safeNext(n: string | null): string {
   return n && n.startsWith('/') && !n.startsWith('//') ? n : '/slate';

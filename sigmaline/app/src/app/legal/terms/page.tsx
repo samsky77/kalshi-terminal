@@ -19,7 +19,7 @@ export default function Terms() {
       </ul>
       <h2>5. Subscription, billing and refunds</h2>
       <ul>
-        <li>Membership is a recurring subscription (currently $25 per month, &ldquo;Founding Member&rdquo; rate) billed through Whop. Whop&apos;s terms also apply to your payment.</li>
+        <li>Membership is a recurring subscription (currently $25 per month, &ldquo;Founding Member&rdquo; rate) billed through Whop, with a 7-day free trial for new accounts. A card is required to start the trial; you are not charged if you cancel before the trial ends. One free trial per account. Whop&apos;s terms also apply to your payment.</li>
         <li>Your subscription renews automatically each period until you cancel. You can cancel at any time in your Whop account. Access continues until the end of the period you have paid for.</li>
         <li>Except where the law requires otherwise, payments are non-refundable and we do not give refunds or credits for partial periods. If you believe you were charged in error, contact us within 14 days and we will review it in good faith.</li>
         <li>We may change the price with at least 30 days&apos; notice. The change applies from your next renewal.</li>

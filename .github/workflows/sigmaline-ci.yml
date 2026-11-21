@@ -37,8 +37,21 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - name: Build web app
+      - name: Build web app (dummy secrets, so a leak into the client bundle is detectable)
+        env:
+          WHOP_API_KEY: ci-dummy-whop-api-key-should-never-ship
+          WHOP_CLIENT_SECRET: ci-dummy-whop-client-secret-never-ship
+          WHOP_WEBHOOK_SECRET: ci-dummy-whop-webhook-secret-never-ship
+          SESSION_SECRET: ci-session-secret-ci-session-secret-0000
         run: npm run build
+      - name: No secrets in the client bundle
+        working-directory: sigmaline/app
+        env:
+          WHOP_API_KEY: ci-dummy-whop-api-key-should-never-ship
+          WHOP_CLIENT_SECRET: ci-dummy-whop-client-secret-never-ship
+          WHOP_WEBHOOK_SECRET: ci-dummy-whop-webhook-secret-never-ship
+          SESSION_SECRET: ci-session-secret-ci-session-secret-0000
+        run: node scripts/secrets-check.mjs
       - name: Paywall check (routes called directly, no UI)
         working-directory: sigmaline/app
         env:

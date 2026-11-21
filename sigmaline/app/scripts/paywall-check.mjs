@@ -20,7 +20,7 @@ for (const [path, method] of [['/api/push', 'POST'], ['/api/me/alerts', 'POST']]
 const adm = await fetch(`${base}/api/admin/settings`, { method: 'POST', body: new URLSearchParams({ a: '0.01', b: '0.01', alert: '0.01' }) });
 check('anon POST /api/admin/settings -> 403', adm.status === 403, `(got ${adm.status})`);
 // 2. Paid pages redirect to sign-in / sales page
-for (const path of ['/slate', `/game/${anyGame}`, '/alerts', '/account', '/admin']) {
+for (const path of ['/slate', '/slate?view=props', '/edges', '/edges?type=prop', `/game/${anyGame}`, '/alerts', '/account', '/admin']) {
   const r = await fetch(base + path, { redirect: 'manual' });
   check(`anon page ${path} -> redirect`, r.status >= 300 && r.status < 400, `(got ${r.status} -> ${r.headers.get('location')})`);
 }

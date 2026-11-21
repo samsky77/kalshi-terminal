@@ -46,3 +46,21 @@ describe('Whop webhooks (Standard Webhooks, literal-secret HMAC)', () => {
     expect(safeNext('https://evil.com')).toBe('/slate');
   });
 });
+
+describe('QA security regressions', () => {
+  it('SEC-001: no dev fallback secret whenever a real database is configured', async () => {
+    const { sessionSecret } = await import('../src/lib/session');
+    expect(() => sessionSecret({ NODE_ENV: 'production', DATABASE_URL: 'postgres://x' })).toThrow(/SESSION_SECRET/);
+    expect(() => sessionSecret({ DATABASE_URL: 'postgres://x' })).toThrow(/SESSION_SECRET/);
+    expect(() => sessionSecret({ SUPABASE_URL: 'https://x.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'k' })).toThrow(/SESSION_SECRET/);
+    expect(() => sessionSecret({ NETLIFY: 'true' })).toThrow(/SESSION_SECRET/);
+    expect(() => sessionSecret({ DATABASE_URL: 'postgres://x', SESSION_SECRET: 'short' })).toThrow(/SESSION_SECRET/);
+    expect(sessionSecret({ DATABASE_URL: 'postgres://x', SESSION_SECRET: 'z'.repeat(32) })).toBe('z'.repeat(32));
+    expect(sessionSecret({})).toMatch(/^dev-only/); // local demo only
+  });
+  it('SEC-002: post-login redirects stay on this site', () => {
+    for (const bad of ['/\\evil.com', '/\\\\evil.com', '//evil.com', 'https://evil.com', '/%5Cevil.com\\x', '/\tevil', 'javascript:alert(1)']) expect(safeNext(bad)).toBe('/slate');
+    expect(safeNext('/game/nba-1?x=1#y')).toBe('/game/nba-1?x=1#y');
+    expect(safeNext('/edges?type=prop')).toBe('/edges?type=prop');
+  });
+});

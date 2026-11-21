@@ -24,10 +24,17 @@ async function key(secret: string) {
   return crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
 }
 
-export function sessionSecret(): string {
-  const s = process.env.SESSION_SECRET;
+/**
+ * The dev fallback is only for the local demo (no real database configured). With any real database
+ * (Supabase or DATABASE_URL) a missing or short SESSION_SECRET is fatal: a world-known secret would
+ * let anyone forge sessions (QA ticket SEC-001: the old guard only checked SUPABASE_URL, but
+ * production runs on DATABASE_URL).
+ */
+export function sessionSecret(env: Record<string, string | undefined> = process.env): string {
+  const s = env.SESSION_SECRET;
   if (s && s.length >= 32) return s;
-  if (process.env.NODE_ENV === 'production' && process.env.SUPABASE_URL) throw new Error('SESSION_SECRET must be set (32+ chars) in production');
+  const realDb = !!env.DATABASE_URL || !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) || !!env.SUPABASE_URL;
+  if (realDb || env.NETLIFY === 'true' || env.VERCEL === '1') throw new Error('SESSION_SECRET must be set (32+ chars) whenever a real database is configured');
   return 'dev-only-insecure-session-secret-change-me-0000';
 }
 

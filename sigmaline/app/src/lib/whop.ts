@@ -112,6 +112,14 @@ export const OFFER = {
 /** Map a Whop webhook to a membership status (null = ignore). One rule, in membership.ts. */
 export { statusFromWebhook as statusFor } from './membership';
 
+/**
+ * Only same-site paths after sign-in. Browsers and the URL parser treat a backslash like a slash, so
+ * "/\\evil.com" is a protocol-relative URL (QA ticket SEC-002); control characters are rejected too.
+ */
 export function safeNext(n: string | null): string {
-  return n && n.startsWith('/') && !n.startsWith('//') ? n : '/slate';
+  if (!n || !n.startsWith('/') || n.startsWith('//') || /[\\\u0000-\u001f]/.test(n)) return '/slate';
+  try {
+    const u = new URL(n, 'https://same.origin');
+    return u.origin === 'https://same.origin' ? `${u.pathname}${u.search}${u.hash}` : '/slate';
+  } catch { return '/slate'; }
 }

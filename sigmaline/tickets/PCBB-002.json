@@ -1,0 +1,18 @@
+{
+ "id": "PCBB-002",
+ "title": "CBB props: no player model and 'NBA and NFL only' publish rule, yet props are requested, priced and shown",
+ "severity": "P3",
+ "persona": "CBB props user",
+ "url": "http://localhost:3100/slate?sport=cbb&view=props",
+ "device": "iPhone 13 (390px)",
+ "steps": [
+  "Read SPORT_DEFS.cbb: no propsFlag, so simulate.ts never runs a player sim for CBB and tick.ts never fetches player logs.",
+  "worker/src/publish.ts publishable(): returns 'props launch for NBA and NFL only' for any other sport.",
+  "worker/src/ingest.ts still requests PROP_MARKETS.cbb on every PropLine pull, so CBB props are priced (always consensus-only) and can reach edges_log / Edge Finder.",
+  "Open /slate?sport=cbb&view=props on the demo."
+ ],
+ "expected": "One consistent story: either CBB props are launched (consensus-only, max grade B, labelled so) or the CBB Props tab says they are not offered yet.",
+ "actual": "The CBB tab is shown with the generic empty state 'Books haven't posted props... Props appear here as soon as a book lists them', which promises something the publish rule says will not happen for picks. Edge Finder copy says 'A >= 5% with model and consensus agreeing' but no CBB prop can ever have a model.",
+ "evidence": "Page text captured on the demo (empty state only; demo has no props). Code references above.",
+ "suspected_area": "suspected: product decision not reflected in app copy; publish.ts vs ingest.ts/tick.ts flags"
+}

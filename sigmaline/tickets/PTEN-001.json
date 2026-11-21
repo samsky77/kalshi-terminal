@@ -1,0 +1,17 @@
+{
+ "title": "A tennis prop market the provider was never asked for is stored, priced and can be graded B (no whitelist by requested market)",
+ "severity": "P2",
+ "url": "packages/core/src/oddsformat.ts quotesFromEvent; worker/src/ingest.ts",
+ "device": "n/a (scratch script)",
+ "steps": [
+  "PROP_MARKETS.tennis is [] so ingest requests no tennis props (confirmed: ingest.ts line ~101 uses [...GAME_MARKETS, ...PROP_MARKETS[sport]]).",
+  "Run evidence/PTEN-001.synthetic.ts (npx tsx from sigmaline) with a synthetic tennis event whose bookmakers return player_aces / player_games_won / player_double_faults.",
+  "quotesFromEvent keeps every key matching /^(player_|batter_|pitcher_|goalie_)/ regardless of what was requested; priceMarkets then prices it consensus-only; with 6 books and one book 16% longer, over 7.5 comes out 3.0% B."
+ ],
+ "expected": "Only requested prop keys for the sport are stored; an unrequested/unverified tennis key is dropped (or at least never graded), per \"no invented markets\".",
+ "actual": "Rows stored in odds_snapshots with stat player_aces etc., priced as consensus-only, graded B; buildEdges/buildProps have no sport/market whitelist so they would reach Edge Finder and Props tab (labels come out as tidied keys \"aces\", \"games won\"). Publishing picks is blocked (publish.ts line 19) but edges_log is not (see PTEN-002). Today the exposure is only if a provider volunteers extra markets.",
+ "evidence": "evidence/PTEN-001.synthetic.ts output: \"prop over 7.5 Carlos Alcaraz player_aces b4 6 3.0% B consensus\"",
+ "suspected_area": "quotesFromEvent (filter by requested keys), ingest.ts",
+ "id": "PTEN-001",
+ "persona": "Tennis props user"
+}

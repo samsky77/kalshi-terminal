@@ -1,0 +1,17 @@
+{
+ "title": "Tennis handicap (and any prop) edges ungated for edges_log / Edge Finder; \"not published\" only enforced when picking",
+ "severity": "P2",
+ "url": "worker/src/edges.ts logEdges; worker/src/publish.ts publishable",
+ "device": "n/a (code + scratch)",
+ "steps": [
+  "Read worker/src/edges.ts logEdges: filters only grade A/B, no call to publishable().",
+  "publishable() (tennis non-ML needs TENNIS_GAME_MARKETS_PUBLISH; props only NBA/NFL) is called only in publish.ts pick selection.",
+  "Scratch syn3: tennis spread home -2.5 priced 3.0% B with 6 books."
+ ],
+ "expected": "Markets declared unpublished for tennis (handicaps/totals, props) never appear in edges_log or the Edge Finder.",
+ "actual": "They would be logged to edges_log (public Results page, never editable) and listed in Edge Finder with a grade, while the game page and picks treat them as unpublished. Not observed in demo (demo tennis market_prices are ML only, edges_log has no tennis rows); inferred from code plus scratch run.",
+ "evidence": "evidence/PTEN-001.synthetic.ts output: \"spread home -2.5 ... 6 3.0% B consensus\"",
+ "suspected_area": "logEdges / buildEdges should apply publishable()",
+ "id": "PTEN-002",
+ "persona": "Tennis props user"
+}

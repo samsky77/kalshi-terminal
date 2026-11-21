@@ -83,14 +83,15 @@ describe('ingest helpers', () => {
     const quotes = [
       ...['a', 'b', 'c', 'd'].map((b) => q(b, 'spread', -3.5)), // main
       q('a', 'spread', -10.5), q('b', 'spread', -10.5), // thin alternate
-      ...['a', 'b', 'c'].map((b) => q(b, 'spread', -2.5)), // alternate with 3 books
+      ...['a', 'b', 'c'].map((b) => q(b, 'spread', -2.5)), // alternate with 3 books: can never be graded (PCFB-001)
+      ...['a', 'b', 'c', 'd', 'e'].map((b) => q(b, 'spread', -1.5)), // alternate with 5 books: kept
       q('a', 'prop', 24.5, { player: 'P', stat: 'player_points' }), q('b', 'prop', 24.5, { player: 'P', stat: 'player_points' }),
       q('a', 'prop', 30.5, { player: 'P', stat: 'player_points' }),
     ];
     const kept = keepDeepLines(quotes as any).map((x) => `${x.market}${x.line}`);
     expect(kept.filter((k) => k === 'spread-10.5').length).toBe(0);
-    expect(kept.filter((k) => k === 'spread-3.5').length).toBe(4);
-    expect(kept.filter((k) => k === 'spread-2.5').length).toBe(3);
+    expect(kept.filter((k) => k === 'spread-1.5').length).toBe(5);
+    expect(kept.filter((k) => k === 'spread-2.5').length).toBe(0);
     expect(kept.filter((k) => k === 'prop24.5').length).toBe(2);
     expect(kept.filter((k) => k === 'prop30.5').length).toBe(0);
   });

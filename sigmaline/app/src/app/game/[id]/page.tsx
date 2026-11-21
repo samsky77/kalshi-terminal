@@ -65,7 +65,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
               </dl>
             </div>
           ) : (
-            <p className="panel p-3 text-[13px] text-muted">{pick && started ? `Logged pick: ${pick.label} at ${american(Number(pick.price_decimal))} (${bookName(pick.book)}), grade ${pick.grade}.` : 'No live edge. Every fresh market below is priced at or near fair.'}</p>
+            <p className="panel p-3 text-[13px] text-muted">{pick && started ? `Logged pick: ${pick.label} at ${american(Number(pick.price_decimal))} (${bookName(pick.book)}), grade ${pick.grade}.` : (g.prices.length ? 'No live edge. Every fresh market below is priced at or near fair.' : 'No prices from the books for this game yet. It will be priced as soon as books post lines.')}</p>
           )}
         </Section>
 

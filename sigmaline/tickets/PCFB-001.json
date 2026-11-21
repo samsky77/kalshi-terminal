@@ -1,0 +1,16 @@
+{
+  "id": "PCFB-001",
+  "title": "keepDeepLines keeps thin alternate prop and game rungs that can never be graded; CFB slate with props stores 9k-43k rows per full-league pull",
+  "severity": "P2",
+  "persona": "CFB props user / storage",
+  "url": "worker/src/ingest.ts#keepDeepLines",
+  "device": "n/a (script)",
+  "steps": [
+    "Run npx tsx /tmp/pcfb/vol.ts (copy: evidence/PCFB-001.volume.ts): synthetic 63-game slate, 8 books, 20 player-markets per game over PROP_MARKETS.cfb, game lines with alternate rungs",
+    "Pass each game through keepDeepLines"
+  ],
+  "expected": "Storage drops what the pricer can never grade. GRADE_CONFIG.altLine needs >=5 books for a non-main spread/total/prop line, so alt rungs with <5 books should not be stored; a CFB bulk pull stays near the ~9k main-line figure.",
+  "actual": "keepDeepLines keeps any prop line with >=2 books and any game alt line with >=3 books (below altLine.minBooks=5), and has no main-line notion for props. Kept rows per full-league pull: main lines only 9,072; +10 game rungs x4 books 14,112; +2 prop rungs x3 books 21,672; heavy case (4 prop rungs x4 books, 20 game rungs x5) 43,092. Props alone add 7.5k-29k rows per pull to the 3.3k game-line rows. The bulk call covers every game, and pregame/closing rows are not pruned by prune_snapshots (only kind=refresh), so each Saturday permanently adds roughly 2 x 63 x 344 = ~43k rows in the middle case. Estimates assume provider alt-rung depth I could not verify (demo DB has no props).",
+  "evidence": "tickets/evidence/PCFB-001.log, PCFB-001.volume.ts",
+  "suspected_area": "worker/src/ingest.ts keepDeepLines thresholds not tied to GRADE_CONFIG.altLine; also consider storing props only for events in the pregame/closing window"
+}

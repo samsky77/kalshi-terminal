@@ -1,0 +1,15 @@
+{
+  "id": "PCFB-002",
+  "title": "Consensus-only prop edge ignores push on whole-number lines, so edge is overstated",
+  "severity": "P2",
+  "persona": "CFB props user",
+  "url": "packages/core/src/pricing.ts#priceMarkets",
+  "device": "n/a (script)",
+  "steps": [
+    "Run evidence/PCFB-002.pipeline.ts, case 2: Fake WR Beta receptions line 5.0, 4 books, czr over +105 vs others around -120"
+  ],
+  "expected": "Edge = p_win x decimal + p_push - 1 (README rule). A whole-number line can push.",
+  "actual": "Un-simulated props use model {win:NaN,push:0}, so consFair.push = 0 and cP (the no-vig over share) is used as win probability: Over 5 shows +6.78% (fair 1.920) with no allowance for the push chance, which on a 5.0 receptions line is material. Overstates edge for the Over when edge>0 (understates push refund). Row is ungraded now (>5% consensus-only) but the 6.78% is shown in feed/props lists; at 2-5% it would be a B.",
+  "evidence": "tickets/evidence/PCFB-002.log (## 2)",
+  "suspected_area": "pricing.ts consFair uses model.push which is 0 for consensus-only props; push is not estimated from the market"
+}

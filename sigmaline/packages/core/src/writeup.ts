@@ -164,8 +164,11 @@ function sportContext(f: WriteupFacts): Candidate[] {
   if (f.sport === 'soccer' && s.market === 'ml' && s.side === 'draw' && ok(f.drawP)) {
     c.push({ id: 'draw_risk', score: 0.7, text: `Our sims land on a draw ${pct(f.drawP)} of the time.` });
   }
-  if (f.sport === 'tennis' && (f.bestOf === 3 || f.bestOf === 5)) {
-    c.push({ id: 'format', score: 0.3, text: f.bestOf === 5 ? 'Best-of-five sets gives the stronger player more room to recover from a slow start.' : 'Best-of-three sets leaves less room to recover from a slow start, which helps the underdog.' });
+  if (f.sport === 'tennis' && s.market === 'ml' && (f.bestOf === 3 || f.bestOf === 5) && ok(f.fairP)) {
+    // Only when the format supports the pick (PTEN-004): best-of-5 favours the favourite, best-of-3 the underdog.
+    const fav = f.fairP >= 0.5;
+    if (f.bestOf === 5 && fav) c.push({ id: 'format', score: 0.3, text: 'Best-of-five sets gives the stronger player more room to recover from a slow start.' });
+    if (f.bestOf === 3 && !fav) c.push({ id: 'format', score: 0.3, text: 'Best-of-three sets leaves less room to recover from a slow start, which helps the underdog.' });
   }
   if ((f.sport === 'nfl' || f.sport === 'cfb') && s.market === 'spread' && ok(s.line) && [3, 7].includes(Math.abs(Math.round(s.line)))) {
     c.push({ id: 'key_number', score: 0.5, text: `${Math.abs(s.line)} is close to a key number in football (games land on 3 and 7 far more than other margins), which is where half a point is worth the most.` });

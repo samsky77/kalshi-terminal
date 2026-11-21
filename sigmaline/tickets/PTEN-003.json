@@ -1,0 +1,16 @@
+{
+ "title": "Tennis game page without prices: margin histogram and \"priced at or near fair\" text with nothing priced",
+ "severity": "P3",
+ "url": "http://localhost:3100/game/tennis-0c4370b4e52a3db5",
+ "device": "iPhone 13",
+ "steps": [
+  "Open the game page for Rafael Jodar @ Alexander Zverev (1 book, no prices).",
+  "Also open /game/tennis-697e1e665689a69f."
+ ],
+ "expected": "No simulated chart or \"every fresh market is priced near fair\" claim when nothing is priced; tennis margin axis labelled in games/sets.",
+ "actual": "Shows \"No live edge. Every fresh market below is priced at or near fair.\" above an empty ALL MARKETS table (header only), plus a \"Simulated final margin (home - away)\" histogram (-8..+15 buckets, all \"Pick wins: no\") with no unit for tennis. MODEL says market consensus only, so the skewed histogram is built from one book. No \"undefined\" text seen; empty props state (\"No player props for this game from our data provider yet.\") and the slate props empty state (\"Our data provider doesn\u2019t send tennis player props yet.\") are clear and accurate. No horizontal scroll.",
+ "evidence": "evidence/PTEN-003.png",
+ "suspected_area": "app/src/app/game/[id]/page.tsx line ~68, 73; charts.tsx",
+ "id": "PTEN-003",
+ "persona": "Tennis props user"
+}

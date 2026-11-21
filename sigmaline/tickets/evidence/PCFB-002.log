@@ -1,0 +1,72 @@
+CFB markets player_pass_yds=Passing yds, player_pass_tds=Passing TDs, player_rush_yds=Rushing yds, player_receptions=Receptions, player_reception_yds=Receiving yds
+player_pass_yds -> Fake Player Over 49.5 Passing yds | statValue sample: 1
+player_pass_tds -> Fake Player Over 49.5 Passing TDs | statValue sample: 3
+player_rush_yds -> Fake Player Over 49.5 Rushing yds | statValue sample: 4
+player_receptions -> Fake Player Over 49.5 Receptions | statValue sample: 6
+player_reception_yds -> Fake Player Over 49.5 Receiving yds | statValue sample: 5
+
+## 1 four books, one generous over (+105) quotes 4 kept 4 susp 0
+  Fake QB Alpha Over 250.5 Passing yds |best czr 2.050 books 4 fairDec 2.009 consP 0.4977 ev 2.02% grade B src consensus
+  Fake QB Alpha Under 250.5 Passing yds |best fd 1.926 books 4 fairDec 1.991 consP 0.5023 ev -3.26% grade none src consensus
+  feed keep 2 stale 0 anom 0 {"no_price":0,"no_fair":0,"started":0,"duplicate":0,"suspended":0,"sanity":0,"stale":0}
+
+## 2 integer line receptions 5.0 (push possible) quotes 4 kept 4 susp 0
+  Fake WR Beta Over 5 Receptions |best czr 2.050 books 4 fairDec 1.920 consP 0.5209 ev 6.78% grade none src consensus
+  Fake WR Beta Under 5 Receptions |best fd 2.050 books 4 fairDec 2.087 consP 0.4791 ev -1.78% grade none src consensus
+  feed keep 2 stale 0 anom 0 {"no_price":0,"no_fair":0,"started":0,"duplicate":0,"suspended":0,"sanity":0,"stale":0}
+
+## 3 single book quotes 1 kept 0 susp 0
+  feed keep 0 stale 0 anom 0 {"no_price":0,"no_fair":0,"started":0,"duplicate":0,"suspended":0,"sanity":0,"stale":0}
+
+## 4 two books quotes 2 kept 2 susp 0
+  Fake QB Alpha Over 250.5 Rushing yds |best dk 2.100 books 2 fairDec 2.095 consP 0.4773 ev 0.23% grade none src consensus
+  Fake QB Alpha Under 250.5 Rushing yds |best fd 1.909 books 2 fairDec 1.913 consP 0.5227 ev -0.21% grade none src consensus
+  feed keep 2 stale 0 anom 0 {"no_price":0,"no_fair":0,"started":0,"duplicate":0,"suspended":0,"sanity":0,"stale":0}
+
+## 5 best price from 30-min old book (stale threshold 10) quotes 4 kept 4 susp 0
+  Fake QB Alpha Over 250.5 Passing TDs |best czr 2.150 books 4 fairDec 2.009 consP 0.4977 ev 7.00% grade none src consensus
+  Fake QB Alpha Under 250.5 Passing TDs |best fd 1.926 books 4 fairDec 1.991 consP 0.5023 ev -3.26% grade none src consensus
+  feed keep 1 stale 1 anom 0 {"no_price":0,"no_fair":0,"started":0,"duplicate":0,"suspended":0,"sanity":0,"stale":1}
+
+## 5b consensus from 3 hour-old quotes, fresh DK price vs them quotes 4 kept 4 susp 0
+  Fake WR Beta Under 250.5 Receiving yds |best dk 1.800 books 4 fairDec 1.665 consP 0.6006 ev 8.11% grade none src consensus
+  Fake WR Beta Over 250.5 Receiving yds |best czr 2.350 books 4 fairDec 2.504 consP 0.3994 ev -6.15% grade none src consensus
+  feed keep 1 stale 1 anom 0 {"no_price":0,"no_fair":0,"started":0,"duplicate":0,"suspended":0,"sanity":0,"stale":1}
+
+## 6 suspended over at czr quotes 4 kept 4 susp 1
+  Fake QB Alpha Over 250.5 Passing yds |best mgm 1.926 books 3 fairDec 2.000 consP 0.5000 ev -3.70% grade none src consensus
+  Fake QB Alpha Under 250.5 Passing yds |best fd 1.926 books 3 fairDec 2.000 consP 0.5000 ev -3.70% grade none src consensus
+  feed keep 2 stale 0 anom 0 {"no_price":0,"no_fair":0,"started":0,"duplicate":0,"suspended":0,"sanity":0,"stale":0}
+
+## 7 prop edge ~ >25% (sanity) quotes 4 kept 4 susp 0
+  Fake QB Alpha Over 250.5 Passing yds |best czr 2.900 books 4 fairDec 2.009 consP 0.4977 ev 44.33% grade none src consensus
+  Fake QB Alpha Under 250.5 Passing yds |best fd 1.926 books 4 fairDec 1.991 consP 0.5023 ev -3.26% grade none src consensus
+  feed keep 1 stale 0 anom 1 {"no_price":0,"no_fair":0,"started":0,"duplicate":0,"suspended":0,"sanity":1,"stale":0}
+
+## 7b ~ 17% edge quotes 4 kept 4 susp 0
+  Fake QB Alpha Over 250.5 Passing yds |best czr 2.250 books 4 fairDec 2.009 consP 0.4977 ev 11.98% grade none src consensus
+  Fake QB Alpha Under 250.5 Passing yds |best fd 1.926 books 4 fairDec 1.991 consP 0.5023 ev -3.26% grade none src consensus
+  feed keep 2 stale 0 anom 0 {"no_price":0,"no_fair":0,"started":0,"duplicate":0,"suspended":0,"sanity":0,"stale":0}
+
+## 8 alt line quotes 5 kept 5 susp 0
+  Fake QB Alpha Over 200.5 Passing yds |best dk 1.400 books 2 fairDec 1.429 consP 0.6997 ev -2.04% grade none src consensus
+  Fake QB Alpha Over 250.5 Passing yds |best mgm 1.909 books 3 fairDec 2.000 consP 0.5000 ev -4.55% grade none src consensus
+  Fake QB Alpha Under 250.5 Passing yds |best mgm 1.909 books 3 fairDec 2.000 consP 0.5000 ev -4.55% grade none src consensus
+  Fake QB Alpha Under 200.5 Passing yds |best fd 3.100 books 2 fairDec 3.330 consP 0.3003 ev -6.91% grade none src consensus
+  feed keep 4 stale 0 anom 0 {"no_price":0,"no_fair":0,"started":0,"duplicate":0,"suspended":0,"sanity":0,"stale":0}
+
+## writeup quotes 4 kept 4 susp 0
+  Fake QB Alpha Over 250.5 Passing yds |best czr 2.050 books 4 fairDec 2.009 consP 0.4977 ev 2.02% grade B src consensus
+  Fake QB Alpha Under 250.5 Passing yds |best fd 1.926 books 4 fairDec 1.991 consP 0.5023 ev -3.26% grade none src consensus
+  feed keep 2 stale 0 anom 0 {"no_price":0,"no_fair":0,"started":0,"duplicate":0,"suspended":0,"sanity":0,"stale":0}
+{
+ "edge": "Fake QB Alpha Over 250.5 Passing yds at +105: the market consensus across 4 books puts the over at 50%, against 49% implied by the price. That's roughly +2.0% EV.",
+ "reasons": [
+  "Czr is out of line with the other 3 books we checked; even the market's own fair price says this number is generous."
+ ],
+ "risk": "Risk: game script and snap counts. A blowout means the backups play.",
+ "drivers": [
+  "line_shop"
+ ]
+}
+{"edge":"Fake QB Alpha Over 250.5 Passing yds at +105: the market consensus across 4 books puts the over at 50%, against 49% implied by the price. That's roughly +2.0% EV.","reasons":["Czr is out of line with the other 3 books we checked; even the market's own fair price says this number is generous."],"risk":"Risk: game script and snap counts. A blowout means the backups play.","drivers":["line_shop"]}

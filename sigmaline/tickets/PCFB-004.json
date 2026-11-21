@@ -1,0 +1,15 @@
+{
+  "id": "PCFB-004",
+  "title": "Edge Finder with CFB + Props says \"No edges match these filters\" instead of explaining props are not carried",
+  "severity": "P3",
+  "persona": "CFB props user",
+  "url": "http://localhost:3100/edges?sport=cfb&market=prop",
+  "device": "iPhone 13 profile",
+  "steps": [
+    "Open /edges?sport=cfb&market=prop (also the filter form)"
+  ],
+  "expected": "Props empty state consistent with the slate (\"No College Football player props right now...\").",
+  "actual": "\"0 of 4 live edges. No edges match these filters. Loosen them or press Reset.\" Reset does not help since there are no props at all. Slate props tab and game-page \"Player props\" empty states are fine; no horizontal scroll.",
+  "evidence": "tickets/evidence/PCFB-ui-edges.png, PCFB-ui-props.png, PCFB-ui-game.png",
+  "suspected_area": "app/src/app/edges/page.tsx empty-state branch"
+}

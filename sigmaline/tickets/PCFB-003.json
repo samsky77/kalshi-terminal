@@ -1,0 +1,15 @@
+{
+  "id": "PCFB-003",
+  "title": "Stale quotes still count toward a prop consensus and the \"N books\" figure",
+  "severity": "P2",
+  "persona": "CFB props user",
+  "url": "packages/core/src/pricing.ts#priceMarkets",
+  "device": "n/a (script)",
+  "steps": [
+    "Run evidence/PCFB-002.pipeline.ts, case 5b: fresh DK quote, three other books 60-90 min old (stale threshold 10)"
+  ],
+  "expected": "Quotes past the stale threshold should not build fair price or count as books (a graded prop needs >=2 fresh books).",
+  "actual": "consensus uses all byBook quotes regardless of age: row shows \"books 4\", consP 0.6006 built from 3 hour-old prices, +8.11% edge on the fresh DK quote and it lands in feed.keep (grade none only because of the consensus-only cap; a 2-5% case would be graded B on a consensus of old prices). Only the best book age is checked.",
+  "evidence": "tickets/evidence/PCFB-002.log (## 5b)",
+  "suspected_area": "priceMarkets: filter `full` by age before consensus / books count"
+}

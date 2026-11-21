@@ -1,4 +1,4 @@
-import { CLOSING_WINDOW, mainLine, PREGAME_WINDOW, PROP_MARKETS, quotesFromEvent, SPORT_DEFS, type MarketQuote, type OddsApiEvent, type ProviderId, type PullKind, type SportId } from '@sigmaline/core';
+import { CLOSING_WINDOW, GRADE_CONFIG, mainLine, PREGAME_WINDOW, PROP_MARKETS, quotesFromEvent, SPORT_DEFS, type MarketQuote, type OddsApiEvent, type ProviderId, type PullKind, type SportId } from '@sigmaline/core';
 import { eventId, getEvents, normTeam, type EventRow, type SnapshotRow } from '@sigmaline/db';
 import { mayPull, recordUsage, type Ctx } from './context';
 import type { DataProvider, LeagueRef } from './providers/types';
@@ -111,7 +111,10 @@ export async function pullOdds(ctx: Ctx, sport: SportId, leagueId: string, kind:
           // game's pre-game snapshot.
           const rowKind = snapshotKind(Date.parse(e.commence_time), ctx.now().getTime());
           const stats = { suspended: 0 };
-          for (const q of keepDeepLines(quotesFromEvent(ev, res.priceFormat, pulledAt, stats))) {
+          // Only markets we asked for: a provider volunteering extra prop keys (e.g. tennis aces) must not
+          // create markets we never chose to show (PTEN-001).
+          const asked = new Set(markets);
+          for (const q of keepDeepLines(quotesFromEvent(ev, res.priceFormat, pulledAt, stats).filter((q) => q.market !== 'prop' || asked.has(q.stat ?? '')))) {
             rows.push({ event_id: e.id, provider: pid, book: q.book, market: q.market, line: q.line ?? null, player: q.player ?? null, stat: q.stat ?? null, ...(q.team ? { team: q.team } : {}), prices: q.prices as Record<string, number>, ts: q.ts, kind: rowKind, pulled_at: pulledAt });
             if (q.market !== 'prop') { const s = bookCount.get(e.id) ?? new Set(); s.add(q.book); bookCount.set(e.id, s); }
           }
@@ -183,10 +186,19 @@ export function keepDeepLines(quotes: MarketQuote[]): MarketQuote[] {
   const books = new Map<string, Set<string>>();
   for (const q of quotes) { const k = key(q); const s = books.get(k) ?? new Set<string>(); s.add(q.book); books.set(k, s); }
   const main = { spread: mainLine(quotes, 'spread'), total: mainLine(quotes, 'total') };
+  // Props: each player/stat's main line is the rung most books quote.
+  const propMain = new Map<string, { line: number | undefined; n: number }>();
+  for (const q of quotes) if (q.market === 'prop') {
+    const pk = `${q.player}|${q.stat}`, n = books.get(key(q))!.size, cur = propMain.get(pk);
+    if (!cur || n > cur.n || (n === cur.n && (q.line ?? 0) < (cur.line ?? 0))) propMain.set(pk, { line: q.line, n });
+  }
+  // Keep what can ever be graded: main lines (min books apply later) and alternate lines with at least
+  // GRADE_CONFIG.altLine.minBooks books (PCFB-001: thinner rungs were stored but never gradable).
+  const alt = GRADE_CONFIG.altLine.minBooks;
   return quotes.filter((q) => {
     const n = books.get(key(q))!.size;
     if (q.market === 'ml') return true;
-    if (q.market === 'prop') return n >= 2;
-    return q.line === main[q.market] || n >= 3;
+    if (q.market === 'prop') return (q.line === propMain.get(`${q.player}|${q.stat}`)?.line && n >= GRADE_CONFIG.minBooks.prop) || n >= alt;
+    return q.line === main[q.market] || n >= alt;
   });
 }

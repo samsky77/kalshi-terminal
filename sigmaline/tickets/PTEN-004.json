@@ -1,0 +1,15 @@
+{
+ "title": "Tennis write-up \"helps the underdog\" shown even when the pick is the favourite",
+ "severity": "P3",
+ "url": "packages/core/src/writeup.ts line 168",
+ "device": "n/a (scratch)",
+ "steps": [
+  "buildWriteup with sport tennis, ML on the favourite (decimal 1.5, fairP 0.70), bestOf 3."
+ ],
+ "expected": "Best-of-three sentence worded to fit the pick side.",
+ "actual": "Reason reads \"Best-of-three sets leaves less room to recover from a slow start, which helps the underdog.\" under a favourite pick (and is the only reason, so it argues against the bet). Retirement risk line and best-of-five sentence render correctly; no undefined text for ML/spread/total.",
+ "evidence": "scratch output (/tmp/q/syn.ts, same facts)",
+ "suspected_area": "sportContext in writeup.ts",
+ "id": "PTEN-004",
+ "persona": "Tennis props user"
+}

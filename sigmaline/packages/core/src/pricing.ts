@@ -155,6 +155,12 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
     const alt = GRADE_CONFIG.altLine;
     if ((m === 'spread' || m === 'total' || m === 'prop') && !isMain && p.books < Math.max(alt.minBooks, Math.ceil(top * alt.minShareOfMain))) p.grade = 'none';
     if (m !== 'prop' && p.ev > GAME_LINE_MAX_CREDIBLE_EV) p.grade = 'none';
+    // Consensus-only prop on a whole-number line: the push chance is unknown, so the edge can't be
+    // stated honestly (PCFB-002).
+    if (m === 'prop' && p.fairSource === 'consensus' && p.selection.line !== undefined && Number.isInteger(p.selection.line)) p.grade = 'none';
+    // Tennis games handicaps / totals: no licensed game-count results to settle them, so never graded
+    // or logged (PTEN-002; same rule as publish.ts).
+    if (opt.sport === 'tennis' && m !== 'ml') p.grade = 'none';
   }
   // Both sides of one market can't both be +EV against one fair price unless a quote is stale or
   // mis-mapped (QA ticket CAS-003: Rockets −476 and Jazz +600 both graded B). Grade neither.

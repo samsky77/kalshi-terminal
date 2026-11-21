@@ -8,7 +8,7 @@ export function JoinButton({ href, label, sub }: { href: string; label: string; 
   return (
     <div>
       <label className="tap flex cursor-pointer items-center gap-3 text-[13px]">
-        <input type="checkbox" className="h-5 w-5 accent-[#FFB000]" checked={ok} onChange={(e) => setOk(e.target.checked)} />
+        <input type="checkbox" className="h-5 w-5 shrink-0 accent-[#FFB000]" checked={ok} onChange={(e) => setOk(e.target.checked)} />
         <span>I am legally allowed to bet where I live.</span>
       </label>
       {ok ? (

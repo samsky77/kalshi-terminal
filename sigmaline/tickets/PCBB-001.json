@@ -1,0 +1,16 @@
+{
+ "id": "PCBB-001",
+ "title": "Stale books still count toward a prop's book count and consensus, so a lone fresh book can earn a B",
+ "severity": "P2",
+ "persona": "CBB props user",
+ "url": "packages/core/src/pricing.ts (priceMarkets)",
+ "device": "n/a (scratch script /tmp/pcbb/t3.ts)",
+ "steps": [
+  "Synthetic CBB event, market player_points, 'Fake P' 18.5. Book a (fresh, 1 min old) +105/-125; books b, c, d each -110/-110 with last_update 6 hours old.",
+  "quotesFromEvent -> priceMarkets (bettable a,b,c,d, no sim) -> filterFeed with now=20:00Z."
+ ],
+ "expected": "Stale books (> GRADE_CONFIG.staleMinutes) should not count toward 'books' or the consensus; with one fresh book the prop is below the 2-book minimum and ungraded.",
+ "actual": "Row is kept with books=4, best=a, ev=+2.5%, grade B. The fair price is built from three 6-hour-old quotes. (With a bigger gap the row is only dropped because of the consensus-only cap, not because the support is stale.)",
+ "evidence": "npx tsx /tmp/pcbb/t3.ts -> 'Fake P Over 18.5 Points books 4 a ev 2.5 B'. Best-price staleness is already fixed; this is about consensus/depth.",
+ "suspected_area": "priceMarkets: byBook/full/consensus built from all quotes regardless of ts; no freshness filter before counting books"
+}

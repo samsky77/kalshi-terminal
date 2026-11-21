@@ -1,0 +1,17 @@
+{
+ "id": "PCBB-003",
+ "title": "CBB prop settlement depends on unverified PropLine key and box-score field names and exact player-name match",
+ "severity": "P3",
+ "persona": "CBB props user",
+ "url": "packages/core/src/sports.ts, worker/src/simulate.ts (STAT_KEYS, statValue)",
+ "device": "n/a",
+ "steps": [
+  "Check CBB propLineKey 'basketball_ncaab' and PROP_MARKETS.cbb (points, rebounds, assists, threes).",
+  "statValue maps them to candidate fields points/pts, rebounds/reb/total_rebounds, assists/ast, three_pointers_made/threes/fg3m/3pm: all four CBB markets grade from a box score in a unit check.",
+  "getPlayerGames queries /sports/basketball_ncaab/players/{name}/games with the book's description string."
+ ],
+ "expected": "Settlement works for college rosters.",
+ "actual": "Mappings exist for every CBB market (OK). Not verifiable offline: whether PropLine uses basketball_ncaab and those field names for college, and whether college names as books spell them ('D.J.', 'Jr.', accents, transfers with the same name on two teams; logs are keyed by sport+player+stat+date, not team) match PropLine's. A miss only shows as 'void' after 24h.",
+ "evidence": "Read-only code review; no external calls made.",
+ "suspected_area": "guess: name normalisation between book descriptions and PropLine player lookup; player_logs key lacks team"
+}

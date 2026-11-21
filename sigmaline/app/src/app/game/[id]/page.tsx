@@ -46,7 +46,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
             This game has started. Pre-game prices are closed, so nothing below is graded or counted as an edge; live betting isn&apos;t covered.
           </p>
         )}
-        <Section title={pick ? 'Top pick · logged' : 'Top pick'}>
+        <Section title={pick ? 'Top pick · logged' : top && top.grade !== 'none' ? 'Best edge found' : 'Pricing summary'}>
           {top && top.grade !== 'none' && top.best_decimal && !started && !isStale(top.price_ts, now, sm) ? (
             <div className="panel p-3">
               <div className="flex items-start justify-between gap-3">
@@ -109,6 +109,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
         </Section>
 
         <Section title={g.movementKind === 'line' ? 'Line movement' : 'Market probability'}>
+          <p className="mb-2 text-[12px] text-muted">{g.movementKind === 'line' ? 'How the main spread has moved across the books we checked, from the first snapshot to the latest. A spread is the margin the favourite must win by; a move from −3 to −4 means the market now expects a bigger win.' : 'How the no-vig market probability for the top pick has moved. Each point is one snapshot of all books together.'}</p>
           <LineChart
             points={g.movement}
             label={g.movementKind === 'line' ? 'Consensus line, open to now' : 'No-vig market probability, open to now'}

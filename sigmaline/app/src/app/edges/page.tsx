@@ -78,7 +78,7 @@ export default async function EdgeFinder({ searchParams }: { searchParams: Promi
           <p className="label mt-3 border-b border-line pb-1" role="status">{rows.length} of {feed.rows.length} live {feed.rows.length === 1 ? 'edge' : 'edges'}</p>
           {rows.length === 0 && (
             <p className="py-10 text-center text-[13px] text-muted">
-              {feed.rows.length ? 'No edges match these filters. Loosen them or press Reset.' : 'No live edges right now. Edges appear as soon as a book is out of line with the fair price, and disappear when the price goes stale or the game starts.'}
+              {feed.rows.length ? 'No edges match these filters. Loosen them or press Reset.' : (f.type === 'prop' ? 'No live prop edges right now. Props are only priced for sports and books that post them; try Market = All, or another sport.' : 'No live edges right now. Edges appear as soon as a book is out of line with the fair price, and disappear when the price goes stale or the game starts.')}
             </p>
           )}
           <ul>

@@ -8,7 +8,7 @@ export default {
       colors: {
         bg: '#0A0A0A',
         panel: '#141414',
-        line: '#2A2A2A',
+        line: '#5C5C5C',
         line2: '#1E1E1E',
         ink: '#E8E6E0',
         muted: '#9A968C',

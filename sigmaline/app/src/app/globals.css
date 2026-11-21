@@ -49,7 +49,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 /* Stale prices (item 7): dimmed, STALE tag, no grade / edge. FreshRow toggles .is-stale live. */
 .is-stale, .is-stale * { color: #9A968C !important; } /* dimmed but still ≥ 4.5:1 on black */
-.is-stale { box-shadow: inset 2px 0 0 #2A2A2A; }
+.is-stale { box-shadow: inset 2px 0 0 #5C5C5C; }
 .is-stale .edge-only { display: none !important; }
 .stale-only { display: none; }
 .is-stale .stale-only { display: inline-flex; }

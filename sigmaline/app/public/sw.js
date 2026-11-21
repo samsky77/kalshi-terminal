@@ -3,7 +3,7 @@ const SHELL = 'sl-shell-v2';
 const PAGES = 'sl-pages-v2';
 // App shell: offline page, manifest, icons and fonts. Public pages (landing, results, legal) are cached
 // network-first so they open offline; paid pages and every /api/ response are never cached.
-const SHELL_URLS = ['/offline.html', '/manifest.webmanifest', '/icons/icon-192.png', '/fonts/plex-mono-400.woff2', '/fonts/plex-mono-600.woff2', '/fonts/plex-sans-var.woff2'];
+const SHELL_URLS = ['/offline.html', '/manifest.webmanifest', '/icons/icon-192.png', '/legal/privacy', '/legal/responsible-gambling', '/legal/terms', '/fonts/plex-mono-400.woff2', '/fonts/plex-mono-600.woff2', '/fonts/plex-sans-var.woff2'];
 const PUBLIC_PAGES = ['/', '/results', '/legal/terms', '/legal/privacy', '/legal/responsible-gambling'];
 
 self.addEventListener('install', (e) => {

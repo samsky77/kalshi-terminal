@@ -162,7 +162,7 @@ async function Props({ sport, edgesOnly, now, sm }: { sport: SportId; edgesOnly:
           We don&apos;t simulate {SPORT_DEFS[sport].label} players yet, so the fair price is the no-vig consensus of every book. Edges here come from a book being out of line with the market.
         </p>
       )}
-      {shown.length === 0 && <p className="py-10 text-center text-[13px] text-muted">No live prop edges right now. Turn off “Edges only” to see every prop.</p>}
+      {shown.length === 0 && <p className="py-10 text-center text-[13px] text-muted">No live prop edges right now. Turn off “Edges only” to see every prop, or check Game lines for this sport.</p>}
       {[...byEvent.values()].map((list) => (
         <section key={list[0].event.id} className="mt-3" aria-label={list[0].event.label}>
           <h2 className="label border-b border-line pb-1"><Link href={`/game/${encodeURIComponent(list[0].event.id)}`} prefetch={false} className="hover:text-ink">{list[0].event.label} · {time(list[0].event.commence_time)}</Link></h2>

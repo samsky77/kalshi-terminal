@@ -50,7 +50,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         )}
         <section className="mx-auto max-w-3xl px-4 pt-8">
           <p className="label text-amber">The Bloomberg terminal for sports betting</p>
-          <h1 className="mt-2 text-[28px] font-semibold leading-tight sm:text-[36px]">Every game simulated 10,000 times. Only the bets worth making.</h1>
+          <h1 className="mt-2 text-[28px] font-semibold leading-tight sm:text-[36px]">Every game simulated 10,000 times. Only the bets where we see an edge.</h1>
           <p className="prose-sl mt-3 text-[16px] leading-relaxed text-ink">
             Sigmaline prices every game on the slate from its own simulations, compares that fair price with the best line at the books you can bet, and flags only the bets with positive expected value. Each one comes with a grade and a plain-English reason why.
           </p>

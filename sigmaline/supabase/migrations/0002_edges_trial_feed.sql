@@ -199,10 +199,12 @@ end $$;
 -- ── Function access (advisor fix, 2026-11-21) ───────────────────────────────────
 -- SECURITY DEFINER functions must not be callable through the public API (anon / authenticated).
 -- prune_snapshots deletes data and append_pick writes the track record: only the app role may run them.
-revoke execute on function public.prune_snapshots(int) from public, anon, authenticated;
-revoke execute on function public.append_pick(jsonb) from public, anon, authenticated;
 do $$
 begin
+  if exists (select 1 from pg_roles where rolname = 'anon') and exists (select 1 from pg_roles where rolname = 'authenticated') then
+    revoke execute on function public.prune_snapshots(int) from public, anon, authenticated;
+    revoke execute on function public.append_pick(jsonb) from public, anon, authenticated;
+  end if;
   if exists (select 1 from pg_roles where rolname = 'sigmaline_app') then
     grant execute on function public.prune_snapshots(int) to sigmaline_app;
     grant execute on function public.append_pick(jsonb) to sigmaline_app;

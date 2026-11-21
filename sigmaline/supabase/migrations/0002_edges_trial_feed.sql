@@ -195,3 +195,19 @@ begin
     revoke all on edges_log, edge_price_updates, data_anomalies, feed_filter_log, feed_cache from anon, authenticated;
   end if;
 end $$;
+
+-- ── Function access (advisor fix, 2026-11-21) ───────────────────────────────────
+-- SECURITY DEFINER functions must not be callable through the public API (anon / authenticated).
+-- prune_snapshots deletes data and append_pick writes the track record: only the app role may run them.
+revoke execute on function public.prune_snapshots(int) from public, anon, authenticated;
+revoke execute on function public.append_pick(jsonb) from public, anon, authenticated;
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'sigmaline_app') then
+    grant execute on function public.prune_snapshots(int) to sigmaline_app;
+    grant execute on function public.append_pick(jsonb) to sigmaline_app;
+  end if;
+end $$;
+alter function public.forbid_change() set search_path = public;
+alter function public.edges_log_stamp() set search_path = public;
+alter function public.edges_log_guard() set search_path = public;

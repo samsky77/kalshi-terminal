@@ -1,0 +1,17 @@
+{
+  "id": "PNBA-004",
+  "title": "Prop edges in edges_log never get their box score: ingestPropResults only covers `picks`, player_logs refreshed only pre-game",
+  "severity": "P1",
+  "persona": "NBA props user",
+  "url": "worker/src/tick.ts#refreshPlayerLogs, worker/src/grade.ts#ingestPropResults, worker/src/edges.ts#settleEdges",
+  "device": "code review + scratch pipeline (no UI repro possible: demo DB has no props)",
+  "steps": [
+    "Read settleEdges: for market=prop it reads player_logs for (sport, player, stat, game date) and voids after 24h if absent",
+    "Find who writes player_logs: refreshPlayerLogs (pre-game, skipped if the player has a log < 2 days old) and ingestPropResults (loops over `picks` only, never edges_log)",
+    "So an NBA prop edge that is logged in edges_log but not published as a pick gets no post-game box score"
+  ],
+  "expected": "Every logged NBA prop edge (points, rebounds, assists, threes, PRA) is graded from that game's box score after it goes final",
+  "actual": "Only the pre-game history fetch writes logs; the game's own stat line is fetched post-game only for published picks. Prop edges for players with a recent log (back-to-back, regular starters) have no row for the game date, so they settle 'void' after 24h. Applies to all prop markets, not just blocks/steals/turnovers (guess: depends on whether provider's pre-game 20-game fetch ever includes the just-played game).",
+  "evidence": "Code reading only; demo DB has no props so not reproducible end to end.",
+  "suspected_area": "ingestPropResults should also iterate unsettled prop rows from edges_log; refreshPlayerLogs 2-day skip"
+}

@@ -1,0 +1,18 @@
+{
+  "id": "PNBA-003",
+  "title": "NBA Turnovers props (player_turnovers) can never be graded from a box score: no STAT_KEYS entry, always void",
+  "severity": "P1",
+  "persona": "NBA props user",
+  "url": "worker/src/simulate.ts#STAT_KEYS",
+  "device": "code review + scratch pipeline (no UI repro possible: demo DB has no props)",
+  "steps": [
+    "Read worker/src/simulate.ts STAT_KEYS and statValue",
+    "statValue('player_turnovers', {blocks:2,steals:1,turnovers:3,points:20}) falls through to `STAT_KEYS[stat] ?? []` and returns undefined",
+    "refreshPlayerLogs (tick.ts) and ingestPropResults (grade.ts) both drop rows where statValue is undefined, so no player_logs row exists",
+    "settleEdges/gradePicks then wait 24h and settle props={} -> gradeBet returns 'void'"
+  ],
+  "expected": "PROP_MARKETS.nba requests player_turnovers; an edge/pick on it is settled win/loss/push from the box score",
+  "actual": "player_turnovers is requested, priced, can be graded A/B and logged to edges_log/picks, but always ends 'void' (0 units) because the stat key is unmapped. Voids hide real results and skew the public track record.",
+  "evidence": "worker/src/simulate.ts lines ~: STAT_KEYS has only player_points/rebounds/assists/threes (+ non-NBA keys); PRA is special-cased in statValue. Pipeline script /tmp/pnba/pipe.ts shows these three markets reach grading (consensus-only).",
+  "suspected_area": "STAT_KEYS missing entries (suggest ['blocks','blk'], ['steals','stl'], ['turnovers','tov','to']); also PROP_BETA has no entry for them (defaults to 0.7)"
+}

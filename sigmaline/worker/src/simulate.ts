@@ -104,12 +104,32 @@ const STAT_KEYS: Record<string, string[]> = {
   player_threes: ['three_pointers_made', 'threes', 'fg3m', '3pm'], player_pass_yds: ['passing_yards', 'pass_yds'],
   player_rush_yds: ['rushing_yards', 'rush_yds'], player_reception_yds: ['receiving_yards', 'rec_yds'], player_receptions: ['receptions', 'rec'],
   player_pass_tds: ['passing_touchdowns', 'pass_tds', 'passing_tds'],
+  // Every requested prop market needs a box-score mapping or it can only ever settle void (PNBA-001..003).
+  // PropLine's /players/{name}/games returns raw box-score stats; these are the candidate field names.
+  player_blocks: ['blocks', 'blk'], player_steals: ['steals', 'stl'], player_turnovers: ['turnovers', 'tov', 'to'],
+  player_pass_completions: ['passing_completions', 'completions', 'cmp'], player_pass_attempts: ['passing_attempts', 'pass_attempts', 'att'],
+  player_pass_interceptions: ['passing_interceptions', 'interceptions_thrown', 'int'], player_rush_attempts: ['rushing_attempts', 'rush_attempts', 'carries'],
+  player_goals: ['goals', 'g'], player_shots_on_goal: ['shots_on_goal', 'shots_on_target', 'sog'], player_blocked_shots: ['blocked_shots', 'blocks', 'blk'],
+  goalie_saves: ['saves', 'sv'], player_cards: ['cards'],
 };
+/** Box-score totals built from parts (only when every part is present). */
+const COMPOSITE: Record<string, (s: Record<string, number>) => number | undefined> = {
+  player_anytime_td: (s) => {
+    const parts = [['rushing_touchdowns', 'rush_tds'], ['receiving_touchdowns', 'rec_tds']].map((ks) => ks.map((k) => s[k]).find((v) => typeof v === 'number'));
+    return parts.every((v) => v !== undefined) ? (parts as number[]).reduce((a, b) => a + b, 0) : undefined;
+  },
+  player_cards: (s) => (typeof s.cards === 'number' ? s.cards : typeof s.yellow_cards === 'number' && typeof s.red_cards === 'number' ? s.yellow_cards + s.red_cards : undefined),
+};
+/** Prop markets we can settle from a box score (anything else must not be requested). */
+export function settleableStat(stat: string): boolean {
+  return stat === 'player_points_rebounds_assists' || stat in STAT_KEYS || stat in COMPOSITE;
+}
 export function statValue(stat: string, stats: Record<string, number>): number | undefined {
   if (stat === 'player_points_rebounds_assists') {
     const p = statValue('player_points', stats), r = statValue('player_rebounds', stats), a = statValue('player_assists', stats);
     return p !== undefined && r !== undefined && a !== undefined ? p + r + a : undefined;
   }
+  if (COMPOSITE[stat]) { const v = COMPOSITE[stat](stats); if (v !== undefined) return v; }
   for (const k of STAT_KEYS[stat] ?? []) if (typeof stats[k] === 'number') return stats[k];
   return undefined;
 }

@@ -132,22 +132,37 @@ export async function ingestPropResults(ctx: Ctx): Promise<number> {
   if (!prov.enabled || !prov.getPlayerGames) return 0;
   const picks = (await ctx.db.select<PickRow>('picks', { eq: { market: 'prop' }, lt: { commence_time: ctx.now().toISOString() } }));
   const graded = new Set((await ctx.db.select<{ pick_id: string }>('pick_results')).map((r) => r.pick_id));
-  let n = 0;
-  for (const p of picks.filter((x) => !graded.has(x.id))) {
+  // Open prop edges in the edge log need box scores too (PNBA-004), one request per player and game.
+  const openEdges = await ctx.db.select<{ sport: string; league: string | null; selection: string; start_time: string }>('edges_log', { eq: { market: 'prop' }, isNull: ['result'], lt: { start_time: new Date(ctx.now().getTime() - 2 * 3600000).toISOString() } }).catch(() => []);
+  const todo = [
+    ...picks.filter((x) => !graded.has(x.id)).map((p) => ({ sport: p.sport, league: p.league, selection: p.selection })),
+    ...openEdges.map((e) => ({ sport: e.sport as PickRow['sport'], league: e.league ?? e.sport, selection: e.selection })),
+  ];
+  // One box-score request per player covers every stat we need for that player.
+  const byPlayer = new Map<string, { sport: PickRow['sport']; league: string; player: string; stats: Set<string> }>();
+  for (const p of todo) {
     const sel = parseSelection(p.selection);
-    if (!sel.player || !sel.stat || !mayPull(ctx, 'propline', 'scores', 1)) continue;
+    if (!sel.player || !sel.stat) continue;
+    const key = `${p.sport}|${p.league}|${sel.player}`;
+    const cur = byPlayer.get(key) ?? { sport: p.sport, league: p.league, player: sel.player, stats: new Set<string>() };
+    cur.stats.add(sel.stat);
+    byPlayer.set(key, cur);
+  }
+  let n = 0, calls = 0;
+  for (const p of byPlayer.values()) {
+    if (++calls > 40 || !mayPull(ctx, 'propline', 'scores', 1)) break; // budget guard: at most 40 requests per tick
     const ref = (await leagueRefs(ctx, p.sport, prov)).find((r) => r.leagueId === p.league);
     if (!ref) continue;
     try {
-      const r = await prov.getPlayerGames(ref, sel.player, 3);
+      const r = await prov.getPlayerGames(ref, p.player, 3);
       await recordUsage(ctx, 'propline', r.cost, r.remaining);
-      for (const g of r.data) {
-        const v = statValue(sel.stat, g.stats);
+      for (const g of r.data) for (const stat of p.stats) {
+        const v = statValue(stat, g.stats);
         if (v === undefined) continue;
-        await ctx.db.upsert('player_logs', { sport: p.sport, player: sel.player, stat: sel.stat, game_date: g.date.slice(0, 10), value: v, minutes: g.minutes ?? null }, 'sport,player,stat,game_date');
+        await ctx.db.upsert('player_logs', { sport: p.sport, player: p.player, stat, game_date: g.date.slice(0, 10), value: v, minutes: g.minutes ?? null }, 'sport,player,stat,game_date');
         n++;
       }
-    } catch (e) { ctx.log(`player games failed ${sel.player}: ${(e as Error).message}`); }
+    } catch (e) { ctx.log(`player games failed ${p.player}: ${(e as Error).message}`); }
   }
   return n;
 }

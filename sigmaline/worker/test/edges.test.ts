@@ -99,3 +99,17 @@ describe('ingest helpers', () => {
     expect(gameDates({ commence_time: '2026-11-21T18:00:00Z' })).toEqual(['2026-11-21']);
   });
 });
+
+describe('prop settlement mappings (PNBA-001..004)', () => {
+  it('every requested prop market can be read from a box score', async () => {
+    const { PROP_MARKETS } = await import('@sigmaline/core');
+    const { settleableStat, statValue } = await import('../src/simulate');
+    for (const [sport, markets] of Object.entries(PROP_MARKETS)) for (const m of markets) expect(settleableStat(m), `${sport} ${m}`).toBe(true);
+    expect(statValue('player_blocks', { blocks: 3 })).toBe(3);
+    expect(statValue('player_steals', { stl: 2 })).toBe(2);
+    expect(statValue('player_turnovers', { turnovers: 4 })).toBe(4);
+    expect(statValue('player_anytime_td', { rushing_touchdowns: 0, receiving_touchdowns: 1 })).toBe(1);
+    expect(statValue('player_anytime_td', { rushing_touchdowns: 0 })).toBeUndefined(); // missing part: don't guess
+    expect(statValue('goalie_saves', { saves: 31 })).toBe(31);
+  });
+});

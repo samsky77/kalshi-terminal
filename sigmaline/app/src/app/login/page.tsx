@@ -8,6 +8,9 @@ const ERRORS: Record<string, string> = {
   state: 'Sign-in could not be verified. Please try again.',
   denied: 'Sign-in was cancelled.',
   whop: 'Whop sign-in failed. Please try again in a minute.',
+  whop_token: 'Whop rejected the sign-in code. Check the app’s redirect URI and client secret in Whop (Developer → Apps).',
+  whop_userinfo: 'Whop sign-in worked, but we could not read your profile. Check the app’s scopes in Whop (openid, profile, email).',
+  whop_other: 'Sign-in failed after Whop returned. Please try again; if it keeps happening, tell us the time.',
   not_configured: 'Sign-in is not configured yet (WHOP_CLIENT_ID missing).',
 };
 

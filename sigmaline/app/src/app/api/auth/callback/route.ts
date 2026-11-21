@@ -33,7 +33,10 @@ export async function GET(req: Request) {
     res.cookies.set(SESSION_COOKIE, session, cookieOptions(SESSION_DAYS * 86400));
     res.cookies.set('sl_oauth', '', cookieOptions(0));
     return res;
-  } catch {
-    return fail('whop');
+  } catch (e) {
+    // Say which step failed (no secrets): token exchange, user info, or the membership check.
+    const msg = (e as Error).message || '';
+    const step = msg.startsWith('whop token') ? 'token' : msg.startsWith('whop userinfo') ? 'userinfo' : 'other';
+    return fail(`whop_${step}`);
   }
 }

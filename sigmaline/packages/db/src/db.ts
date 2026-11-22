@@ -182,6 +182,6 @@ export async function fileMemoryDb(path: string): Promise<MemoryDb> {
   const fs = await import('node:fs');
   return new MemoryDb({
     load: () => (fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : null),
-    save: (t) => { fs.mkdirSync(path.replace(/\/[^/]+$/, ''), { recursive: true }); fs.writeFileSync(path, JSON.stringify(t)); },
+    save: (t) => { fs.mkdirSync(path.replace(/[\\/][^\\/]+$/, ''), { recursive: true }); fs.writeFileSync(path, JSON.stringify(t)); },
   });
 }

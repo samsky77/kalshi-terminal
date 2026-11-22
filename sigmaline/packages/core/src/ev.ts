@@ -50,9 +50,9 @@ export function fairDecimal(fair: OutcomeProbs): number {
 
 /**
  * Grades come only from GRADE_CONFIG (see grades.ts and the FAQ):
- *   A: edge ≥ 5% AND both the pure model and the pure consensus say the price is +EV.
+ *   A: edge ≥ 5% (agreement with the model is only required if GRADE_CONFIG.A.requireAgreement is on).
  *   B: 2% ≤ edge < 5%.
- *   Otherwise (including ≥ 5% without agreement): no edge.
+ *   Otherwise: no edge.
  * The `t` argument is ignored for the boundaries; it exists only so old call sites still compile.
  */
 export function gradePick(ev: number, modelEv: number, consensusEv: number, _t?: GradeThresholds): Grade {

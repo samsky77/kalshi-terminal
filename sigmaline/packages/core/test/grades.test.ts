@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { clv, edgePct, expectedValue, gradeFaqAnswer, gradePick, GRADE_CONFIG, stakeUnits } from '../src';
+import { EDGE_FLAG_THRESHOLD, clv, edgePct, expectedValue, gradeFaqAnswer, gradePick, GRADE_CONFIG, stakeUnits } from '../src';
 
 /** Every percentage the FAQ answer states, in order of appearance, as fractions. */
 function faqPercents(): number[] {
@@ -33,13 +33,18 @@ describe('grades match the FAQ', () => {
   it('the FAQ states exactly the configured boundaries, in order', () => {
     const c = GRADE_CONFIG;
     expect(faqPercents()).toEqual([
-      c.A.minEdge, c.B.minEdge, c.B.maxEdge, c.B.minEdge, c.A.minEdge, c.maxCredibleEdge.game, c.maxCredibleEdge.prop,
+      c.A.minEdge, c.B.minEdge, c.B.maxEdge, c.B.minEdge, c.maxCredibleEdge.game,
     ]);
     expect(gradeFaqAnswer()).toContain(`at least ${c.minBooks.game} books`);
     expect(gradeFaqAnswer()).toContain(`${c.staleMinutes} minutes`);
     expect(gradeFaqAnswer()).toContain(`at least ${c.altLine.minBooks} books and half as many books as the main line`);
     expect(c.altLine.minShareOfMain).toBe(0.5); // the FAQ says "half"
-    expect(gradeFaqAnswer()).toMatch(/can be a B but never an A/);
+  });
+  it('the flag threshold is one constant: 2%', () => {
+    expect(EDGE_FLAG_THRESHOLD).toBe(0.02);
+    expect(GRADE_CONFIG.B.minEdge).toBe(EDGE_FLAG_THRESHOLD);
+    expect(gradePick(EDGE_FLAG_THRESHOLD - 1e-6, 0, 0)).toBe('none');
+    expect(gradePick(EDGE_FLAG_THRESHOLD, 0, 0)).not.toBe('none');
   });
   it('the published FAQ boundaries are 5% / 2% / 5% (source of truth)', () => {
     expect(GRADE_CONFIG.A.minEdge).toBe(0.05);
@@ -54,9 +59,9 @@ describe('grades match the FAQ', () => {
     expect(gradePick(0.02, ...disagree)).toBe('B');
     expect(gradePick(0.05, ...agree)).toBe('A');
     expect(gradePick(0.09, ...agree)).toBe('A');
-    // ≥ 5% without agreement is neither A nor "B: 2–5%"
-    expect(gradePick(0.05, ...disagree)).toBe('none');
-    expect(gradePick(0.08, 0.01, -0.01)).toBe('none');
+    // the fair price is the consensus, so model agreement is not required
+    expect(gradePick(0.05, ...disagree)).toBe('A');
+    expect(gradePick(0.08, 0.01, -0.01)).toBe('A');
     expect(gradePick(NaN, ...agree)).toBe('none');
   });
   it('stakes come from the config', () => {

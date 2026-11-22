@@ -1,6 +1,6 @@
 import { isStale } from './feed';
 import { GRADE_CONFIG } from './grades';
-import { blendFair, conditionalWin, expectedValue, fairDecimal, gradePick, type GradeThresholds } from './ev';
+import { conditionalWin, expectedValue, fairDecimal, gradePick, type GradeThresholds } from './ev';
 import { priceSelection, selectionKey, settleFractions } from './markets';
 import { consensus } from './odds';
 import type { Grade, MarketType, OutcomeProbs, Selection, SimSamples, Side, SportId } from './types';
@@ -126,7 +126,11 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
       const cP = cons ? cons.probs[i] : NaN;
       const w = opt.w[market] ?? 0.35;
       const consFair: OutcomeProbs = { win: cP * (1 - model.push), push: model.push, loss: (1 - cP) * (1 - model.push) };
-      const fair = marketOnly ? (Number.isFinite(cP) ? consFair : { win: NaN, push: NaN, loss: NaN }) : blendFair(model, cP, w);
+      // The fair price is the no-vig sportsbook consensus only. The simulation is NOT blended in: on live data it
+      // disagreed with the market by 10+ points on some games and turned that gap into phantom edges. The sim is
+      // used here only for the push probability on whole-number lines. No consensus means no fair price (never faked).
+      void w;
+      const fair = Number.isFinite(cP) ? consFair : { win: NaN, push: NaN, loss: NaN };
       const ev = Number.isFinite(bestDecimal) ? expectedValue(fair, bestDecimal) : NaN;
       const consensusEv = Number.isFinite(bestDecimal) && Number.isFinite(cP) ? expectedValue(consFair, bestDecimal) : NaN;
       // No independent model: there is no model EV, so 'model and consensus agree' (grade A) can't hold.
@@ -136,7 +140,7 @@ export function priceMarkets(samples: SimSamples, quotes: MarketQuote[], opt: Pr
         consensusP: cP, model, fair, fairDecimal: fairDecimal(fair), ev, modelEv, consensusEv,
         // A grade needs a real market behind it: enough books (3, props 2) and a credible EV.
         grade: full.length < (market === 'prop' ? GRADE_CONFIG.minBooks.prop : GRADE_CONFIG.minBooks.game) || ev > GRADE_CONFIG.maxCredibleEdge.prop ? 'none' : gradePick(ev, modelEv, consensusEv),
-        w: marketOnly ? 0 : w, snapshotTs, bestTs, fairSource: marketOnly ? 'consensus' : 'blend',
+        w: 0, snapshotTs, bestTs, fairSource: 'consensus',
       });
     });
   }

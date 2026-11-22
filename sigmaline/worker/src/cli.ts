@@ -4,6 +4,7 @@
  *   npm run worker -- nightly     after grading: calibration + retune + model versions
  *   npm run worker -- history     import licensed historical results (nflverse, openfootball)
  *   npm run worker -- backtest    walk-forward backtests -> backtest_runs ("Backtest (simulated)")
+ *   npm run worker -- edges [sport…]  print today's real edges from the price board (read-only)
  *   npm run worker -- budget      print quota usage and the projected month
  *   npm run worker -- vapid       generate a VAPID key pair for Web Push
  *   npm run worker -- demo        local only: build a DEMO database from recorded fixtures
@@ -20,6 +21,7 @@ import { nightly } from './nightly';
 import { tick } from './tick';
 import { budgetReport } from './budget';
 import { runDemo } from './demo';
+import { edgesToday } from './edges-today';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const FIXTURES = resolve(here, '../../fixtures/odds');
@@ -39,7 +41,16 @@ async function main() {
   }
   const db = await dbFromEnv(env);
   const ctx = await makeCtx(db, env);
+  if (cmd === 'edges') {
+    const only = rest.filter((s) => (SPORTS as string[]).includes(s)) as SportId[];
+    console.log(await edgesToday(ctx, only.length ? only : undefined));
+    return;
+  }
   const jobId = await startJob(db, cmd);
+  // A cancelled / timed-out run used to leave its job row 'running' forever. Close it on SIGTERM / SIGINT.
+  for (const sig of ['SIGTERM', 'SIGINT'] as const) {
+    process.once(sig, () => { finishJob(db, jobId, 'error', { message: `cancelled by ${sig}` }).catch(() => {}).finally(() => process.exit(1)); });
+  }
   try {
     let detail: unknown;
     const sports = rest.length ? (rest.filter((s) => (SPORTS as string[]).includes(s)) as SportId[]) : undefined;

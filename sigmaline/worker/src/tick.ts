@@ -81,7 +81,10 @@ async function refreshPlayerLogs(ctx: Ctx, sport: SportId, leagueId: string, eve
   await ctx.db.upsert('settings', { key: 'player_logs_fetched', value: fetched, updated_at: ctx.now().toISOString() }, 'key');
 }
 
-export interface TickReport { pulls: unknown[]; simulated: number; published: number; closing: number; finals: number; graded: number; alerts: unknown; edgesClosed?: number; edgesSettled?: number; feed?: unknown; cache?: unknown }
+/** Stop re-pricing after this long so the tick always finishes well inside the 15-minute cadence. */
+export const SIM_DEADLINE_MS = 9 * 60000;
+
+export interface TickReport { pulls: unknown[]; simulated: number; simSkipped?: number; published: number; closing: number; finals: number; graded: number; alerts: unknown; edgesClosed?: number; edgesSettled?: number; feed?: unknown; cache?: unknown }
 
 /**
  * One scheduler tick (every ~15 minutes from GitHub Actions):
@@ -91,6 +94,7 @@ export interface TickReport { pulls: unknown[]; simulated: number; published: nu
  *  4. capture closing lines, ingest finals, grade
  */
 export async function tick(ctx: Ctx, opts: { sports?: SportId[] } = {}): Promise<TickReport> {
+  const tickStart = Date.now();
   clearRatingsCache();
   await pruneSnapshots(ctx);
   const sports = opts.sports ?? SPORTS;
@@ -138,17 +142,20 @@ export async function tick(ctx: Ctx, opts: { sports?: SportId[] } = {}): Promise
     }
     // Refresh pulls touch every upcoming event in the league
     if (p.kind === 'refresh' && r.provider) {
-      const evs = await getEvents(ctx.db, { sport, from: now.toISOString(), to: new Date(now.getTime() + 48 * 3600000).toISOString(), status: ['scheduled'] });
+      const evs = await getEvents(ctx.db, { sport, from: now.toISOString(), to: new Date(now.getTime() + 24 * 3600000).toISOString(), status: ['scheduled'] });
       for (const e of evs.filter((e) => e.league_id === p.league)) touched.add(e.id);
     }
   }
   await saveLastRefresh(ctx, last);
   await refreshInjuries(ctx, sports);
 
-  // Re-simulate everything that got new prices (the slate screen reads market_prices).
-  for (const id of touched) {
-    const e = (await getEvents(ctx.db, { ids: [id] }))[0];
-    if (!e || e.status !== 'scheduled') continue;
+  // Re-price everything that got new prices (the slate screen reads market_prices). Games starting soonest go
+  // first, and the loop stops at SIM_DEADLINE_MS so one slow tick can never overrun the 15-minute cadence or the
+  // workflow timeout (a 14.5-minute tick used to leave prices stale for hours). Skipped games are picked up next tick.
+  const deadline = tickStart + SIM_DEADLINE_MS;
+  const todo = (await getEvents(ctx.db, { ids: [...touched] })).filter((e) => e.status === 'scheduled').sort((a, b) => a.commence_time.localeCompare(b.commence_time));
+  for (const e of todo) {
+    if (Date.now() > deadline) { rep.simSkipped = todo.length - rep.simulated; ctx.log(`sim time box reached: ${rep.simSkipped} games left for the next tick`); break; }
     const s = await simulateEvent(ctx, e);
     if (s) { await saveSim(ctx, s); rep.simulated++; }
   }

@@ -9,11 +9,14 @@
  * The FAQ wins over earlier code: an edge of 5% or more where the model and the consensus do NOT both
  * agree fits neither A nor "B: 2–5%", so it is not graded (earlier code called it B).
  */
+/** THE edge flag threshold (2%): the lowest edge that is shown, flagged and published. Change it here only. */
+export const EDGE_FLAG_THRESHOLD = 0.02;
+
 export const GRADE_CONFIG = {
   /** A: edge ≥ 5% and the pure model and the pure no-vig consensus both say the price is +EV. */
-  A: { minEdge: 0.05, requireAgreement: true },
+  A: { minEdge: 0.05, requireAgreement: false },
   /** B: 2% ≤ edge < 5%. */
-  B: { minEdge: 0.02, maxEdge: 0.05 },
+  B: { minEdge: EDGE_FLAG_THRESHOLD, maxEdge: 0.05 },
   /** A graded edge needs this many books pricing both sides of the market. */
   minBooks: { game: 3, prop: 2 },
   /**
@@ -23,7 +26,7 @@ export const GRADE_CONFIG = {
    */
   altLine: { minBooks: 5, minShareOfMain: 0.5 },
   /** Above these the price is treated as stale or mis-mapped, not as value: shown ungraded. */
-  maxCredibleEdge: { game: 0.10, prop: 0.25 },
+  maxCredibleEdge: { game: 0.25, prop: 0.25 },
   /** |edge| above this is bad data: hidden from the feed and written to `data_anomalies`. */
   sanityCap: 0.25,
   /** Minutes after the book's own last_update before a price is STALE (dimmed, never graded). Set above the 15-min tick so prices from a normal tick aren't stale. */
@@ -39,12 +42,12 @@ const p = (x: number) => `${Math.round(x * 1000) / 10}%`;
 /** FAQ answer for "What does a grade mean?", rendered from GRADE_CONFIG. */
 export function gradeFaqAnswer(c: GradeConfig = GRADE_CONFIG): string {
   return [
-    `A: an edge (expected value) of at least ${p(c.A.minEdge)}, and our model and the market consensus both agree the price is good.`,
+    `The fair price is the market consensus: every book's price with its margin (the vig) removed, combined with the sharpest books such as Pinnacle counting double. An edge is the best price you can actually bet compared with that fair price.`,
+    `A: an edge of at least ${p(c.A.minEdge)}.`,
     `B: an edge of ${p(c.B.minEdge)} up to ${p(c.B.maxEdge)}.`,
-    `Anything under ${p(c.B.minEdge)}, or ${p(c.A.minEdge)} and up where the model and the consensus don't both agree, is shown in grey as “No edge” and never published.`,
-    `A grade also needs at least ${c.minBooks.game} books pricing the market (${c.minBooks.prop} for player props), and an alternate line (not the main spread, total or prop line) needs at least ${c.altLine.minBooks} books and half as many books as the main line.`,
-    `When we have no independent model for a market (the fair price is the market consensus alone), there is nothing to agree with the consensus, so it can be a B but never an A.`,
-    `Game-line edges above ${p(c.maxCredibleEdge.game)} and prop edges above ${p(c.maxCredibleEdge.prop)} are almost always a stale or wrong price, so they are not graded.`,
+    `Anything under ${p(c.B.minEdge)} is shown in grey as “No edge” and never published.`,
+    `A grade needs at least ${c.minBooks.game} books pricing the market (${c.minBooks.prop} for player props), and an alternate line (not the main spread, total or prop line) needs at least ${c.altLine.minBooks} books and half as many books as the main line.`,
+    `Edges above ${p(c.maxCredibleEdge.game)} are almost always a stale or wrong price, so they are not graded.`,
     `Prices more than ${c.staleMinutes} minutes old are marked STALE and get no grade.`,
   ].join(' ');
 }

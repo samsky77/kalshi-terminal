@@ -19,6 +19,7 @@
   --amber: #ffb000;
   --fair: #5ab0ff;
   --noedge-bar: #6b675f;
+  --stale: #c9a24a;
   color-scheme: dark;
 }
 
@@ -30,7 +31,8 @@ html, body {
   -webkit-text-size-adjust: 100%;
 }
 
-* { border-radius: 0 !important; }
+/* Square by default (the terminal look); cards, chips and meters opt in with rounded-* classes. */
+* { border-radius: 0; }
 
 .label { @apply text-[11px] uppercase tracking-[0.14em] text-muted; }
 .panel { @apply bg-panel border border-line; }
@@ -51,4 +53,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .is-stale, .is-stale * { color: #9A968C !important; } /* dimmed but still ≥ 4.5:1 on black */
 .is-stale .edge-only { display: none !important; }
 .stale-only { display: none; }
+.is-stale .edge-chip span { background: transparent !important; border: 1px dashed #c9a24a; color: #c9a24a !important; }
+@media (prefers-contrast: more) { :root { --muted: #c4bfb0; } }
 .is-stale .stale-only { display: inline-flex; }

@@ -70,7 +70,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
         <Section title="Grades and alerts">
           {sp.saved && <p role="status" className="mb-2 text-[12px] text-amber">Saved. New alerts use this immediately.</p>}
-          <p className="mb-2 text-[12px] text-muted">Grade boundaries are fixed in <code>packages/core/src/grades.ts</code>, the same file the FAQ renders from, so they can&apos;t drift: A ≥ {pct(GRADE_CONFIG.A.minEdge, 1, false)} with model and consensus agreeing, B {pct(GRADE_CONFIG.B.minEdge, 1, false)}–{pct(GRADE_CONFIG.B.maxEdge, 1, false)}, stale after {GRADE_CONFIG.staleMinutes} min.</p>
+          <p className="mb-2 text-[12px] text-muted">Grade boundaries are fixed in <code>packages/core/src/grades.ts</code>, the same file the FAQ renders from, so they can&apos;t drift: A ≥ {pct(GRADE_CONFIG.A.minEdge, 1, false)}, B {pct(GRADE_CONFIG.B.minEdge, 1, false)}–{pct(GRADE_CONFIG.B.maxEdge, 1, false)}, stale after {GRADE_CONFIG.staleMinutes} min.</p>
           <form action="/api/admin/settings" method="post" className="grid max-w-md grid-cols-3 gap-3 text-[13px]">
             <label className="flex flex-col gap-1"><span className="label">Alert EV</span><input name="alert" type="number" step="0.005" min="0.01" max="0.4" defaultValue={settings.alertEv} className="tap border border-line bg-panel px-2" /></label>
             <button type="submit" className="tap col-span-3 border border-amber px-4 font-semibold uppercase tracking-[0.12em] text-amber">Save</button>

@@ -124,4 +124,56 @@ export function CalibrationChart({ buckets, label }: { buckets: { lo: number; hi
   );
 }
 
+/** Edge size against the minimum flag threshold (2%): a bar, a white tick at the threshold, and text for screen readers. */
+export function EdgeMeter({ ev, min, max = 0.12 }: { ev: number; min: number; max?: number }) {
+  const w = Math.max(2, Math.min(100, (ev / max) * 100)), t = (min / max) * 100;
+  return (
+    <div role="img" aria-label={`Edge ${(ev * 100).toFixed(1)}%. Minimum flagged edge is ${(min * 100).toFixed(0)}%.`}>
+      <div className="relative my-3 h-2.5 rounded-md bg-[#1d1a10]">
+        <i className="absolute inset-y-0 left-0 rounded-md bg-amber" style={{ width: `${w}%` }} />
+        <u className="absolute -inset-y-1 w-0.5 bg-ink no-underline" style={{ left: `${t}%` }} />
+      </div>
+      <div className="flex justify-between text-[11px] text-muted"><span>0%</span><span>| {(min * 100).toFixed(0)}% minimum</span><span>{(max * 100).toFixed(0)}%</span></div>
+    </div>
+  );
+}
+
+/** One dot per book at the pick's exact line, the best price highlighted, the fair price as a dashed line. Axis in American odds. */
+export function BookDots({ prices, best, fair, label, fmt }: {
+  prices: { book: string; decimal: number }[]; best: { book: string; decimal: number }; fair: number; label: string; fmt: (d: number) => string;
+}) {
+  const W = 350, H = 150, pad = 20;
+  const vals = [...prices.map((p) => p.decimal), fair];
+  const span = Math.max(...vals) - Math.min(...vals) || 0.2;
+  const lo = Math.min(...vals) - span * 0.06, hi = Math.max(...vals) + span * 0.06;
+  const x = (v: number) => pad + ((v - lo) / (hi - lo)) * (W - 2 * pad);
+  const bw = (hi - lo) / 26;
+  const bins = new Map<number, typeof prices>();
+  for (const p of prices) { const k = Math.round(p.decimal / bw); bins.set(k, [...(bins.get(k) ?? []), p]); }
+  const others = prices.filter((p) => p.book !== best.book).map((p) => p.decimal);
+  const summary = `${label}. Price at each of ${prices.length} books. Best: ${fmt(best.decimal)}. Other books: ${fmt(Math.min(...others))} to ${fmt(Math.max(...others))}. Fair price: ${fmt(fair)}.`;
+  const ticks = [lo + (hi - lo) * 0.1, (lo + hi) / 2, hi - (hi - lo) * 0.1];
+  return (
+    <figure>
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={summary}>
+        <line x1={pad} x2={W - pad} y1={106} y2={106} stroke={GRID} />
+        {[...bins.values()].flatMap((ps) => ps.map((p, i) => {
+          const hot = p.book === best.book;
+          return <circle key={p.book} cx={x(p.decimal)} cy={96 - i * 13} r={5.5} fill={hot ? AMBER : GREY} stroke={hot ? '#fff' : undefined} strokeWidth={hot ? 1.5 : 0}><title>{`${p.book}: ${fmt(p.decimal)}`}</title></circle>;
+        }))}
+        {ticks.map((t, i) => <g key={i}><line x1={x(t)} x2={x(t)} y1={106} y2={110} stroke={MUTED} /><text x={x(t)} y={124} textAnchor="middle" fontSize={10.5} fill={MUTED}>{fmt(t)}</text></g>)}
+        <line x1={x(fair)} x2={x(fair)} y1={26} y2={106} stroke="#F2EFE6" strokeDasharray="3 3" />
+        <text x={x(fair)} y={16} textAnchor="middle" fontSize={10.5} fill="#F2EFE6">fair {fmt(fair)}</text>
+        <text x={Math.min(x(best.decimal), W - pad)} y={40} textAnchor="end" fontSize={10.5} fill={AMBER} fontWeight={600}>{best.book} {fmt(best.decimal)}</text>
+      </svg>
+      <figcaption className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted">
+        <span><span aria-hidden className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm align-[-1px]" style={{ background: AMBER }} />Best price</span>
+        <span><span aria-hidden className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm align-[-1px]" style={{ background: GREY }} />Other books</span>
+        <span><span aria-hidden className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm align-[-1px]" style={{ background: '#F2EFE6' }} />Fair price</span>
+      </figcaption>
+      <div className="sr-only"><table><caption>{summary}</caption><tbody>{[...prices].sort((a, b) => b.decimal - a.decimal).map((p) => <tr key={p.book}><td>{p.book}</td><td>{fmt(p.decimal)}</td></tr>)}</tbody></table></div>
+    </figure>
+  );
+}
+
 export { AMBER, BLUE, GREY };

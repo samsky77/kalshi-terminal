@@ -53,8 +53,8 @@ export function normPrice(r: any, home: string, away: string): FeedPrice {
     event_id: r.event_id, selection_key: r.selection_key, market: r.market, selection: sel, label: selectionLabel(sel, home, away), line: num(r.line),
     fair_decimal: num(r.fair_decimal), fair_probs: r.fair_probs, consensus_p: num(r.consensus_p), best_decimal: num(r.best_decimal), best_book: r.best_book ?? null,
     books: Number(r.books), ev: num(r.ev), model_ev: num(r.model_ev), consensus_ev: num(r.consensus_ev),
-    // A consensus-only price has no model to agree with, so it can't be an A (SHP-001 / DAT-006).
-    grade: r.grade === 'A' && r.fair_source === 'consensus' ? 'none' : r.grade,
+    // The fair price is the consensus for every row now, so the grade is used as stored.
+    grade: r.grade,
     price_ts: r.price_ts ?? r.snapshot_ts ?? null, fair_source: r.fair_source === 'consensus' ? 'consensus' : 'blend',
   };
 }

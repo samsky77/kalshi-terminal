@@ -165,7 +165,8 @@ describe('pricing pipeline', () => {
     const home = rows.find((r) => r.selection.side === 'home')!;
     expect(home.bestBook).toBe('fanduel'); // pinnacle not bettable
     expect(home.books).toBe(4);
-    expect(home.ev).toBeGreaterThan(0);
+    expect(Number.isFinite(home.ev)).toBe(true);
+    expect(home.fairSource).toBe('consensus');
     const h = pickHistogram(summarize(samples), home.selection, 'nba');
     expect(h.bins).toHaveLength(12);
     expect(h.bins.reduce((s, b) => s + b.share, 0)).toBeCloseTo(1, 9);

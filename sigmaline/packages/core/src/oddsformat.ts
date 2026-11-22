@@ -22,6 +22,42 @@ export interface OddsApiEvent {
   bookmakers?: OddsApiBookmaker[];
 }
 
+
+/** Lower-case, accent-free team name with club-type noise words removed ("FC Internazionale" -> "internazionale"). */
+export function normName(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\b(fc|cf|afc|sc|ac|as|fk|bk|sk|ssc|the|club|de|calcio|cd|ud)\b/g, " ").replace(/\s+/g, " ").trim();
+}
+function sameTeam(a: string, b: string): boolean {
+  const x = normName(a), y = normName(b);
+  if (!x || !y) return false;
+  return x === y || x.includes(y) || y.includes(x);
+}
+
+/**
+ * Map each outcome to home / away / draw. Books spell teams differently from the event ("Inter" vs
+ * "Inter Milan"), and an exact-string match silently dropped one side of a quote, which removed that
+ * book (often Pinnacle) from the consensus. Order: exact, then normalised / contained names, then
+ * elimination (one unmatched non-draw outcome left for the one unmatched side). Ambiguous names
+ * (matching both teams) are never guessed.
+ */
+export function outcomeSides(outcomes: { name: string }[], home: string, away: string): (Side | null)[] {
+  const res: (Side | null)[] = outcomes.map(() => null);
+  outcomes.forEach((o, i) => { if (o.name === home) res[i] = 'home'; else if (o.name === away) res[i] = 'away'; else if (/^draw$/i.test(o.name) || /^tie$/i.test(o.name)) res[i] = 'draw'; });
+  outcomes.forEach((o, i) => {
+    if (res[i]) return;
+    const h = sameTeam(o.name, home), a = sameTeam(o.name, away);
+    if (h && !a && !res.includes('home')) res[i] = 'home';
+    else if (a && !h && !res.includes('away')) res[i] = 'away';
+  });
+  const open = res.map((r, i) => (r ? -1 : i)).filter((i) => i >= 0);
+  if (open.length === 1) {
+    const missing = (['home', 'away'] as Side[]).filter((s) => !res.includes(s));
+    if (missing.length === 1) res[open[0]] = missing[0];
+  }
+  return res;
+}
+
 const PROP_MARKETS = /^(player_|batter_|pitcher_|goalie_)/;
 
 /**
@@ -48,14 +84,12 @@ export function quotesFromEvent(ev: OddsApiEvent, priceFormat: 'decimal' | 'amer
       const ts = Date.parse(raw) > Date.parse(fetchedAt) ? fetchedAt : raw;
       if (m.key === 'h2h' || m.key === 'h2h_3_way') {
         const prices: Partial<Record<Side, number>> = {};
-        for (const o of m.outcomes) {
-          if (o.name === ev.home_team) prices.home = toDec(o.price);
-          else if (o.name === ev.away_team) prices.away = toDec(o.price);
-          else if (/^draw$/i.test(o.name)) prices.draw = toDec(o.price);
-        }
+        const sd = outcomeSides(m.outcomes, ev.home_team, ev.away_team);
+        m.outcomes.forEach((o, i) => { const side = sd[i]; if (side) prices[side] = toDec(o.price); });
         out.push({ book: bk.key, market: 'ml', prices, ts });
       } else if (m.key === 'spreads') {
-        const h = m.outcomes.find((o) => o.name === ev.home_team), a = m.outcomes.find((o) => o.name === ev.away_team);
+        const sd = outcomeSides(m.outcomes, ev.home_team, ev.away_team);
+        const h = m.outcomes.find((_, i) => sd[i] === 'home'), a = m.outcomes.find((_, i) => sd[i] === 'away');
         const line = h?.point ?? (a?.point !== undefined && a?.point !== null ? -a.point : undefined);
         if (line === undefined) continue;
         // Both sides must be at mirrored lines to count as one market.

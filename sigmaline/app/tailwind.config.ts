@@ -3,7 +3,7 @@ import type { Config } from 'tailwindcss';
 export default {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
-    borderRadius: { none: '0', DEFAULT: '0' },
+    borderRadius: { none: '0', DEFAULT: '0', md: '8px', lg: '12px', xl: '16px', full: '9999px' },
     extend: {
       colors: {
         bg: '#0A0A0A',

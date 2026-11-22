@@ -105,6 +105,8 @@ export interface GameDetail {
   histogram: ReturnType<typeof pickHistogram> | null;
   movement: { t: string; value: number; label: string }[];
   movementKind: 'line' | 'prob';
+  /** Every book's price on the top pick's exact line in the latest pull (game markets only). */
+  bookPrices: { book: string; decimal: number }[];
   writeup: Writeup | null;
   propWriteup: { label: string; writeup: Writeup } | null;
   factors: { label: string; value: string }[];
@@ -149,6 +151,20 @@ export async function gameDetail(id: string): Promise<GameDetail | null> {
     }
   }
 
+  // Every book's price for the top pick's exact selection, from the newest pull.
+  const bookPrices: GameDetail['bookPrices'] = [];
+  if (top && top.market !== 'prop' && pulls.length) {
+    const sel = top.selection;
+    const homeLine = sel.market === 'spread' && sel.line !== undefined ? (sel.side === 'home' ? sel.line : -sel.line) : sel.line;
+    const seen = new Map<string, number>();
+    for (const s of snaps.filter((x) => x.pulled_at === pulls[pulls.length - 1])) {
+      if (sel.market !== 'ml' && Number(s.line) !== homeLine) continue;
+      const d = Number(s.prices?.[sel.side]);
+      if (d > 1) seen.set(s.book, d);
+    }
+    for (const [book, decimal] of seen) bookPrices.push({ book, decimal });
+  }
+
   // Write-up: the stored one for a published pick; otherwise built now from the same stored facts.
   let writeup: Writeup | null = null;
   const stored = pick?.writeup as (Writeup & { facts?: WriteupFacts }) | null;
@@ -182,7 +198,7 @@ export async function gameDetail(id: string): Promise<GameDetail | null> {
     };
   }
   const factors = await keyFactors(event, sim, prices);
-  return { event, prices, top, pick, sim, histogram, movement, movementKind, writeup, propWriteup, factors, providers: sim?.inputs?.snapshot?.providers ?? [] };
+  return { event, prices, top, pick, sim, histogram, movement, movementKind, bookPrices, writeup, propWriteup, factors, providers: sim?.inputs?.snapshot?.providers ?? [] };
 }
 
 const condWin = (o: OutcomeProbs) => (o.win + o.loss > 0 ? o.win / (o.win + o.loss) : NaN);

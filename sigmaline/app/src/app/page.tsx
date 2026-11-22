@@ -15,7 +15,7 @@ const FAQ: [string, string][] = [
   ['How do I know you don’t delete losing picks?', 'Every pick is written to an append-only log. Each row’s SHA-256 hash covers its own contents and the row before it, so changing or deleting anything breaks the chain. Anyone can re-check it in the browser on the Results page.'],
   // Rendered from GRADE_CONFIG (packages/core/src/grades.ts): the same object the grading code reads.
   ['What does a grade mean?', gradeFaqAnswer()],
-  ['Which sports?', 'NBA, NHL, NFL, college basketball, college football, soccer (EPL, La Liga, Serie A, Bundesliga, Ligue 1, MLS, Champions League) and ATP/WTA tennis. Moneylines, spreads and totals; NBA and NFL player props are rolling out.'],
+  ['Which sports?', 'NBA, NHL, NFL, college basketball, college football, soccer (EPL, La Liga, Serie A, Bundesliga, Ligue 1, MLS, Champions League) and ATP/WTA tennis. Moneylines, spreads and totals, plus player props wherever the books post them (mainly NBA, NFL and NHL).'],
   ['Is profit guaranteed?', 'No. A positive-EV bet still loses often. Results vary, and past performance does not guarantee future results. Only bet what you can afford to lose.'],
   ['What do Fair, Edge, CLV and units mean?', 'Fair is the price at which a bet breaks even by our numbers. Edge is how much better the best book’s price is than fair: fair probability × decimal odds − 1, so +4% means about 4 cents per dollar over the long run. CLV (closing line value) compares the price we flagged with the final price before the start; beating the close is the best early sign the edges are real. Units are a fixed stake size for the record (A = 2 units, B = 1), not advice. Small samples swing a lot, so judge us on hundreds of bets, not a handful.'],
   ['How does the free trial work?', OFFER.fine],
@@ -50,21 +50,21 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         )}
         <section className="mx-auto max-w-3xl px-4 pt-8">
           <p className="label text-amber">The Bloomberg terminal for sports betting</p>
-          <h1 className="mt-2 text-[28px] font-semibold leading-tight sm:text-[36px]">Every game simulated 10,000 times. Only the bets where we see an edge.</h1>
+          <h1 className="mt-2 font-sans text-[30px] font-semibold leading-[1.1] sm:text-[38px]">See which sports bets are priced wrong.</h1>
           <p className="prose-sl mt-3 text-[16px] leading-relaxed text-ink">
-            Sigmaline prices every game on the slate from its own simulations, compares that fair price with the best line at the books you can bet, and flags only the bets with positive expected value. Each one comes with a grade and a plain-English reason why.
+            Sigmaline works out a fair price for every game from all the sportsbooks together, then compares it with the best price you can actually bet. It flags only the bets that pay at least 2% more than fair, each with the pick, the book, the price and a plain-English reason. Information only: we never place bets.
           </p>
           <div className="mt-5 max-w-md"><JoinButton href={checkout} label={OFFER.cta} sub={`${OFFER.after} after the trial · card required · cancel any time`} /></div>
         </section>
 
         <Section title="How it works">
-          <ol className="grid gap-px bg-line sm:grid-cols-3">
+          <ol className="grid gap-2 sm:grid-cols-3">
             {[
-              ['01 Simulate', 'Team ratings plus 10,000 Monte Carlo runs give a full distribution of the final score. Moneyline, spread and total all come from that one distribution.'],
-              ['02 Compare', 'We strip the vig from every book, take the market consensus and blend it with our model. Then we check the best price you can actually bet.'],
-              ['03 Log it', 'Picks with an edge are logged and alerted as soon as we find them, up to 12 hours before the start. Each one is hash-chained and graded against the closing line and the final score.'],
+              ['01 Read the market', 'We collect prices from dozens of sportsbooks, and every game shows when its prices were last updated.'],
+              ['02 Find the fair price', 'We remove each book’s margin (the vig), combine them with sharp books like Pinnacle counting double, and check the best price you can actually bet.'],
+              ['03 Flag the gaps', 'Bets that pay at least 2% more than fair are flagged in plain words. Published picks are logged before the start, hash-chained and graded against the closing line and the final score.'],
             ].map(([t, d]) => (
-              <li key={t} className="bg-panel p-3"><p className="text-[13px] font-semibold text-amber">{t}</p><p className="prose-sl mt-1 text-[14px] leading-relaxed">{d}</p></li>
+              <li key={t} className="rounded-xl border border-line2 bg-panel p-3"><p className="text-[13px] font-semibold text-amber">{t}</p><p className="prose-sl mt-1 text-[14px] leading-relaxed">{d}</p></li>
             ))}
           </ol>
         </Section>
@@ -93,13 +93,13 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         </Section>
 
         <Section title="Pricing">
-          <div className="panel p-4">
+          <div className="panel rounded-2xl p-4">
             <p className="label text-amber">Founding Member</p>
             <p className="mt-1 text-[22px] font-semibold text-amber">{OFFER.trialDays} days free</p>
             <p className="text-[32px] font-semibold">${OFFER.price}<span className="text-[14px] text-muted">/month after the trial</span></p>
             <ul className="prose-sl mt-2 space-y-1 text-[14px]">
-              <li>Full slate for 7 sports with fair prices, EV and grades</li>
-              <li>Simulation breakdowns, line movement and CLV</li>
+              <li>Full slate for 7 sports with fair prices and edges</li>
+              <li>Price comparison across books, simulation breakdowns and line movement</li>
               <li>Push and Discord alerts for the strongest new picks</li>
               <li>Cancel any time on Whop</li>
             </ul>

@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { isStale, selectionLabel } from '@sigmaline/core';
-import { MarginHistogram, LineChart, BLUE } from '@/components/charts';
-import { Footer, GradeBadge, Header, Main, Section } from '@/components/chrome';
-import { gameDetail, staleMinutes, type PriceRow } from '@/lib/data';
+import { GRADE_CONFIG, isStale, selectionLabel } from '@sigmaline/core';
+import { BookDots, EdgeMeter, MarginHistogram, LineChart, BLUE } from '@/components/charts';
+import { Footer, GradeBadge, Header, Main } from '@/components/chrome';
+import { gameDetail, short, staleMinutes, type GameDetail, type PriceRow } from '@/lib/data';
 import { Ago, FreshRow } from '@/components/ago';
 import { PropRow } from '@/components/prop-row';
 import { demoMode } from '@/lib/db';
@@ -12,8 +12,6 @@ import { requirePaid } from '@/lib/guard';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Game' };
-
-const cond = (o: { win: number; loss: number }) => (o.win + o.loss > 0 ? o.win / (o.win + o.loss) : NaN);
 
 export default async function GamePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,114 +44,178 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
             This game has started. Pre-game prices are closed, so nothing below is graded or counted as an edge; live betting isn&apos;t covered.
           </p>
         )}
-        <Section title={pick ? 'Top pick · logged' : top && top.grade !== 'none' ? 'Best edge found' : 'Pricing summary'}>
-          {top && top.grade !== 'none' && top.best_decimal && !started && !isStale(top.price_ts, now, sm) ? (
-            <div className="panel p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[24px] font-semibold leading-tight text-amber">{label}</p>
-                  <p className="mt-1 text-[13px] text-ink">{american(top.best_decimal)} <span className="text-muted">at {bookName(top.best_book)}</span></p>
-                  <Ago ts={top.price_ts} staleMin={sm} serverNow={now} />
-                  {pick && <p className="mt-1 text-[11px] text-muted">Logged {dayTime(pick.created_at)} ET · #{pick.seq} · {pick.stake_units}u (record only)</p>}
-                </div>
-                <GradeBadge grade={top.grade} size="lg" />
-              </div>
-              <dl className="mt-3 grid grid-cols-3 border-t border-line pt-2">
-                <div><dt className="label">{top.market === 'ml' ? 'Win %' : top.market === 'total' ? 'Hit %' : 'Cover %'}</dt><dd className="text-[16px]">{Math.round(cond(top.fair_probs) * 1000) / 10}%</dd></div>
-                <div><dt className="label">Fair</dt><dd className="text-[16px] text-fair">{american(top.fair_decimal)}</dd></div>
-                <div><dt className="label">EV</dt><dd className="text-[16px] text-amber">{pct(top.ev)}</dd></div>
-              </dl>
-            </div>
-          ) : (
-            <p className="panel p-3 text-[13px] text-muted">{pick && started ? `Logged pick: ${pick.label} at ${american(Number(pick.price_decimal))} (${bookName(pick.book)}), grade ${pick.grade}.` : (g.prices.length ? 'No live edge. Every fresh market below is priced at or near fair.' : 'No prices from the books for this game yet. It will be priced as soon as books post lines.')}</p>
+        <BestBet g={g} started={started} now={now} sm={sm} />
+
+        <div className="mx-auto mt-3 max-w-3xl px-4">
+          {g.bookPrices.length >= 4 && top?.best_decimal && top.fair_decimal && (
+            <Fold title="Prices at every book" open>
+              <BookDots prices={g.bookPrices} best={{ book: bookName(top.best_book), decimal: top.best_decimal }} fair={top.fair_decimal} fmt={american} label={`${label} at each book`} />
+            </Fold>
           )}
-        </Section>
 
-        {g.histogram && (
-          <Section title={g.histogram.axis === 'total' ? 'Simulated total' : 'Simulated final margin'} right={<span className="label">{(g.sim?.n_sims ?? 10000).toLocaleString()} runs</span>}>
-            <MarginHistogram bins={g.histogram.bins} axis={g.histogram.axis} pickLabel={top && top.grade !== 'none' ? label : null} />
-            {(top?.fair_source === 'consensus' || g.sim?.inputs?.source !== 'ratings') && (
-              <p className="mt-1 text-[12px] text-muted">We don&apos;t have enough results yet to rate these teams, so the fair prices on this page are the market consensus, not this simulation. The chart shows the score spread the market implies; its percentages can differ from the fair price above.</p>
+          {g.histogram && (
+            <Fold title="What our simulation says" hint={`${(g.sim?.n_sims ?? 10000).toLocaleString()} runs`}>
+              {g.sim && g.sim.summary.draw === 0 && <WinBar home={e.home} away={e.away} p={g.sim.summary.homeWin} />}
+              <div className="h-3" />
+              <MarginHistogram bins={g.histogram.bins} axis={g.histogram.axis} pickLabel={top && top.grade !== 'none' ? label : null} />
+              <p className="mt-2 text-[13px] text-muted">For reference only. The fair price and the edge come from the books, not from this simulation.</p>
+            </Fold>
+          )}
+
+          <Fold title={g.movementKind === 'line' ? 'Line movement' : 'Market probability'}>
+            <p className="mb-2 text-[13px] text-muted">{g.movementKind === 'line' ? 'How the main spread has moved across the books we checked.' : 'How the no-vig market probability for the top pick has moved. Each point is one snapshot of all books together.'}</p>
+            {g.movement.length < 3 ? (
+              <div className="rounded-xl border border-dashed border-line p-4 text-[13.5px] text-muted"><b className="mb-1 block text-ink">Not enough history yet</b>We have {g.movement.length} price {g.movement.length === 1 ? 'snapshot' : 'snapshots'} for this game. The chart appears at 3 or more. We never fill gaps with guesses.</div>
+            ) : (
+              <LineChart
+                points={g.movement}
+                label={g.movementKind === 'line' ? 'Consensus line, open to now' : 'No-vig market probability, open to now'}
+                color={BLUE}
+                format={g.movementKind === 'line' ? (v) => (v > 0 ? `+${v}` : `${v}`) : (v) => `${Math.round(v * 100)}%`}
+                xLabel={(t) => new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })}
+              />
             )}
-          </Section>
-        )}
+          </Fold>
 
-        <Section title="All markets" right={<span className="label">Prices go stale after {sm} min</span>}>
-          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="All markets table">
-            <table className="w-full text-[12px]">
-              <thead>
-                <tr className="text-left">
-                  <th scope="col" className="label py-1 font-normal">Line</th>
-                  <th scope="col" className="label py-1 text-right font-normal">Best</th>
-                  <th scope="col" className="label py-1 text-right font-normal">Fair</th>
-                  <th scope="col" className="label py-1 text-right font-normal">EV</th>
-                  <th scope="col" className="label py-1 text-right font-normal"><span className="sr-only">Grade</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {markets.map((p) => <MarketRow key={p.selection_key} p={p} home={e.home} away={e.away} now={now} sm={sm} started={started} />)}
-              </tbody>
-            </table>
-          </div>
-        </Section>
+          {top && top.best_decimal && top.fair_decimal && top.consensus_p !== null && (
+            <Fold title="How the edge is worked out">
+              <table className="w-full text-[13px]"><tbody>
+                <tr><td className="py-1">Books pricing this line</td><td className="py-1 text-right">{top.books}</td></tr>
+                <tr><td className="py-1">Market chance (margin removed)</td><td className="py-1 text-right">{pct(top.consensus_p, 1, false)}</td></tr>
+                <tr><td className="py-1">Fair price</td><td className="py-1 text-right text-fair">{american(top.fair_decimal)} ({top.fair_decimal.toFixed(3)})</td></tr>
+                <tr><td className="py-1">Best price you can bet</td><td className="py-1 text-right">{american(top.best_decimal)} ({top.best_decimal.toFixed(2)})</td></tr>
+                <tr className="border-t border-line"><td className="pt-2 font-semibold text-amber">Edge = {top.consensus_p.toFixed(4)} × {top.best_decimal.toFixed(2)} − 1</td><td className="pt-2 text-right font-semibold text-amber">{pct(top.ev)}</td></tr>
+              </tbody></table>
+              <p className="mt-2 text-[13px] text-muted">The fair price is every book&apos;s price with its margin removed, combined, with sharp books like Pinnacle counting double.</p>
+            </Fold>
+          )}
 
-        <Section title="Player props" right={<span className="label">{props.length} prices</span>}>
-          {props.length ? (
-            <>
-              {props.every((p) => p.fair_source === 'consensus') && (
-                <p className="mb-1 text-[12px] text-muted"><span className="mr-1 border border-line px-1 text-[11px] uppercase tracking-[0.1em] text-ink">Consensus-only</span>No player simulation for this game: each fair price is the no-vig consensus of every book.</p>
-              )}
+          <Fold title="All markets" hint={`stale after ${sm} min`}>
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="All markets table">
+              <table className="w-full text-[12px]">
+                <thead>
+                  <tr className="text-left">
+                    <th scope="col" className="label py-1 font-normal">Line</th>
+                    <th scope="col" className="label py-1 text-right font-normal">Best</th>
+                    <th scope="col" className="label py-1 text-right font-normal">Fair</th>
+                    <th scope="col" className="label py-1 text-right font-normal">Edge</th>
+                    <th scope="col" className="label py-1 text-right font-normal"><span className="sr-only">Grade</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {markets.map((p) => <MarketRow key={p.selection_key} p={p} home={e.home} away={e.away} now={now} sm={sm} started={started} />)}
+                </tbody>
+              </table>
+            </div>
+          </Fold>
+
+          <Fold title="Player props" hint={`${props.length} prices`}>
+            {props.length ? (
               <ul>{props.map((p) => <PropRow key={p.selection_key} r={{ ...p, label: selectionLabel(p.selection, e.home, e.away), grade: started ? 'none' : p.grade }} now={now} sm={sm} />)}</ul>
-            </>
-          ) : <p className="panel p-3 text-[13px] text-muted">No player props for this game from our data provider yet.</p>}
-        </Section>
+            ) : <p className="text-[13.5px] text-muted"><b className="block text-ink">No data</b>No player props for this game from our data provider yet.</p>}
+          </Fold>
 
-        <Section title={g.movementKind === 'line' ? 'Line movement' : 'Market probability'}>
-          <p className="mb-2 text-[12px] text-muted">{g.movementKind === 'line' ? 'How the main spread has moved across the books we checked, from the first snapshot to the latest. A spread is the margin the favourite must win by; a move from −3 to −4 means the market now expects a bigger win.' : 'How the no-vig market probability for the top pick has moved. Each point is one snapshot of all books together.'}</p>
-          <LineChart
-            points={g.movement}
-            label={g.movementKind === 'line' ? 'Consensus line, open to now' : 'No-vig market probability, open to now'}
-            color={BLUE}
-            format={g.movementKind === 'line' ? (v) => (v > 0 ? `+${v}` : `${v}`) : (v) => `${Math.round(v * 100)}%`}
-            xLabel={(t) => new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })}
-          />
-        </Section>
+          {(g.writeup || (g.propWriteup && !started)) && (
+            <Fold title="Analyst notes">
+              {g.writeup && (
+                <div className="prose-sl text-[15px] leading-relaxed">
+                  <p>{g.writeup.edge}</p>
+                  <ul className="mt-2 list-disc pl-5">{g.writeup.reasons.map((r, i) => <li key={i} className="mt-1">{r}</li>)}</ul>
+                  <p className="mt-2 text-muted">{g.writeup.risk}</p>
+                </div>
+              )}
+              {g.propWriteup && !started && (
+                <div className="prose-sl mt-4 border-t border-line pt-3 text-[15px] leading-relaxed">
+                  <p className="label mb-1">Prop: {g.propWriteup.label}</p>
+                  <p>{g.propWriteup.writeup.edge}</p>
+                  <ul className="mt-2 list-disc pl-5">{g.propWriteup.writeup.reasons.map((r, i) => <li key={i} className="mt-1">{r}</li>)}</ul>
+                  <p className="mt-2 text-muted">{g.propWriteup.writeup.risk}</p>
+                </div>
+              )}
+            </Fold>
+          )}
 
-        {g.writeup && (
-          <Section title="Why we like it">
-            <div className="prose-sl panel p-3 text-[15px] leading-relaxed">
-              <p>{g.writeup.edge}</p>
-              <ul className="mt-2 list-disc pl-5">
-                {g.writeup.reasons.map((r, i) => <li key={i} className="mt-1">{r}</li>)}
-              </ul>
-              <p className="mt-2 text-muted">{g.writeup.risk}</p>
-            </div>
-          </Section>
-        )}
-
-        {g.propWriteup && !started && (
-          <Section title={`Prop: ${g.propWriteup.label}`}>
-            <div className="prose-sl panel p-3 text-[15px] leading-relaxed">
-              <p>{g.propWriteup.writeup.edge}</p>
-              <ul className="mt-2 list-disc pl-5">{g.propWriteup.writeup.reasons.map((r, i) => <li key={i} className="mt-1">{r}</li>)}</ul>
-              <p className="mt-2 text-muted">{g.propWriteup.writeup.risk}</p>
-            </div>
-          </Section>
-        )}
-
-        <Section title="Key factors">
-          <dl className="panel divide-y divide-line2 text-[12px]">
-            {g.factors.map((f) => (
-              <div key={f.label} className="flex justify-between gap-3 px-3 py-2">
-                <dt className="label shrink-0">{f.label}</dt>
-                <dd className="text-right">{f.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </Section>
+          <Fold title="Key factors">
+            <dl className="divide-y divide-line2 text-[12.5px]">
+              {g.factors.map((f2) => (
+                <div key={f2.label} className="flex justify-between gap-3 py-2">
+                  <dt className="label shrink-0">{f2.label}</dt>
+                  <dd className="text-right">{f2.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </Fold>
+        </div>
       </Main>
       <Footer sharpApi={g.providers.includes('sharpapi')} />
     </>
+  );
+}
+
+/** Collapsible section: advanced detail lives behind a tap (native <details>, no JS). */
+function Fold({ title, hint, open, children }: { title: string; hint?: string; open?: boolean; children: React.ReactNode }) {
+  return (
+    <details open={open} className="group mb-2.5 rounded-2xl border border-line2 bg-panel">
+      <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between gap-3 px-4 font-sans text-[15px] [&::-webkit-details-marker]:hidden">
+        <span>{title}{hint && <span className="ml-2 text-[12px] text-muted">{hint}</span>}</span>
+        <span aria-hidden className="text-[20px] text-amber group-open:hidden">+</span>
+        <span aria-hidden className="hidden text-[20px] text-amber group-open:inline">–</span>
+      </summary>
+      <div className="px-4 pb-4">{children}</div>
+    </details>
+  );
+}
+
+function WinBar({ home, away, p }: { home: string; away: string; p: number }) {
+  const h = Math.round(p * 100);
+  return (
+    <div role="img" aria-label={`Our simulation: ${home} win ${h}%, ${away} win ${100 - h}%`} className="flex h-9 overflow-hidden rounded-lg text-[13px] font-semibold">
+      <div className="flex items-center bg-amber pl-3 text-black" style={{ flex: p }}>{short(home)} {h}%</div>
+      <div className="flex items-center justify-end bg-[#2a2618] pr-3 text-ink" style={{ flex: 1 - p }}>{short(away)} {100 - h}%</div>
+    </div>
+  );
+}
+
+/** The one card a beginner needs: the pick, the book, the price, the edge in plain words, a friendly line. */
+function BestBet({ g, started, now, sm }: { g: GameDetail; started: boolean; now: number; sm: number }) {
+  const { event: e, top, pick } = g;
+  const label = top ? selectionLabel(top.selection, e.home, e.away) : null;
+  const flagged = !!top && top.grade !== 'none' && !!top.best_decimal && !started;
+  if (!flagged || !top || !top.best_decimal) {
+    return (
+      <section className="mx-auto mt-4 max-w-3xl px-4" aria-label="Best bet">
+        <div className="rounded-2xl border border-dashed border-line p-4 text-[13.5px] text-muted">
+          <b className="mb-1 block text-ink">{pick && started ? 'Logged pick' : g.prices.length ? 'No edge right now' : 'No data'}</b>
+          {pick && started ? `${pick.label} at ${american(Number(pick.price_decimal))} (${bookName(pick.book)}), grade ${pick.grade}.` : g.prices.length ? 'Every fresh price for this game is at or near fair.' : 'No prices from the books for this game yet. It will be priced as soon as books post lines.'}
+        </div>
+      </section>
+    );
+  }
+  const stale = isStale(top.price_ts, now, sm);
+  const others = g.bookPrices.filter((p) => p.book !== top.best_book).map((p) => p.decimal);
+  const lo = others.length ? Math.min(...others) : NaN, hi = others.length ? Math.max(...others) : NaN;
+  const outlier = others.length >= 3 && top.best_decimal > hi;
+  return (
+    <section className="mx-auto mt-4 max-w-3xl px-4" aria-label="Best bet">
+      <div className={`rounded-2xl border p-4 ${stale ? 'border-dashed border-[#c9a24a]' : 'border-amber bg-gradient-to-b from-[#171106] to-panel'}`}>
+        <p className="label mb-1.5">{stale ? 'Best bet · prices are stale, re-check' : pick ? 'Best bet · logged' : 'Best bet'}</p>
+        <p className="font-sans text-[24px] font-semibold leading-tight">{label}</p>
+        <dl className="mt-3 flex gap-6">
+          <div><dt className="label">Bet at</dt><dd className="text-[19px] font-semibold">{bookName(top.best_book)}</dd></div>
+          <div><dt className="label">Price</dt><dd className="text-[19px] font-semibold">{american(top.best_decimal)}</dd></div>
+          <div><dt className="label">Edge</dt><dd className={`text-[19px] font-semibold ${stale ? 'text-[#c9a24a]' : 'text-amber'}`}>{pct(top.ev)}</dd></div>
+        </dl>
+        <Ago ts={top.price_ts} staleMin={sm} serverNow={now} />
+        <EdgeMeter ev={top.ev ?? 0} min={GRADE_CONFIG.B.minEdge} />
+        <p className="prose-sl mt-3 text-[15px] leading-relaxed"><b>In plain words:</b> {bookName(top.best_book)} pays more for this bet than the market says it is worth. Over many bets like this you would expect about ${((top.ev ?? 0) * 100).toFixed(2)} back for every $100 staked. It is not a guarantee on any single bet.</p>
+        {outlier ? (
+          <p className="prose-sl mt-2 text-[14px] leading-relaxed text-muted">&ldquo;The other {others.length} books pay {american(lo)} to {american(hi)}. {bookName(top.best_book)} is out on its own at {american(top.best_decimal)}. That gap is the edge, but one outlier can be a stale or mistaken price, so confirm it is still there before you bet.&rdquo;</p>
+        ) : (
+          <p className="prose-sl mt-2 text-[14px] leading-relaxed text-muted">&ldquo;{top.books} books priced this line. The best price is {american(top.best_decimal)} at {bookName(top.best_book)}, against a fair price of {american(top.fair_decimal)}.&rdquo;</p>
+        )}
+        {pick && <p className="mt-2 text-[11px] text-muted">Logged {dayTime(pick.created_at)} ET · #{pick.seq} · {pick.stake_units}u (record only)</p>}
+      </div>
+    </section>
   );
 }
 
@@ -163,7 +225,7 @@ function MarketRow({ p, home, away, now, sm, started }: { p: PriceRow; home: str
     <FreshRow as="tr" ts={p.price_ts} staleMin={sm} serverNow={now} className={`border-t border-line2 ${edge ? '' : 'text-muted'}`}>
       <td className="py-2 pr-2">
         {selectionLabel(p.selection, home, away)}
-        <span className="block text-[11px] text-muted">{bookName(p.best_book)} · {p.books} {p.books === 1 ? 'book' : 'books'}{p.fair_source === 'consensus' ? ' · consensus-only' : ''}</span>
+        <span className="block text-[11px] text-muted">{bookName(p.best_book)} · {p.books} {p.books === 1 ? 'book' : 'books'}</span>
         <Ago ts={p.price_ts} staleMin={sm} serverNow={now} />
       </td>
       <td className="py-2 text-right">{american(p.best_decimal)}</td>

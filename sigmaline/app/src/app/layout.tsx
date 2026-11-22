@@ -3,8 +3,8 @@ import './globals.css';
 import { SwRegister } from '@/components/sw-register';
 
 export const metadata: Metadata = {
-  title: { default: 'Sigmaline — simulated fair prices for every game', template: '%s · Sigmaline' },
-  description: 'Every game simulated 10,000 times. Fair prices, EV and a verifiable track record. Information only.',
+  title: { default: 'Sigmaline — see which sports bets are priced wrong', template: '%s · Sigmaline' },
+  description: 'Fair prices from every sportsbook, the best price you can bet, and a verifiable track record. Information only.',
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, title: 'Sigmaline', statusBarStyle: 'black-translucent' },
   icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },

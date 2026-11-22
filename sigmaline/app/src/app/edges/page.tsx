@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { GRADE_CONFIG, SPORT_DEFS, SPORTS } from '@sigmaline/core';
 import { applyEdgeFilters, parseEdgeFilters } from '@sigmaline/db';
 import { Ago, FreshRow } from '@/components/ago';
-import { Footer, GradeBadge, Header, Main } from '@/components/chrome';
+import { EdgeMeter } from '@/components/charts';
+import { Footer, Header, Main } from '@/components/chrome';
 import { edgeFeed, staleMinutes } from '@/lib/data';
 import { demoMode } from '@/lib/db';
 import { american, bookName, pct, time } from '@/lib/format';
@@ -21,6 +22,10 @@ export default async function EdgeFinder({ searchParams }: { searchParams: Promi
   const sm = staleMinutes();
   const feed = await edgeFeed();
   const rows = applyEdgeFilters(feed.rows, f);
+  // One idea per game, market and book: several alternate lines at one book are the same bet, shown once.
+  const byIdea = new Map<string, typeof rows>();
+  for (const r of rows) { const k = `${r.event_id}|${r.market}|${r.best_book}|${r.selection.player ?? ''}|${r.selection.stat ?? ''}`; byIdea.set(k, [...(byIdea.get(k) ?? []), r]); }
+  const groups = [...byIdea.values()].map((g) => { const sorted = [...g].sort((x, y) => (y.ev ?? 0) - (x.ev ?? 0)); return { lead: sorted[0], rest: sorted.slice(1) }; });
   // The active book stays selectable even with no live edges right now (EFP-002).
   const books = [...new Set([...feed.rows.map((r) => r.best_book).filter(Boolean) as string[], ...(f.book !== 'all' ? [f.book] : [])])].sort();
   // The active minimum stays selectable even if it isn't a preset (EFP-003).
@@ -32,12 +37,19 @@ export default async function EdgeFinder({ searchParams }: { searchParams: Promi
       <Header demo={demoMode()} />
       <Main>
         <div className="mx-auto max-w-3xl px-4 pt-3">
-          <h1 className="text-[18px] font-semibold">Edge Finder</h1>
-          <p className="mt-1 text-[12px] text-muted">
-            Every live edge across all sports, game lines and player props. Edge = fair probability × decimal odds − 1. Only prices updated in the last {sm} minutes count. Grades: A ≥ {pct(GRADE_CONFIG.A.minEdge, 0, false)}, B {pct(GRADE_CONFIG.B.minEdge, 0, false)}–{pct(GRADE_CONFIG.B.maxEdge, 0, false)}.
+          <h1 className="text-[20px] font-semibold">Best bets</h1>
+          <p className="mt-1 text-[13px] text-muted">
+            The best-priced bets right now, biggest edge first. An edge is how much better a book&apos;s price is than the fair price built from every book. Only prices updated in the last {sm} minutes count, and only edges of {pct(GRADE_CONFIG.B.minEdge, 0, false)} or more are shown.
           </p>
+          <details open={f.sport !== 'all' || f.type !== 'all' || f.book !== 'all' || !!f.minEdge || f.grade !== 'all' || f.sort !== 'edge'} className="group mt-3 rounded-2xl border border-line2 bg-panel">
+            <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between px-4 font-sans text-[15px] [&::-webkit-details-marker]:hidden">
+              <span>Filters{f.sport !== 'all' || f.type !== 'all' || f.book !== 'all' || !!f.minEdge || f.grade !== 'all' || f.sort !== 'edge' && <span className="ml-2 text-[12px] text-amber">on</span>}</span>
+              <span aria-hidden className="text-[20px] text-amber group-open:hidden">+</span>
+              <span aria-hidden className="hidden text-[20px] text-amber group-open:inline">–</span>
+            </summary>
+            <div className="px-4 pb-4">
           {/* key: remount on every filter change so the selects always show the active filters (EFP-001). */}
-          <form key={JSON.stringify(f)} method="get" className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-6" aria-label="Filter edges">
+          <form key={JSON.stringify(f)} method="get" className="grid grid-cols-2 gap-2 sm:grid-cols-6" aria-label="Filter edges">
             <label className="flex flex-col gap-1"><span className="label">Sport</span>
               <select name="sport" defaultValue={f.sport} className={sel}>
                 <option value="all">All</option>
@@ -75,34 +87,40 @@ export default async function EdgeFinder({ searchParams }: { searchParams: Promi
               <Link href="/edges" prefetch={false} className="tap inline-flex items-center border border-line px-4 text-[12px] uppercase tracking-[0.12em] text-muted">Reset</Link>
             </div>
           </form>
-          <p className="label mt-3 border-b border-line pb-1" role="status">{rows.length} of {feed.rows.length} live {feed.rows.length === 1 ? 'edge' : 'edges'}</p>
+            </div>
+          </details>
+          <p className="label mt-3 border-b border-line pb-1" role="status">{groups.length} {groups.length === 1 ? 'idea' : 'ideas'} · {rows.length} of {feed.rows.length} live {feed.rows.length === 1 ? 'edge' : 'edges'}</p>
           {rows.length === 0 && (
             <p className="py-10 text-center text-[13px] text-muted">
               {feed.rows.length ? 'No edges match these filters. Loosen them or press Reset.' : (f.type === 'prop' ? 'No live prop edges right now. Props are only priced for sports and books that post them; try Market = All, or another sport.' : 'No live edges right now. Edges appear as soon as a book is out of line with the fair price, and disappear when the price goes stale or the game starts.')}
             </p>
           )}
-          <ul>
-            {rows.map((r) => (
-              <FreshRow key={`${r.event_id}|${r.selection_key}`} ts={r.price_ts} staleMin={sm} serverNow={now} className="border-b border-line2">
-                <Link href={`/game/${encodeURIComponent(r.event_id)}`} prefetch={false} className="grid grid-cols-[1fr_auto] gap-2 py-2 hover:bg-panel"
-                  aria-label={`${r.event.label}, ${time(r.event.commence_time)} Eastern. ${r.label} ${american(r.best_decimal)} at ${bookName(r.best_book)}, fair ${american(r.fair_decimal)}, edge ${pct(r.ev)}, grade ${r.grade}${r.fair_source === 'consensus' ? ', consensus-only' : ''}.`}>
-                  <span className="min-w-0">
-                    <span className="block text-[11px] uppercase tracking-[0.1em] text-muted">{SPORT_DEFS[r.event.sport].tab} · {r.market === 'prop' ? 'Prop' : 'Game line'} · {time(r.event.commence_time)}</span>
-                    <span className="block truncate text-[12px] text-muted">{r.event.label}</span>
-                    <span className="block text-[13px] leading-snug text-ink">{r.label}</span>
-                    <span className="block text-[12px]"><span className="text-amber">{american(r.best_decimal)}</span> <span className="text-muted">{bookName(r.best_book)} · {r.books} books</span></span>
-                    <span className="flex flex-wrap items-center gap-2">
-                      <Ago ts={r.price_ts} staleMin={sm} serverNow={now} />
-                      {r.fair_source === 'consensus' && <span className="text-[11px] uppercase tracking-[0.1em] text-muted">consensus-only</span>}
+          <ul className="mt-2">
+            {groups.map(({ lead, rest }) => (
+              <li key={`${lead.event_id}|${lead.selection_key}`} className="mb-3">
+                <FreshRow as="div" ts={lead.price_ts} staleMin={sm} serverNow={now} className="rounded-2xl border border-line2 bg-panel">
+                  <Link href={`/game/${encodeURIComponent(lead.event_id)}`} prefetch={false} className="block p-4 hover:bg-[#101010]"
+                    aria-label={`${lead.event.label}, ${time(lead.event.commence_time)} Eastern. ${lead.label} ${american(lead.best_decimal)} at ${bookName(lead.best_book)}, fair ${american(lead.fair_decimal)}, edge ${pct(lead.ev)}${rest.length ? `, plus ${rest.length} more lines at the same book` : ''}.`}>
+                    <span className="block text-[11px] uppercase tracking-[0.1em] text-muted">{SPORT_DEFS[lead.event.sport].tab} · {lead.market === 'prop' ? 'Prop' : 'Game line'} · {time(lead.event.commence_time)}</span>
+                    <span className="mt-1 block font-sans text-[19px] font-semibold leading-tight">{lead.label}</span>
+                    <span className="block truncate text-[12.5px] text-muted">{lead.event.label}</span>
+                    <span className="mt-3 flex gap-6">
+                      <span><span className="label block">Book</span><span className="text-[16px] font-semibold">{bookName(lead.best_book)}</span></span>
+                      <span><span className="label block">Price</span><span className="text-[16px] font-semibold">{american(lead.best_decimal)}</span></span>
+                      <span className="edge-chip"><span className="label block">Edge</span><span className="text-[16px] font-semibold text-amber">{pct(lead.ev)}</span></span>
                     </span>
-                  </span>
-                  <span className="flex flex-col items-end gap-1 text-right">
-                    <span className="text-[12px] text-fair">fair {american(r.fair_decimal)}</span>
-                    <span className="edge-only text-[14px] font-semibold text-amber">{pct(r.ev)}</span>
-                    <span className="edge-only"><GradeBadge grade={r.grade} /></span>
-                  </span>
-                </Link>
-              </FreshRow>
+                    <EdgeMeter ev={lead.ev ?? 0} min={GRADE_CONFIG.B.minEdge} />
+                    <span className="prose-sl block text-[13.5px] leading-snug text-muted">Fair price is {american(lead.fair_decimal)}; this pays {american(lead.best_decimal)}. {lead.books} books priced it.{lead.books <= 5 ? ' Few books: lower confidence.' : ''}{rest.length ? <b className="text-ink"> {rest.length} other {rest.length === 1 ? 'line' : 'lines'} at {bookName(lead.best_book)} also {rest.length === 1 ? 'shows' : 'show'} an edge: one idea, not {rest.length + 1}.</b> : null}</span>
+                    <Ago ts={lead.price_ts} staleMin={sm} serverNow={now} />
+                  </Link>
+                </FreshRow>
+                {rest.length > 0 && (
+                  <details className="mt-1.5 rounded-xl border border-line2">
+                    <summary className="flex min-h-[44px] cursor-pointer items-center px-4 text-[13px] text-muted">Other {rest.length === 1 ? 'line' : 'lines'} at {bookName(lead.best_book)}</summary>
+                    <ul className="px-4 pb-3 text-[13px]">{rest.map((r) => <li key={r.selection_key} className="flex justify-between border-t border-line2 py-2"><span>{r.label}</span><span>{american(r.best_decimal)} <span className="ml-2 text-amber">{pct(r.ev)}</span></span></li>)}</ul>
+                  </details>
+                )}
+              </li>
             ))}
           </ul>
         </div>

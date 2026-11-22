@@ -1,0 +1,14 @@
+diff --git a/.github/workflows/sigmaline-worker.yml b/.github/workflows/sigmaline-worker.yml
+index 523165d..55d87f0 100644
+--- a/.github/workflows/sigmaline-worker.yml
++++ b/.github/workflows/sigmaline-worker.yml
+@@ -91,7 +91,8 @@ jobs:
+           if [ -f "$RUNNER_TEMP/worker.env" ]; then . "$RUNNER_TEMP/worker.env"; fi
+           case "${{ steps.pick.outputs.job }}" in
+             weekly) npm run worker -- history && npm run worker -- backtest ;;
+-            nightly) npm run worker -- tick && npm run worker -- nightly ;;
++            # The 15-minute tick runs on its own schedule; chaining it here pushed the nightly run past the 20-minute timeout.
++            nightly) npm run worker -- nightly ;;
+             *) npm run worker -- "${{ steps.pick.outputs.job }}" ;;
+           esac
+       - name: Alert on failure

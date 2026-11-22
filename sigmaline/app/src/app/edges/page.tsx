@@ -34,7 +34,7 @@ export default async function EdgeFinder({ searchParams }: { searchParams: Promi
         <div className="mx-auto max-w-3xl px-4 pt-3">
           <h1 className="text-[18px] font-semibold">Edge Finder</h1>
           <p className="mt-1 text-[12px] text-muted">
-            Every live edge across all sports, game lines and player props. Edge = fair probability × decimal odds − 1. Only prices updated in the last {sm} minutes count. Grades: A ≥ {pct(GRADE_CONFIG.A.minEdge, 0, false)} with model and consensus agreeing, B {pct(GRADE_CONFIG.B.minEdge, 0, false)}–{pct(GRADE_CONFIG.B.maxEdge, 0, false)}.
+            Every live edge across all sports, game lines and player props. Edge = fair probability × decimal odds − 1. Only prices updated in the last {sm} minutes count. Grades: A ≥ {pct(GRADE_CONFIG.A.minEdge, 0, false)}, B {pct(GRADE_CONFIG.B.minEdge, 0, false)}–{pct(GRADE_CONFIG.B.maxEdge, 0, false)}.
           </p>
           {/* key: remount on every filter change so the selects always show the active filters (EFP-001). */}
           <form key={JSON.stringify(f)} method="get" className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-6" aria-label="Filter edges">

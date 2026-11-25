@@ -1,6 +1,6 @@
 import { clv, gradeBet, profitUnits, SPORT_DEFS, type Selection, type SportId } from '@sigmaline/core';
 import { getEvents, latestPull, normTeam, quoteFromSnapshot, type EventRow, type PickRow } from '@sigmaline/db';
-import { mayPull, recordUsage, type Ctx } from './context';
+import { mayPull, noteProviderError, recordUsage, type Ctx } from './context';
 import { gameDates } from './edges';
 import { leagueRefs } from './ingest';
 import { selectionConsensus, statValue } from './simulate';
@@ -68,7 +68,7 @@ export async function ingestScores(ctx: Ctx): Promise<number> {
           const r = await prov.getScores(ref, 3);
           await recordUsage(ctx, pid, r.cost, r.remaining);
           scores.push(...r.data);
-        } catch (e) { ctx.log(`scores failed ${pid} ${ref.key}: ${(e as Error).message}`); }
+        } catch (e) { ctx.log(`scores failed ${pid} ${ref.key}: ${(e as Error).message}`); if (noteProviderError(ctx, pid, e)) break; }
       }
       let got = 0;
       for (const e of open) {

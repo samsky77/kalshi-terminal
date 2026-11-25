@@ -93,6 +93,25 @@ export async function recordUsage(ctx: Ctx, provider: ProviderId, cost: number, 
   if (!ctx.demo && cost > 0) await addUsage(ctx.db, provider, cost, remaining);
 }
 
+/** True when a provider error means its quota is spent (The Odds API answers 401 OUT_OF_USAGE_CREDITS). */
+export function isQuotaError(err: unknown): boolean {
+  return /OUT_OF_USAGE_CREDITS|usage quota has been reached|HTTP 429/i.test((err as Error)?.message ?? String(err));
+}
+
+/**
+ * Call from a provider catch block. If the provider says its quota is gone, mark it exhausted for the rest
+ * of this run so the tick stops re-sending doomed requests (and logging a 401 for every league).
+ */
+export function noteProviderError(ctx: Ctx, provider: ProviderId, err: unknown): boolean {
+  if (!isQuotaError(err)) return false;
+  const u = ctx.usage.get(provider);
+  if (u && u.used < u.limit) {
+    u.used = u.limit;
+    ctx.log(`${provider} quota exhausted (provider said so): skipping it for the rest of this run`);
+  }
+  return true;
+}
+
 export function modeOf(ctx: Ctx, provider: ProviderId) {
   return budgetMode(ctx.usage.get(provider)!);
 }

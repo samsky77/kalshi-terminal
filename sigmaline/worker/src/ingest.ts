@@ -1,6 +1,6 @@
 import { CLOSING_WINDOW, GRADE_CONFIG, mainLine, PREGAME_WINDOW, PROP_MARKETS, quotesFromEvent, SPORT_DEFS, type MarketQuote, type OddsApiEvent, type ProviderId, type PullKind, type SportId } from '@sigmaline/core';
 import { eventId, getEvents, normTeam, type EventRow, type SnapshotRow } from '@sigmaline/db';
-import { mayPull, recordUsage, type Ctx } from './context';
+import { mayPull, noteProviderError, recordUsage, type Ctx } from './context';
 import type { DataProvider, LeagueRef } from './providers/types';
 
 export const GAME_MARKETS = ['h2h', 'spreads', 'totals'];
@@ -125,6 +125,7 @@ export async function pullOdds(ctx: Ctx, sport: SportId, leagueId: string, kind:
         ok = true;
       } catch (e) {
         ctx.log(`pull failed ${pid} ${ref.key}: ${(e as Error).message}`);
+        if (noteProviderError(ctx, pid, e)) break;
       }
     }
     if (ok) {

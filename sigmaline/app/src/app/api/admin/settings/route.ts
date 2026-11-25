@@ -1,6 +1,7 @@
 import { setSetting } from '@sigmaline/db';
 import { viewerFromRequest } from '@/lib/auth';
 import { getDb } from '@/lib/db';
+import { appUrl } from '@/lib/url';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,5 +14,5 @@ export async function POST(req: Request) {
   if (!(alert > 0 && alert < 0.5)) return Response.json({ error: 'alert EV must be between 0 and 50%' }, { status: 400 });
   const db = await getDb();
   await setSetting(db, 'alertEv', alert);
-  return Response.redirect(new URL('/admin?saved=1', req.url), 303);
+  return Response.redirect(appUrl('/admin?saved=1', req), 303);
 }
